@@ -1,0 +1,30 @@
+// src/composables/useApi.js
+import { ref } from 'vue';
+import axios from 'axios';
+
+export function useApi(url, options = { method: 'get', data: null }) {
+  const data = ref(null);
+  const loading = ref(true);
+  const error = ref(null);
+
+  const fetchData = async () => {
+    loading.value = true;
+    try {
+      // O Axios é inteligente: ele aceita um objeto com todas as configurações
+      const response = await axios({
+        url: `https://supreme-acorn-gpxrgxr74v4hv45w-3000.app.github.dev${url}`,
+        method: options.method || 'get', // Padrão é 'get' se nada for informado
+        data: options.data || null       // Envia o payload (body) se existir
+      });
+      data.value = response.data;
+    } catch (err) {
+      error.value = err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  fetchData();
+
+  return { data, loading, error, fetchData };
+}
