@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://sua-api.com' // Sua URL base
+  baseURL: 'https://portifolio-api-b1ml.onrender.com' // Sua URL base
 });
 
 // "Pedágio": Antes de qualquer requisição, ele checa se tem token
