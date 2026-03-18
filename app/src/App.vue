@@ -53,7 +53,7 @@ onMounted(async () => {
 
 const login = async (token) => {
 
-  const res = await api.post('https://supreme-acorn-gpxrgxr74v4hv45w-3000.app.github.dev/auth/google', { token });    
+  const res = await api.post('${import.meta.env.VITE_API_URL}/auth/google', { token });    
   if (res.data) {
     user.value = res.data;
   } 
