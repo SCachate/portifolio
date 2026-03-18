@@ -53,7 +53,7 @@ onMounted(async () => {
 
 const login = async (token) => {
 
-  const res = await api.post('${import.meta.env.VITE_API_URL}/auth/google', { token });    
+  const res = await api.post('https://portifolio-api-b1ml.onrender.com/auth/google', { token });    
   if (res.data) {
     user.value = res.data;
   } 
