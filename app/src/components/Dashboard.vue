@@ -1,28 +1,26 @@
 <template>
   <DashboardLayout :user="user" @logout="handleLogout">
     <AsyncLoader :loading="loading" :error="!!error">
-      <div class="w-full max-w-5xl">
+      <div class="w-full h-full">
         <PendenciasAlert v-if="data.length > 0" :lista="data || []" />
+        <Resumo v-else />
       </div>
     </AsyncLoader>
   </DashboardLayout>
 </template>
 
 <script setup>
-import { ref } from 'vue';
 import { useApi } from '../composables/useApi';
 import DashboardLayout from './DashboardLayout.vue';
 import PendenciasAlert from './PendenciasAlert.vue';
+import Resumo from './Resumo.vue';
 import AsyncLoader from './AsyncLoader.vue';
 
-const props = defineProps({
-  userId: [String, Number],
-  user: Object,
-});
-
-const { data, loading, error } = useApi(`/dashboard/pendencias/${props.userId}`);
+defineProps({ userId: [String, Number], user: Object });
+const { data, loading, error } = useApi(`/dashboard/pendencias`);
 
 const handleLogout = () => {
   localStorage.removeItem('user_token');
+  window.location.reload();
 };
 </script>

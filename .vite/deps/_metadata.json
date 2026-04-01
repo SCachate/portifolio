@@ -1,0 +1,46 @@
+{
+  "hash": "c6c3a4c3",
+  "configHash": "2e48d7d7",
+  "lockfileHash": "e3b0c442",
+  "browserHash": "4b58eb53",
+  "optimized": {
+    "axios": {
+      "src": "../../app/node_modules/axios/index.js",
+      "file": "axios.js",
+      "fileHash": "635d4fc8",
+      "needsInterop": false
+    },
+    "vue": {
+      "src": "../../app/node_modules/vue/dist/vue.runtime.esm-bundler.js",
+      "file": "vue.js",
+      "fileHash": "653d3c3c",
+      "needsInterop": false
+    },
+    "vue-router": {
+      "src": "../../app/node_modules/vue-router/dist/vue-router.mjs",
+      "file": "vue-router.js",
+      "fileHash": "5c5a485d",
+      "needsInterop": false
+    },
+    "vue3-apexcharts": {
+      "src": "../../app/node_modules/vue3-apexcharts/dist/vue3-apexcharts.js",
+      "file": "vue3-apexcharts.js",
+      "fileHash": "40aaa607",
+      "needsInterop": false
+    },
+    "vue3-google-login": {
+      "src": "../../app/node_modules/vue3-google-login/dist/index.esm.js",
+      "file": "vue3-google-login.js",
+      "fileHash": "3a576dc2",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-ZJ5TRX6L": {
+      "file": "chunk-ZJ5TRX6L.js"
+    },
+    "chunk-PZ5AY32C": {
+      "file": "chunk-PZ5AY32C.js"
+    }
+  }
+}

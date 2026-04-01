@@ -4,7 +4,6 @@ const api = axios.create({
   baseURL: 'https://portifolio-api-b1ml.onrender.com' // Sua URL base
 });
 
-// "Pedágio": Antes de qualquer requisição, ele checa se tem token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('user_token');
   if (token) {

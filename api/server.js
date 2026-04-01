@@ -9,7 +9,12 @@ const errorHandler = require('./middlewares/errorMiddleware');
 const app = express();
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+  origin: '*', // Permite que o seu frontend (localhost) acesse o servidor
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'] // Isso é o que faltava!
+}));
+
 app.use(express.json());
 
 app.use((req, res, next) => {
@@ -19,7 +24,9 @@ app.use((req, res, next) => {
     next();
 });
 
+
 app.use((req, res, next) => {
+    const authHeader = req.headers.authorization;
     console.log(`[${req.method}] ${req.url}`);
     next();
 });

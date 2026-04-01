@@ -1,13 +1,18 @@
 // src/composables/useApi.js
-import { ref } from 'vue';
-import axios from 'axios';
+import { ref, watch, unref } from 'vue';
+import api from '../api/axiosConfig';
 
-export function useApi(url, options = { method: 'get', data: null }) {
+export function useApi(url, options = {}) {
   const data = ref(null);
   const loading = ref(true);
   const error = ref(null);
 
   const fetchData = async () => {
+    // Pegamos o valor real da URL, seja ela uma string simples ou um Ref/Computed
+    const urlValue = unref(url);
+    
+    if (!urlValue) return;
+
     loading.value = true;
     try {
       // O Axios é inteligente: ele aceita um objeto com todas as configurações
@@ -19,11 +24,20 @@ export function useApi(url, options = { method: 'get', data: null }) {
       data.value = response.data;
     } catch (err) {
       error.value = err;
+      console.error("Erro na API:", err);
     } finally {
       loading.value = false;
     }
   };
 
+  // Se a URL for reativa (Ref ou Computed), observamos as mudanças
+  if (typeof url === 'function' || (url && url.value !== undefined)) {
+    watch(() => unref(url), () => {
+      fetchData();
+    });
+  }
+
+  // Executa a primeira vez
   fetchData();
 
   return { data, loading, error, fetchData };
