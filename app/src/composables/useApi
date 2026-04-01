@@ -1,29 +1,44 @@
 // src/composables/useApi.js
-import { ref } from 'vue';
-import axios from 'axios';
+import { ref, watch, unref } from 'vue';
+import api from '../api/axiosConfig';
 
-export function useApi(url, options = { method: 'get', data: null }) {
+export function useApi(url, options = {}) {
   const data = ref(null);
   const loading = ref(true);
   const error = ref(null);
 
   const fetchData = async () => {
+    // Pegamos o valor real da URL, seja ela uma string simples ou um Ref/Computed
+    const urlValue = unref(url);
+    
+    if (!urlValue) return;
+
     loading.value = true;
+    error.value = null; // Limpa erros anteriores antes de nova tentativa
+    
     try {
-      // O Axios é inteligente: ele aceita um objeto com todas as configurações
-      const response = await axios({
-        url: `https://supreme-acorn-gpxrgxr74v4hv45w-3000.app.github.dev${url}`,
-        method: options.method || 'get', // Padrão é 'get' se nada for informado
-        data: options.data || null       // Envia o payload (body) se existir
+      const response = await api({
+        url: `https://supreme-acorn-gpxrgxr74v4hv45w-3000.app.github.dev${urlValue}`,
+        method: options.method || 'get',
+        data: options.data || null
       });
       data.value = response.data;
     } catch (err) {
       error.value = err;
+      console.error("Erro na API:", err);
     } finally {
       loading.value = false;
     }
   };
 
+  // Se a URL for reativa (Ref ou Computed), observamos as mudanças
+  if (typeof url === 'function' || (url && url.value !== undefined)) {
+    watch(() => unref(url), () => {
+      fetchData();
+    });
+  }
+
+  // Executa a primeira vez
   fetchData();
 
   return { data, loading, error, fetchData };

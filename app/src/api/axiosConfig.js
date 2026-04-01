@@ -1,10 +1,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://sua-api.com' // Sua URL base
+  baseURL: 'https://supreme-acorn-gpxrgxr74v4hv45w-3000.app.github.dev' 
 });
 
-// "Pedágio": Antes de qualquer requisição, ele checa se tem token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('user_token');
   if (token) {
