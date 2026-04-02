@@ -99,7 +99,7 @@ exports.getResultado = async (req, res) => {
         const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 0).toISOString().split('T')[0];
         const inicioAno = new Date(new Date().getFullYear() - 1, 11, 31).toISOString().split('T')[0];
 
-        console.info([userId, dataHoje, dataOntem, inicioMes, inicioAno])
+        // console.info([userId, dataHoje, dataOntem, inicioMes, inicioAno])
 
         // 1. Executa as chamadas (resDia, resMes e resAno recebem o pacote completo da procedure)
         const [resDia] = await db.query('CALL sp_resultado_periodo_por_classe(?, ?, ?)', [userId, dataOntem, dataHoje]);
