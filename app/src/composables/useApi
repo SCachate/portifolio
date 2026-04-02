@@ -23,14 +23,17 @@ export function useApi(url, options = {}) {
         method: options.method || 'get', // Padrão é 'get' se nada for informado
         data: options.data || null       // Envia o payload (body) se existir
         , headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
       data.value = response.data;
     } catch (err) {
       error.value = err;
       console.error("Erro na API:", err);
+      console.error(`URL: ${import.meta.env.VITE_API_URL}${url}`);
+      console.error(`Metodo: ${options.method || 'get'}`);
+      console.error(`Dados: ${options.data}`);
     } finally {
       loading.value = false;
     }
