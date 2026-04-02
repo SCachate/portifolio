@@ -1,6 +1,6 @@
 // src/composables/useApi.js
 import { ref, watch, unref } from 'vue';
-import api from '../api/axiosConfig';
+import axios from 'axios';
 
 export function useApi(url, options = {}) {
   const data = ref(null);
