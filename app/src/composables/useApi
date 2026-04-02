@@ -11,6 +11,7 @@ export function useApi(url, options = {}) {
   const fetchData = async () => {
     // Pegamos o valor real da URL, seja ela uma string simples ou um Ref/Computed
     const urlValue = unref(url);
+    const token = localStorage.getItem('user_token');
     
     if (!urlValue) return;
 
@@ -21,6 +22,10 @@ export function useApi(url, options = {}) {
         url: `${import.meta.env.VITE_API_URL}${url}`,
         method: options.method || 'get', // Padrão é 'get' se nada for informado
         data: options.data || null       // Envia o payload (body) se existir
+        , headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
       });
       data.value = response.data;
     } catch (err) {
