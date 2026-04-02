@@ -16,6 +16,7 @@
     "vite": "^7.3.1",
     "vue": "^3.5.29",
     "vue-router": "^4.6.4",
+    "vue-toastification": "^2.0.0-rc.5",
     "vue3-apexcharts": "^1.10.0",
     "vue3-google-login": "^2.0.37"
   },

@@ -4,6 +4,8 @@ import App from './App.vue'
 import { createRouter, createWebHistory } from 'vue-router';
 import VueApexCharts from 'vue3-apexcharts';
 import Dashboard from './components/Dashboard.vue';
+import Toast from "vue-toastification";
+import "vue-toastification/dist/index.css";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -24,6 +26,7 @@ app.use(vue3GoogleLogin, {
   language: 'pt-BR' // <--- Adicione esta linha exatamente assim
 })
 
+app.use(Toast);
 app.use(router);
 app.use(VueApexCharts);
 app.mount('#app')

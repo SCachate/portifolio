@@ -36,10 +36,26 @@ export function useApi(url, options = {}) {
       data.value = response.data;
     } catch (err) {
       error.value = err;
+
+      // --- TRATAMENTO DE ERRO COM TOAST ---
+      if (err.response && err.response.status === 401) {
+        // Remove o token para evitar loops
+        localStorage.removeItem('user_token');
+
+        // EXIBE O TOAST NO LUGAR DO ALERT
+        toast.error("Sua sessão expirou. Faça login novamente.", {
+          timeout: 4000, // 4 segundos
+          closeOnClick: true,
+          pauseOnHover: true,
+        });
+
+        router.push('/login');
+      } else {
+          toast.warning("Ocorreu um erro na requisição.");
+      }
+      // ------------------------------------
+
       console.error("Erro na API:", err);
-      console.error(`URL: ${import.meta.env.VITE_API_URL}${urlValue}`);
-      console.error(`Metodo: ${options.method || 'get'}`);
-      console.error(`Dados: ${options.data}`);
     } finally {
       loading.value = false;
     }
