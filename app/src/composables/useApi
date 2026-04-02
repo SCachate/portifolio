@@ -19,7 +19,7 @@ export function useApi(url, options = {}) {
     try {
       // O Axios é inteligente: ele aceita um objeto com todas as configurações
       const response = await axios({
-        url: `${import.meta.env.VITE_API_URL}${url}`,
+        url: `${import.meta.env.VITE_API_URL}${urlValue}`,
         method: options.method || 'get', // Padrão é 'get' se nada for informado
         data: options.data || null       // Envia o payload (body) se existir
         , headers: {
@@ -31,7 +31,7 @@ export function useApi(url, options = {}) {
     } catch (err) {
       error.value = err;
       console.error("Erro na API:", err);
-      console.error(`URL: ${import.meta.env.VITE_API_URL}${url}`);
+      console.error(`URL: ${import.meta.env.VITE_API_URL}${urlValue}`);
       console.error(`Metodo: ${options.method || 'get'}`);
       console.error(`Dados: ${options.data}`);
     } finally {
