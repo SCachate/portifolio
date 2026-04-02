@@ -88,13 +88,12 @@ exports.getResultado = async (req, res) => {
     try {
         const userId = req.userId;
 
-        // ... Lógica de datas permanece a mesma ...
         const hoje = new Date();
-        hoje.setDate(hoje.getDate() - 1);
+        hoje.setDate(hoje.getDate());
         const dataHoje = hoje.toISOString().split('T')[0];
         
         const ontem = new Date();
-        ontem.setDate(ontem.getDate() - 2);
+        ontem.setDate(ontem.getDate() - 1);
         const dataOntem = ontem.toISOString().split('T')[0];
 
         const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 0).toISOString().split('T')[0];
