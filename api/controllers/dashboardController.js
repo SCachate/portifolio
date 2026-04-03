@@ -86,11 +86,11 @@ exports.getResultado = async (req, res) => {
         const timeZone = 'America/Sao_Paulo';
         const userId = req.userId;
         const agoraUTC = new Date();
-        const referenciaSP = toZonedTime(agoraUTC, timeZone);
-        const dataHoje   = formatInTimeZone(referenciaSP, timeZone, 'yyyy-MM-dd');
-        const dataOntem  = formatInTimeZone(subDays(referenciaSP, 1), timeZone, 'yyyy-MM-dd');
-        const inicioMes  = formatInTimeZone(startOfMonth(referenciaSP), timeZone, 'yyyy-MM-dd');
-        const inicioAno  = formatInTimeZone(startOfYear(referenciaSP), timeZone, 'yyyy-MM-dd');
+        const zonedDate = toZonedTime(agoraUTC, timeZone);
+        const dataHoje   = format(zonedDate, 'yyyy-MM-dd', { timeZone });
+        const dataOntem  = format(subDays(zonedDate, 1), 'yyyy-MM-dd', { timeZone });
+        const inicioMes  = format(startOfMonth(zonedDate), 'yyyy-MM-dd', { timeZone });
+        const inicioAno  = format(startOfYear(zonedDate), 'yyyy-MM-dd', { timeZone });
 
         console.info([userId, dataHoje, dataOntem, inicioMes, inicioAno]);
 
