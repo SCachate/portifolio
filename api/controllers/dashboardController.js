@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { formatInTimeZone } = require('date-fns-tz');
 
 exports.getPendencias = async (req, res) => {
     try {
@@ -30,7 +31,7 @@ exports.getResumo = async (req, res) => {
 exports.getEvolucao = async (req, res) => {
     try {
         const { ano } = req.query;
-        // A query que você forneceu, mantendo userId e ano fixos para seus testes
+       
         const query = `
             SELECT 
                 nome_classe AS name,
@@ -55,16 +56,14 @@ exports.getEvolucao = async (req, res) => {
             ORDER BY type, name, mes;
         `;
 
-        // Executa a query no banco de dados [1]
         const [rows] = await db.execute(query,[req.userId, ano, req.userId, ano-1]);
 
-        // Processamento para agrupar os dados por "name" (Classe ou Ano Passado)
         const processado = rows.reduce((acc, row) => {
             if (!acc[row.name]) {
                 acc[row.name] = {
                     name: row.name,
                     type: row.type,
-                    color: row.color, // Atribui a cor vinda do SQL à série
+                    color: row.color, 
                     data: new Array(12).fill(0)
                 };
             }
@@ -72,36 +71,33 @@ exports.getEvolucao = async (req, res) => {
             return acc;
         }, {});
 
-        // Converte o objeto de agrupamento em um array de objetos (formato final desejado)
         const resultadoFinal = Object.values(processado);
 
-        // Retorna o JSON estruturado para o frontend [2]
         res.json(resultadoFinal);
 
     } catch (error) {
-        // Tratamento de erro padrão conforme seus outros métodos [1, 3]
         res.status(500).json({ error: error.message });
     }
 };
 
 exports.getResultado = async (req, res) => {
     try {
+        const timeZone = 'America/Sao_Paulo';
         const userId = req.userId;
 
         const hoje = new Date();
         hoje.setDate(hoje.getDate());
-        const dataHoje = hoje.toISOString().split('T')[0];
-        
+        const dataHoje = formatInTimeZone(hoje, timeZone, 'yyyy-MM-dd');
+
         const ontem = new Date();
         ontem.setDate(ontem.getDate() - 1);
-        const dataOntem = ontem.toISOString().split('T')[0];
+        const dataOntem = formatInTimeZone(ontem, timeZone, 'yyyy-MM-dd');
 
-        const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 0).toISOString().split('T')[0];
-        const inicioAno = new Date(new Date().getFullYear() - 1, 11, 31).toISOString().split('T')[0];
+        const inicioMes = formatInTimeZone(new Date(new Date().getFullYear(), new Date()), timeZone, 'yyyy-MM-dd');
+        const inicioAno = formatInTimeZone(new Date(new Date().getFullYear() - 1, 11, 31), timeZone, 'yyyy-MM-dd');
 
-        // console.info([userId, dataHoje, dataOntem, inicioMes, inicioAno])
+        console.info([userId, dataHoje, dataOntem, inicioMes, inicioAno])
 
-        // 1. Executa as chamadas (resDia, resMes e resAno recebem o pacote completo da procedure)
         const [resDia] = await db.query('CALL sp_resultado_periodo_por_classe(?, ?, ?)', [userId, dataOntem, dataHoje]);
         const [resMes] = await db.query('CALL sp_resultado_periodo_por_classe(?, ?, ?)', [userId, inicioMes, dataHoje]);
         const [resAno] = await db.query('CALL sp_resultado_periodo_por_classe(?, ?, ?)', [userId, inicioAno, dataHoje]);
