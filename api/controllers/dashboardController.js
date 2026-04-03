@@ -85,15 +85,14 @@ exports.getResultado = async (req, res) => {
     try {
         const timeZone = 'America/Sao_Paulo';
         const userId = req.userId;
+        const agoraUTC = new Date();
+        const agoraSP = toZonedTime(agoraUTC, timeZone);
+        const dataHoje = formatInTimeZone(agoraSP, timeZone, 'yyyy-MM-dd');
+        const dataOntem = formatInTimeZone(subDays(agoraSP, 1), timeZone, 'yyyy-MM-dd');
+        const inicioMes = formatInTimeZone(startOfMonth(agoraSP), timeZone, 'yyyy-MM-dd');
+        const inicioAno = formatInTimeZone(startOfYear(agoraSP), timeZone, 'yyyy-MM-dd');
 
-        const agora = new Date();
-        const dataHoje = formatInTimeZone(agora, timeZone, 'yyyy-MM-dd');
-        const ontem = subDays(agora, 1);
-        const dataOntem = formatInTimeZone(ontem, timeZone, 'yyyy-MM-dd');
-        const inicioMes = formatInTimeZone(startOfMonth(agora), timeZone, 'yyyy-MM-dd');
-        const inicioAno = formatInTimeZone(startOfYear(agora), timeZone, 'yyyy-MM-dd');
-
-        console.info([userId, dataHoje, dataOntem, inicioMes, inicioAno])
+        console.info([userId, dataHoje, dataOntem, inicioMes, inicioAno]);
 
         const [resDia] = await db.query('CALL sp_resultado_periodo_por_classe(?, ?, ?)', [userId, dataOntem, dataHoje]);
         const [resMes] = await db.query('CALL sp_resultado_periodo_por_classe(?, ?, ?)', [userId, inicioMes, dataHoje]);
