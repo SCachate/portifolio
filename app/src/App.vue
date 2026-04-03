@@ -7,10 +7,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import axios from 'axios';
 import Login from './components/Login.vue';
 import Dashboard from './components/Dashboard.vue';
-import AsyncLoader from './components/AsyncLoader.vue';
 import api from './api/axiosConfig';
 
 const user = ref(null);
