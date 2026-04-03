@@ -1,12 +1,15 @@
 // src/composables/useApi.js
 import { ref, watch, unref } from 'vue';
-import api from '../api/axiosConfig';
 import axios from 'axios';
+import { useRouter } from 'vue-router'; 
+import { useToast } from 'vue-toastification'; 
 
 export function useApi(url, options = {}) {
   const data = ref(null);
   const loading = ref(true);
   const error = ref(null);
+  const router = useRouter(); 
+  const toast = useToast();  
 
   const fetchData = async () => {
     // Pegamos o valor real da URL, seja ela uma string simples ou um Ref/Computed
