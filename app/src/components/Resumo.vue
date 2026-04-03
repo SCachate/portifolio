@@ -66,7 +66,7 @@
           :error="errorResultado" 
           class="flex-grow-loader"
         >
-          <apexchart type="bar" height="200" :options="barOptions" :series="diaSeries" />
+          <apexchart type="bar" height="100%" :options="barOptions" :series="diaSeries" />
         </AsyncLoader>
       </div>
       <div class="chart-card">
@@ -203,23 +203,18 @@ const evolucaoOptions = computed(() => ({
   }
 }));
 
-// Opções dos Gráficos de Barra (Resultados)
-/*
-const barOptions = {
-  chart: { toolbar: { show: false } },
-  plotOptions: { bar: { borderRadius: 4, colors: { ranges: [{ from: -9999, to: 0, color: '#f87171' }] } } },
-  colors: ['#10b981'],
-  xaxis: { categories: ['RF', 'Int', 'Aç', 'FII', 'Mo'], labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
-  yaxis: { show: false },
-  tooltip: { theme: 'dark' },
-  dataLabels: { enabled: false }
-};
-*/
 const barOptions = {
   chart: { 
     toolbar: { show: false },
-    // AJUSTE: Dá um pouco mais de espaço na base para o texto inclinado
     parentHeightOffset: 0,
+  },
+  grid: {
+    padding: {
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0
+    }
   },
   plotOptions: { 
     bar: { 
@@ -327,7 +322,22 @@ watch(dadosResultado, (newData) => {
 
 <style scoped>
 .charts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; }
-.chart-card { background: #1a1c24; padding: 20px; border-radius: 12px; height: 320px; display: flex; flex-direction: column; overflow: hidden; padding-bottom: 30px; }
+.chart-card { 
+  background: #1a1c24;
+  padding: 20px;
+  border-radius: 12px;
+  height: 320px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 20px;
+}
+.bar-chart-wrapper {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
 .card-span-2 { grid-column: span 2; }
 .chart-title { color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
 
@@ -354,6 +364,9 @@ watch(dadosResultado, (newData) => {
 :deep(.tooltip-row) { display: flex; justify-content: space-between; font-size: 11px; padding: 1px 0; }
 :deep(.dot) { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
 :deep(.tooltip-total) { border-top: 1px solid #475569; margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-weight: 700; color: #34d399; }
-
+:deep(.apexcharts-canvas) {
+  width: 100% !important;
+  height: 100% !important;
+}
 @media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr; } .card-span-2 { grid-column: span 1; } }
 </style>
