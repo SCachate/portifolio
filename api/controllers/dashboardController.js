@@ -1,6 +1,6 @@
 const db = require('../config/db');
 const { format, toZonedTime } = require('date-fns-tz');
-const { subDays, endOfMonth, endOfYear, subYears,  } = require('date-fns');
+const { subDays, endOfMonth, endOfYear, subYears, subMonths } = require('date-fns');
 
 exports.getPendencias = async (req, res) => {
     try {
