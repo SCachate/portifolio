@@ -93,11 +93,12 @@ exports.getResultado = async (req, res) => {
         ontem.setDate(ontem.getDate() - 1);
         const dataOntem = formatInTimeZone(ontem, timeZone, 'yyyy-MM-dd');
 
-        const inicioMes = formatInTimeZone(new Date(new Date().getFullYear(), new Date()), timeZone, 'yyyy-MM-dd');
-        const inicioAno = formatInTimeZone(new Date(new Date().getFullYear() - 1, 11, 31), timeZone, 'yyyy-MM-dd');
+        const inicioMes = new Date(new Date().getFullYear(), new Date());
+        const inicioAno = new Date(new Date().getFullYear() - 1, 11, 31);
 
-        console.info([userId, dataHoje, dataOntem, inicioMes, inicioAno])
+        // console.info([userId, dataHoje, dataOntem, inicioMes, inicioAno])
 
+        // 1. Executa as chamadas (resDia, resMes e resAno recebem o pacote completo da procedure)
         const [resDia] = await db.query('CALL sp_resultado_periodo_por_classe(?, ?, ?)', [userId, dataOntem, dataHoje]);
         const [resMes] = await db.query('CALL sp_resultado_periodo_por_classe(?, ?, ?)', [userId, inicioMes, dataHoje]);
         const [resAno] = await db.query('CALL sp_resultado_periodo_por_classe(?, ?, ?)', [userId, inicioAno, dataHoje]);
