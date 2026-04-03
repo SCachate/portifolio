@@ -43,9 +43,10 @@ export function useApi(url, options = {}) {
         localStorage.removeItem('user_token');
 
         toast.error("Sua sessão expirou. Faça login novamente.", {
-          timeout: 4000, // 4 segundos
-          closeOnClick: true,
-          pauseOnHover: true,
+          timeout: false,       
+          closeOnClick: true,   
+          draggable: false,      
+          closeButton: "button", 
         });
 
         router.push('/login');
