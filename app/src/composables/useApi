@@ -1,4 +1,3 @@
-// src/composables/useApi.js
 import { ref, watch, unref } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router'; 
@@ -12,7 +11,7 @@ export function useApi(url, options = {}) {
   const toast = useToast();  
 
   const fetchData = async () => {
-    // Pegamos o valor real da URL, seja ela uma string simples ou um Ref/Computed
+
     const urlValue = unref(url);
     const token = localStorage.getItem('user_token');
     
@@ -24,20 +23,16 @@ export function useApi(url, options = {}) {
         'Content-Type': 'application/json'
       };
 
-      // 3. Só adicionamos o Authorization se NÃO for a URL de login do Google
       if (token && urlValue !== '/auth/google') {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
       const response = await axios({
-        url: `${import.meta.env.VITE_API_URL}${urlValue}`, // Corrigido para urlValue
+        url: `${import.meta.env.VITE_API_URL}${urlValue}`, 
         method: options.method || 'get',
         data: options.data || null,
-        headers: headers // Passamos o objeto de headers que construímos acima
+        headers: headers 
       });
-
-                toast.warning(`URL: ${urlValue}`);
-
       data.value = response.data;
     } catch (err) {
       error.value = err;
@@ -63,14 +58,12 @@ export function useApi(url, options = {}) {
     }
   };
 
-  // Se a URL for reativa (Ref ou Computed), observamos as mudanças
   if (typeof url === 'function' || (url && url.value !== undefined)) {
     watch(() => unref(url), () => {
       fetchData();
     });
   }
 
-  // Executa a primeira vez
   fetchData();
 
   return { data, loading, error, fetchData };
