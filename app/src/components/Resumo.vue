@@ -91,7 +91,7 @@ import { useApi } from '../composables/useApi';
 import AsyncLoader from './AsyncLoader.vue';
 
 // 1. Lógica da Distribuição (Donut)
-const { data, loading, error } = useApi(`/dashboard/resumo`);
+const { data, loading, error, fetchData: fetchResumo } = useApi(`/dashboard/resumo`);
 const series = ref([]);
 
 // 2. Lógica da Evolução (API Reativa por Ano)
@@ -101,14 +101,32 @@ const urlEvolucao = computed(() => { return `/dashboard/evolucao?ano=${anoVisual
 const { 
   data: dadosEvolucao, 
   loading: loadingEvolucao, 
-  error: errorEvolucao 
+  error: errorEvolucao,
+  fetchData: fetchEvolucao
 } = useApi(urlEvolucao);
 
 const { 
   data: dadosResultado, 
   loading: loadingResultado, 
-  error: errorResultado 
+  error: errorResultado,
+  fetchData: fetchResultado
 } = useApi(`/dashboard/resultado`);
+
+let intervalId = null;
+
+const atualizarTudo = () => {
+  fetchResumo();
+  fetchEvolucao();
+  fetchResultado();
+};
+
+onMounted(() => {
+  intervalId = setInterval(atualizarTudo, 60000);
+});
+
+onUnmounted(() => {
+  if (intervalId) clearInterval(intervalId);
+});
 
 const evolucaoSeries = computed(() => {
   return (dadosEvolucao.value && Array.isArray(dadosEvolucao.value)) 
