@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { formatInTimeZone } = require('date-fns-tz');
+const { subDays, startOfMonth, startOfYear } = require('date-fns');
 
 exports.getPendencias = async (req, res) => {
     try {
@@ -85,16 +86,12 @@ exports.getResultado = async (req, res) => {
         const timeZone = 'America/Sao_Paulo';
         const userId = req.userId;
 
-        const hoje = new Date();
-        hoje.setDate(hoje.getDate());
-        const dataHoje = formatInTimeZone(hoje, timeZone, 'yyyy-MM-dd');
-
-        const ontem = new Date();
-        ontem.setDate(ontem.getDate() - 1);
+        const agora = new Date();
+        const dataHoje = formatInTimeZone(agora, timeZone, 'yyyy-MM-dd');
+        const ontem = subDays(agora, 1);
         const dataOntem = formatInTimeZone(ontem, timeZone, 'yyyy-MM-dd');
-
-        const inicioMes = formatInTimeZone(new Date(new Date().getFullYear(), new Date().getMonth(), 0), timeZone, 'yyyy-MM-dd');
-        const inicioAno = formatInTimeZone(new Date(new Date().getFullYear() - 1, 11, 31), timeZone, 'yyyy-MM-dd');
+        const inicioMes = formatInTimeZone(startOfMonth(agora), timeZone, 'yyyy-MM-dd');
+        const inicioAno = formatInTimeZone(startOfYear(agora), timeZone, 'yyyy-MM-dd');
 
         console.info([userId, dataHoje, dataOntem, inicioMes, inicioAno])
 
