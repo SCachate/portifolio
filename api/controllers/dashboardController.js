@@ -1,6 +1,6 @@
 const db = require('../config/db');
 const { format, toZonedTime } = require('date-fns-tz');
-const { subDays, endOfMonth, endOfYear } = require('date-fns');
+const { subDays, endOfMonth, endOfYear, subYears,  } = require('date-fns');
 
 exports.getPendencias = async (req, res) => {
     try {
@@ -89,8 +89,8 @@ exports.getResultado = async (req, res) => {
         const zonedDate = toZonedTime(agoraUTC, timeZone);
         const dataHoje   = format(zonedDate, 'yyyy-MM-dd', { timeZone });
         const dataOntem  = format(subDays(zonedDate, 1), 'yyyy-MM-dd', { timeZone });
-        const inicioMes  = format(endOfMonth(subMonth(zonedDate,1)), 'yyyy-MM-dd', { timeZone });
-        const inicioAno  = format(endOfYear(subYear(zonedDate,1)), 'yyyy-MM-dd', { timeZone });
+        const inicioMes  = format(endOfMonth(subMonths(zonedDate,1)), 'yyyy-MM-dd', { timeZone });
+        const inicioAno  = format(endOfYear(subYears(zonedDate,1)), 'yyyy-MM-dd', { timeZone });
 
         console.info([userId, dataHoje, dataOntem, inicioMes, inicioAno]);
 
