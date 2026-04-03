@@ -86,7 +86,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { useApi } from '../composables/useApi';
 import AsyncLoader from './AsyncLoader.vue';
 
