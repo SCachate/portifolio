@@ -204,11 +204,43 @@ const evolucaoOptions = computed(() => ({
 }));
 
 // Opções dos Gráficos de Barra (Resultados)
+/*
 const barOptions = {
   chart: { toolbar: { show: false } },
   plotOptions: { bar: { borderRadius: 4, colors: { ranges: [{ from: -9999, to: 0, color: '#f87171' }] } } },
   colors: ['#10b981'],
   xaxis: { categories: ['RF', 'Int', 'Aç', 'FII', 'Mo'], labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
+  yaxis: { show: false },
+  tooltip: { theme: 'dark' },
+  dataLabels: { enabled: false }
+};
+*/
+const barOptions = {
+  chart: { 
+    toolbar: { show: false },
+    // AJUSTE: Dá um pouco mais de espaço na base para o texto inclinado
+    parentHeightOffset: 0,
+  },
+  plotOptions: { 
+    bar: { 
+      borderRadius: 4, 
+      colors: { ranges: [{ from: -9999, to: 0, color: '#f87171' }] } 
+    } 
+  },
+  colors: ['#10b981'],
+  xaxis: { 
+    // Remova o mapeamento manual de categorias se houver no objeto fixo
+    labels: { 
+      rotate: -45, // Rotaciona o texto para caber
+      rotateAlways: false, // Só rotaciona se necessário
+      style: { 
+        colors: '#94a3b8', 
+        fontSize: '10px' 
+      },
+      hideOverlappingLabels: false, // Garante que não suma nada
+      trim: true, // Corta com "..." se for realmente gigantesco
+    } 
+  },
   yaxis: { show: false },
   tooltip: { theme: 'dark' },
   dataLabels: { enabled: false }
