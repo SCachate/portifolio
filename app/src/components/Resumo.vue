@@ -319,14 +319,7 @@ watch(dadosResultado, (newData) => {
         data: newData.map(item => item.ano) 
     }];
 
-    // DICA EXTRA: Atualize as legendas do eixo X caso elas mudem
-    barOptions.xaxis.categories = newData.map(item => {
-        // Abrevia nomes longos para caber no gráfico pequeno
-        if (item.classe === 'Renda fixa') return 'RF';
-        if (item.classe === 'Internacional') return 'Int';
-        if (item.classe === 'Ações') return 'Aç';
-        return item.classe.substring(0, 3);
-    });
+    barOptions.xaxis.categories = newData.map(item => item.classe);
   }
 }, { immediate: true });
 
@@ -334,7 +327,7 @@ watch(dadosResultado, (newData) => {
 
 <style scoped>
 .charts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; }
-.chart-card { background: #1a1c24; padding: 20px; border-radius: 12px; height: 320px; display: flex; flex-direction: column; overflow: hidden; }
+.chart-card { background: #1a1c24; padding: 20px; border-radius: 12px; height: 320px; display: flex; flex-direction: column; overflow: hidden; padding-bottom: 30px; }
 .card-span-2 { grid-column: span 2; }
 .chart-title { color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
 
