@@ -7,7 +7,6 @@ export function useApi(url, options = {}) {
   const data = ref(null);
   const loading = ref(true);
   const error = ref(null);
-  const router = useRouter(); 
   const toast = useToast();  
 
   const fetchData = async () => {
@@ -49,7 +48,7 @@ export function useApi(url, options = {}) {
           closeButton: "button", 
         });
 
-        router.push('/login');
+        window.location.reload();
       } else {
           toast.warning("Ocorreu um erro na requisição.");
       }
