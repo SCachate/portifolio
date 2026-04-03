@@ -76,7 +76,7 @@
           :error="errorResultado" 
           class="flex-grow-loader"
         >
-          <apexchart type="bar" height="200" :options="barOptions" :series="mesSeries" />
+          <apexchart type="bar" height="100%" :options="barOptions" :series="mesSeries" />
         </AsyncLoader>
       </div>
       <div class="chart-card">
@@ -86,7 +86,7 @@
           :error="errorResultado" 
           class="flex-grow-loader"
         >
-          <apexchart type="bar" height="200" :options="barOptions" :series="anoSeries" />
+          <apexchart type="bar" height="100%" :options="barOptions" :series="anoSeries" />
         </AsyncLoader>
       </div>
     </div>
