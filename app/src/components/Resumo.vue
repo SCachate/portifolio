@@ -60,32 +60,42 @@
       </div>
 
       <div class="chart-card">
-        <h3 class="chart-title">Resultado do Dia</h3>
         <AsyncLoader 
           :loading="loadingResultado" 
           :error="errorResultado" 
           class="flex-grow-loader"
         >
+          <h3 class="chart-title">Resultado do Dia</h3>
+          <span :class="['result-value', totaisResultado.dia >= 0 ? 'text-emerald-400' : 'text-red-400']">
+            {{ formatCurrency(totaisResultado.dia) }}
+          </span>
           <apexchart type="bar" height="100%" :options="barOptions" :series="diaSeries" />
         </AsyncLoader>
       </div>
       <div class="chart-card">
-        <h3 class="chart-title">Resultado do Mês</h3>
+
         <AsyncLoader 
           :loading="loadingResultado" 
           :error="errorResultado" 
           class="flex-grow-loader"
         >
+          <h3 class="chart-title">Resultado do Mês</h3>
+          <span :class="['result-value', totaisResultado.mes >= 0 ? 'text-emerald-400' : 'text-red-400']">
+            {{ formatCurrency(totaisResultado.mes) }}
+          </span>
           <apexchart type="bar" height="100%" :options="barOptions" :series="mesSeries" />
         </AsyncLoader>
       </div>
       <div class="chart-card">
-        <h3 class="chart-title">Resultado do Ano</h3>
         <AsyncLoader 
           :loading="loadingResultado" 
           :error="errorResultado" 
           class="flex-grow-loader"
         >
+          <h3 class="chart-title">Resultado do Ano</h3>
+          <span :class="['result-value', totaisResultado.ano >= 0 ? 'text-emerald-400' : 'text-red-400']">
+            {{ formatCurrency(totaisResultado.ano) }}
+          </span>
           <apexchart type="bar" height="100%" :options="barOptions" :series="anoSeries" />
         </AsyncLoader>
       </div>
@@ -293,6 +303,18 @@ watch(data, (newData) => {
   }
 }, { immediate: true });
 
+const totaisResultado = computed(() => {
+  if (!dadosResultado.value || !Array.isArray(dadosResultado.value)) {
+    return { dia: 0, mes: 0, ano: 0 };
+  }
+  return dadosResultado.value.reduce((acc, item) => {
+    acc.dia += Number(item.dia) || 0;
+    acc.mes += Number(item.mes) || 0;
+    acc.ano += Number(item.ano) || 0;
+    return acc;
+  }, { dia: 0, mes: 0, ano: 0 });
+});
+
 watch(dadosResultado, (newData) => {
   if (newData && Array.isArray(newData) && newData.length > 0) {
     console.info(newData);
@@ -321,6 +343,25 @@ watch(dadosResultado, (newData) => {
 </script>
 
 <style scoped>
+.result-header {
+  display: flex;
+  justify-content: space-between; /* Título na esquerda, Valor na direita */
+  align-items: center;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.result-value {
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.chart-title {
+  margin: 0;
+  line-height: 1;
+}
+
 .charts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; }
 .chart-card { 
   background: #1a1c24;
