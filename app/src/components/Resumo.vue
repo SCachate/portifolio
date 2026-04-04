@@ -132,6 +132,16 @@ const {
 
 let intervalId = null;
 
+const formatCurrency = (val) => {
+  if (val === undefined || val === null) return 'R$ 0,00';
+  return val.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
 const atualizarTudo = () => {
   fetchResumo();
   fetchEvolucao();
@@ -154,10 +164,6 @@ const evolucaoSeries = computed(() => {
 
 const mudarAno = (delta) => { 
   anoVisualizado.value += delta; 
-};
-
-const formatCurrency = (val) => {
-  return val !== undefined ? `R$ ${val.toLocaleString('pt-BR')}` : '';
 };
 
 // Opções do Gráfico de Evolução
@@ -352,9 +358,9 @@ watch(dadosResultado, (newData) => {
 }
 
 .result-value {
-  font-size: 0.9rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums; /* Mantém os números com a mesma largura */
+  font-family: 'Inter', sans-serif; /* Ou outra fonte sans-serif moderna */
+  font-weight: 700;
 }
 
 .chart-title {
