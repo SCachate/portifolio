@@ -51,7 +51,7 @@ onMounted(async () => {
 
 const login = async (token) => {
 
-  const res = await api.post('https://portifolio-api-b1ml.onrender.com/auth/google', { token });    
+  const res = await api.post('https://portifolio-api-b1ml.onrender.com/auth/google2', { token });    
   if (res.data) {
     user.value = res.data;
   } 
