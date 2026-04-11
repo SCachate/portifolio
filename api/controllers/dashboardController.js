@@ -49,7 +49,7 @@ exports.getEvolucao = async (req, res) => {
                 'line' AS type,
                 CONVERT(RIGHT(yearMonth, 2), SIGNED) AS mes,
                 SUM(closingBalance) AS valor,
-                '#2c0aaa' AS color -- Cor fixa sugerida para a linha de comparação
+                '#b4b4b4' AS color -- Cor fixa sugerida para a linha de comparação
             FROM monthly_reports
             WHERE userId = ?
               AND LEFT(yearMonth, 4) = ?
