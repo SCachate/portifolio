@@ -6,7 +6,7 @@
 
   <!-- Botão moderno à direita -->
   <button 
-    @click="carregarResumo" 
+    @click="atualizarTudo" 
     :disabled="loading"
     class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-md active:scale-95"
   >
@@ -178,20 +178,27 @@ const formatCurrency = (val) => {
   });
 }
 
-const atualizarTudo = () => {
-  fetchResumo();
-  fetchEvolucao();
-  fetchResultado();
+// const atualizarTudo = () => {
+//   fetchResumo();
+//   fetchEvolucao();
+//   fetchResultado();
+// };
+
+const atualizarTudo = async () => {
+  this.loadingGlobal = true; // Feedback visual único para o dashboard
+  try {
+    // Executa as chamadas em paralelo para maior rapidez
+    await Promise.all([
+      this.fetchResumo(),
+      this.fetchEvolucao(),
+      this.fetchResultado()
+    ]);
+  } catch (error) {
+    console.error("Erro na atualização global:", error);
+  } finally {
+    this.loadingGlobal = false;
+  }
 };
-
-onMounted(() => {
-  intervalId = setInterval(atualizarTudo, 60000);
-});
-
-onUnmounted(() => {
-  if (intervalId) clearInterval(intervalId);
-});
-
 const evolucaoSeries = computed(() => {
   return (dadosEvolucao.value && Array.isArray(dadosEvolucao.value)) 
     ? dadosEvolucao.value 
