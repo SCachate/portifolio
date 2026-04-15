@@ -149,7 +149,7 @@ const { data, loading, error, fetchData: fetchResumo } = useApi(`/dashboard/resu
 const series = ref([]);
 
 // 2. Lógica da Evolução (API Reativa por Ano)
-const anoVisualizado = ref(2026);
+const anoVisualizado = ref(new Date().getFullYear());
 const urlEvolucao = computed(() => { return `/dashboard/evolucao?ano=${anoVisualizado.value}`; });
 
 const { 
@@ -178,20 +178,14 @@ const formatCurrency = (val) => {
   });
 }
 
-// const atualizarTudo = () => {
-//   fetchResumo();
-//   fetchEvolucao();
-//   fetchResultado();
-// };
-
 const atualizarTudo = async () => {
   //loading = true; // Feedback visual único para o dashboard
   try {
     // Executa as chamadas em paralelo para maior rapidez
     await Promise.all([
-      this.fetchResumo(),
-      this.fetchEvolucao(),
-      this.fetchResultado()
+      fetchResumo(),
+      fetchEvolucao(),
+      fetchResultado()
     ]);
   } catch (error) {
     console.error("Erro na atualização global:", error);
