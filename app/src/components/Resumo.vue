@@ -179,18 +179,16 @@ const formatCurrency = (val) => {
 }
 
 const atualizarTudo = async () => {
-  //loading = true; // Feedback visual único para o dashboard
   try {
-    // Executa as chamadas em paralelo para maior rapidez
     await Promise.all([
       fetchResumo(),
       fetchEvolucao(),
       fetchResultado()
     ]);
+    
+    console.info("Dashboard atualizado com sucesso!");
   } catch (error) {
     console.error("Erro na atualização global:", error);
-  } finally {
-    //loading = false;
   }
 };
 const evolucaoSeries = computed(() => {
