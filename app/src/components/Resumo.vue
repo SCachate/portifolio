@@ -185,7 +185,7 @@ const formatCurrency = (val) => {
 // };
 
 const atualizarTudo = async () => {
-  this.loadingGlobal = true; // Feedback visual único para o dashboard
+  this.loading = true; // Feedback visual único para o dashboard
   try {
     // Executa as chamadas em paralelo para maior rapidez
     await Promise.all([
@@ -196,7 +196,7 @@ const atualizarTudo = async () => {
   } catch (error) {
     console.error("Erro na atualização global:", error);
   } finally {
-    this.loadingGlobal = false;
+    this.loading = false;
   }
 };
 const evolucaoSeries = computed(() => {
