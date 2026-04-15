@@ -1,6 +1,18 @@
 <template>
   <div class="w-full">
-    <h2 class="text-white text-xl font-bold mb-6">Meu Patrimônio</h2>
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-white text-xl font-bold">Meu Patrimônio</h2>
+      
+      <button 
+        @click="carregarResumo" 
+        class="nav-btn" 
+        :disabled="loading"
+        title="Atualizar Patrimônio"
+      >
+        <span v-if="!loading">🔄 Atualizar</span>
+        <span v-else>⌛ Carregando...</span>
+      </button>
+    </div>
     
     <div class="charts-grid">
 
