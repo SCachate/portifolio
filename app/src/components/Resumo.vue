@@ -208,18 +208,24 @@ const evolucaoOptions = computed(() => ({
     toolbar: { show: false }, 
     fontFamily: 'inherit',
     events: {
+      // Evento disparado ao clicar em uma barra do gráfico
       dataPointSelection: (event, chartContext, config) => {
+        // 1. Obtém o nome da série (Classe de Investimento: Ações, FII, etc) [1, 2]
         const classeNome = config.w.config.series[config.seriesIndex].name;
-        const index = config.dataPointIndex;
-        // Identifica se clicou em Resultado do Dia, Mês ou Ano baseado na série
-        const tipoPeriodo = this.identificarPeriodoPorSerie(config.seriesIndex); 
-
-        console.info([classeNome, tipoPeriodo]);
         
-        // this.abrirDialogDetalhamento({
-        //   classe: classeNome,
-        //   periodo: tipoPeriodo
-        // });
+        // 2. Obtém o índice do mês (0 = Jan, 1 = Fev, etc)
+        const mesIndex = config.dataPointIndex;
+        
+        // 3. Formata o período para a consulta (MM/AAAA) usando o anoVisualizado.value [3]
+        // Somamos +1 no índice pois o JS conta meses de 0 a 11
+        const mesFormatado = String(mesIndex + 1).padStart(2, '0');
+        const periodoSelecionado = `${mesFormatado}/${anoVisualizado.value}`;
+
+        console.info("Classe selecionada:", classeNome);
+        console.info("Período selecionado:", periodoSelecionado);
+        
+        // 4. Chama a função para abrir o Dialog (deve estar definida no seu <script setup>)
+        // abrirDialogDetalhamento(classeNome, periodoSelecionado);
       }
     }
   },
