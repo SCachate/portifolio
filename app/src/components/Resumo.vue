@@ -280,6 +280,8 @@ const barOptions = {
             periodoFinal = `${anoVisualizado.value}`;
           }
 
+          alert('teste');
+
           console.info(`Gráfico: ${tipoResultado} | Classe: ${classeNome} | Período: ${periodoFinal}`);
 
           // 3. Abre o Dialog passando os filtros exatos
