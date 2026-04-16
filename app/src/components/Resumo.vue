@@ -206,7 +206,22 @@ const evolucaoOptions = computed(() => ({
   chart: { 
     stacked: true, 
     toolbar: { show: false }, 
-    fontFamily: 'inherit'
+    fontFamily: 'inherit',
+    events: {
+      dataPointSelection: (event, chartContext, config) => {
+        const classeNome = config.w.config.series[config.seriesIndex].name;
+        const index = config.dataPointIndex;
+        // Identifica se clicou em Resultado do Dia, Mês ou Ano baseado na série
+        const tipoPeriodo = this.identificarPeriodoPorSerie(config.seriesIndex); 
+
+        console.info([classeNome, tipoPeriodo]);
+        
+        // this.abrirDialogDetalhamento({
+        //   classe: classeNome,
+        //   periodo: tipoPeriodo
+        // });
+      }
+    }
   },
   stroke: { width: [0, 0, 0, 0, 0, 3], curve: 'smooth' },
   colors: ['#A78BFA', '#F472B6', '#FBBF24', '#60A5FA', '#34D399', '#F87171'],
