@@ -22,7 +22,6 @@ export function useApi(url, options = {}) {
         'Content-Type': 'application/json'
       };
 
-      console.info([token, urlValue]);
       if (token && urlValue !== '/auth/google') {
         headers['Authorization'] = `Bearer ${token}`;
       }
