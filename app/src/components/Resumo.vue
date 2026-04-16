@@ -2,7 +2,7 @@
   <div class="w-full">
     <div class="flex justify-between items-center mb-6">
   <!-- Título à esquerda -->
-  <h2 class="text-white text-xl font-bold">Meu Patrimônio</h2>
+  <h2 class="text-white text-xl font-bold">Meu Patrimônio (XISTO)</h2>
 
   <!-- Botão moderno à direita -->
   <button 
