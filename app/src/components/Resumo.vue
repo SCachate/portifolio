@@ -206,28 +206,7 @@ const evolucaoOptions = computed(() => ({
   chart: { 
     stacked: true, 
     toolbar: { show: false }, 
-    fontFamily: 'inherit',
-    events: {
-      // Evento disparado ao clicar em uma barra do gráfico
-      dataPointSelection: (event, chartContext, config) => {
-        // 1. Obtém o nome da série (Classe de Investimento: Ações, FII, etc) [1, 2]
-        const classeNome = config.w.config.series[config.seriesIndex].name;
-        
-        // 2. Obtém o índice do mês (0 = Jan, 1 = Fev, etc)
-        const mesIndex = config.dataPointIndex;
-        
-        // 3. Formata o período para a consulta (MM/AAAA) usando o anoVisualizado.value [3]
-        // Somamos +1 no índice pois o JS conta meses de 0 a 11
-        const mesFormatado = String(mesIndex + 1).padStart(2, '0');
-        const periodoSelecionado = `${mesFormatado}/${anoVisualizado.value}`;
-
-        console.info("Classe selecionada:", classeNome);
-        console.info("Período selecionado:", periodoSelecionado);
-        
-        // 4. Chama a função para abrir o Dialog (deve estar definida no seu <script setup>)
-        // abrirDialogDetalhamento(classeNome, periodoSelecionado);
-      }
-    }
+    fontFamily: 'inherit', 
   },
   stroke: { width: [0, 0, 0, 0, 0, 3], curve: 'smooth' },
   colors: ['#A78BFA', '#F472B6', '#FBBF24', '#60A5FA', '#34D399', '#F87171'],
@@ -279,6 +258,39 @@ const barOptions = {
   chart: { 
     toolbar: { show: false },
     parentHeightOffset: 0,
+    events: {
+        dataPointSelection: (event, chartContext, config) => {
+          // 1. Captura a Classe (Ações, FIIs, etc)
+          // Se as classes forem as séries:
+          const classeNome = config.w.config.series[config.seriesIndex].name;
+          
+          // 2. Define o Período com base no tipo do gráfico
+          let periodoFinal = '';
+          let mesIndex = config.dataPointIndex;
+          
+          if (tipoResultado === 'dia') {
+            // Para o resultado do dia, usamos a data atual ou do snapshot
+            periodoFinal = new Date().toLocaleDateString('pt-BR'); 
+          } else if (tipoResultado === 'mes') {
+            // Para o mês, pegamos o mês da barra clicada e o ano visualizado
+            const mes = String(mesIndex + 1).padStart(2, '0');
+            periodoFinal = `${mes}/${anoVisualizado.value}`;
+          } else if (tipoResultado === 'ano') {
+            // Para o ano, usamos o ano selecionado no dashboard
+            periodoFinal = `${anoVisualizado.value}`;
+          }
+
+          console.info(`Gráfico: ${tipoResultado} | Classe: ${classeNome} | Período: ${periodoFinal}`);
+
+          // 3. Abre o Dialog passando os filtros exatos
+          // abrirDialogDetalhamento({
+          //   classe: classeNome,
+          //   periodo: periodoFinal,
+          //   tipo: tipoResultado // 'dia', 'mes' ou 'ano'
+          // });
+        }
+      }
+    },
   },
   grid: {
     padding: {
