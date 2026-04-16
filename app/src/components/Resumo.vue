@@ -105,7 +105,7 @@
           <span :class="['result-value', totaisResultado.dia >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.dia) }}
           </span>
-          <apexchart type="bar" height="100%" :options="barOptions" :series="diaSeries" />
+          <apexchart type="bar" height="100%" :options="getBarOptions('dia')" :series="diaSeries" />
         </AsyncLoader>
       </div>
       <div class="chart-card">
@@ -119,7 +119,7 @@
           <span :class="['result-value', totaisResultado.mes >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.mes) }}
           </span>
-          <apexchart type="bar" height="100%" :options="barOptions" :series="mesSeries" />
+          <apexchart type="bar" height="100%" :options="getBarOptions('mes')" :series="mesSeries" />
         </AsyncLoader>
       </div>
       <div class="chart-card">
@@ -132,7 +132,7 @@
           <span :class="['result-value', totaisResultado.ano >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.ano) }}
           </span>
-          <apexchart type="bar" height="100%" :options="barOptions" :series="anoSeries" />
+          <apexchart type="bar" height="100%" :options="getBarOptions('ano')" :series="anoSeries" />
         </AsyncLoader>
       </div>
     </div>
@@ -254,7 +254,9 @@ const evolucaoOptions = computed(() => ({
   }
 }));
 
-const barOptions = {
+
+const getBarOptions = (tipo) => {
+  return {
   chart: { 
     toolbar: { show: false },
     parentHeightOffset: 0,
@@ -266,23 +268,8 @@ const barOptions = {
         
         // 2. Define o Período com base no tipo do gráfico
         let periodoFinal = '';
-        let mesIndex = config.dataPointIndex;
-        
-        if (tipoResultado === 'dia') {
-          // Para o resultado do dia, usamos a data atual ou do snapshot
-          periodoFinal = new Date().toLocaleDateString('pt-BR'); 
-        } else if (tipoResultado === 'mes') {
-          // Para o mês, pegamos o mês da barra clicada e o ano visualizado
-          const mes = String(mesIndex + 1).padStart(2, '0');
-          periodoFinal = `${mes}/${anoVisualizado.value}`;
-        } else if (tipoResultado === 'ano') {
-          // Para o ano, usamos o ano selecionado no dashboard
-          periodoFinal = `${anoVisualizado.value}`;
-        }
-
-        alert('teste');
-
-        console.info(`Gráfico: ${tipoResultado} | Classe: ${classeNome} | Período: ${periodoFinal}`);
+        let mesIndex = config.dataPointIndex;    
+        console.info(`Gráfico: ${tipo} | Classe: ${classeNome}`);
 
         // 3. Abre o Dialog passando os filtros exatos
         // abrirDialogDetalhamento({
@@ -324,6 +311,7 @@ const barOptions = {
   yaxis: { show: false },
   tooltip: { theme: 'dark' },
   dataLabels: { enabled: false }
+  }
 };
 
 const diaSeries = ref([]);
