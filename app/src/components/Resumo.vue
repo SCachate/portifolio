@@ -262,12 +262,7 @@ const getBarOptions = (tipo) => {
     parentHeightOffset: 0,
     events: {
       dataPointSelection: (event, chartContext, config) => {
-        // 1. Captura a Classe (Ações, FIIs, etc)
-        // Se as classes forem as séries:
-        const classeNome = config.w.config.series[config.seriesIndex].categories;
-        
-        // 2. Define o Período com base no tipo do gráfico
-        let periodoFinal = '';
+        const classeNome = config.w.globals.labels[config.dataPointIndex];;
         let mesIndex = config.dataPointIndex;    
         console.info(`Gráfico: ${tipo} | Classe: ${classeNome}`);
 
@@ -380,7 +375,6 @@ const totaisResultado = computed(() => {
 });
 
 watch(dadosResultado, (newData) => {
-  console.info(['newData', newData]);
   if (newData && Array.isArray(newData) && newData.length > 0) {
     
     // Atualiza o gráfico do Dia
