@@ -2,7 +2,7 @@
   <Teleport to="body">
     <Transition name="fade">
       <div v-if="modelValue" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-        <div class="bg-[#1a1c24] border border-slate-700 w-full max-w-[95vw] h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-modal">
+        <div class="bg-[#1a1c24] border border-slate-700 w-full max-w-[75vw] h-[80vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-modal">
           
           <header class="p-4 border-b border-slate-700 bg-slate-800/20 flex flex-wrap items-end justify-between gap-4">
             <div class="flex items-end gap-4">
