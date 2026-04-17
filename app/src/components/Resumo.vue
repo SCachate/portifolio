@@ -140,8 +140,8 @@
   <ModalDetalhamento 
     v-model="modalAberto"
     :classeSelecionada="filtrosAtivos.classe"
-    :listaClasses="dadosResultado.map(i => i.classe)" 
-    :subtitle="periodoCalculado"
+    :listaClasses="dadosResultado?.map(i => i.classe)" 
+    :subtitle="filtrosAtivos.tipo"
     @update:classe="(novaClasse) => filtrosAtivos.classe = novaClasse"
   >
   </ModalDetalhamento>
