@@ -379,8 +379,9 @@ const totaisResultado = computed(() => {
 });
 
 watch(dadosResultado, (newData) => {
+  console.info(['newData', newData]);
   if (newData && Array.isArray(newData) && newData.length > 0) {
-    console.info(newData);
+    
     // Atualiza o gráfico do Dia
     diaSeries.value = [{ 
         name: 'Resultado', 
