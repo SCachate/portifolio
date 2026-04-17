@@ -138,14 +138,13 @@
     </div>
   </div>
   <ModalDetalhamento 
-    v-model="modalAberto" 
-    :title="`Detalhamento: ${filtrosAtivos.classe}`"
-    :subtitle="filtrosAtivos.tipo"
+    v-model="modalAberto"
+    :classeSelecionada="filtrosAtivos.classe"
+    :listaClasses="dadosResultado.map(i => i.classe)" 
+    :subtitle="periodoCalculado"
+    @update:classe="(novaClasse) => filtrosAtivos.classe = novaClasse"
   >
-    <div class="text-slate-300">
-      <p>Lista de ativos para {{ filtrosAtivos.classe }} no {{ filtrosAtivos.tipo }}...</p>
-      </div>
-  </ModalDetalhamento>
+  </ModalDetalhamento
 </template>
 
 <script setup>
