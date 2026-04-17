@@ -44,43 +44,47 @@
                 />
               </div>
 
-              <div class="flex-1 overflow-y-auto custom-scrollbar">
-                <div v-if="carregandoAssets" class="p-8 text-center text-slate-500 text-[10px] italic animate-pulse">
-                   Buscando ativos da classe...
+              <div class="flex-1 overflow-y-auto custom-scrollbar relative">
+                
+                <div v-if="carregandoAssets" class="absolute inset-0 bg-[#1a1c24]/80 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-6 text-center">
+                  <div class="w-8 h-8 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-3"></div>
+                  <span class="text-blue-400 text-xs font-bold uppercase tracking-widest animate-pulse">
+                    Atualizando Ativos...
+                  </span>
                 </div>
                 
-                <button 
-                  v-for="asset in assetsFiltrados" 
-                  :key="asset.Id" 
-                  @click="assetSelecionado = asset"
-                  :class="[
-                    'w-full p-3 flex flex-col border-b border-slate-800/40 hover:bg-slate-800/60 transition-all text-left group', 
-                    (assetSelecionado && assetSelecionado.Id === asset.Id) ? 'bg-blue-600/20 border-l-2 border-l-blue-500' : 'border-l-2 border-l-transparent'
-                  ]"
-                >
-                  <span class="font-bold text-xs" :class="assetSelecionado?.Id === asset.Id ? 'text-blue-400' : 'text-slate-200'">
-                    {{ asset.ticker }}
-                  </span>
-                  <span class="text-[10px] text-slate-500 leading-tight mt-0.5 group-hover:text-slate-300">
-                    {{ asset.nome_completo }}
-                  </span>
-                </button>
+                <div v-else>
+                  <button 
+                    v-for="asset in assetsFiltrados" 
+                    :key="asset.Id" 
+                    @click="assetSelecionado = asset"
+                    :class="[
+                      'w-full p-3 flex flex-col border-b border-slate-800/40 hover:bg-slate-800/60 transition-all text-left group', 
+                      (assetSelecionado && assetSelecionado.Id === asset.Id) ? 'bg-blue-600/20 border-l-2 border-l-blue-500' : 'border-l-2 border-l-transparent'
+                    ]"
+                  >
+                    <span class="font-bold text-xs" :class="assetSelecionado?.Id === asset.Id ? 'text-blue-400' : 'text-slate-200'">
+                      {{ asset.ticker }}
+                    </span>
+                    <span class="text-[10px] text-slate-500 leading-tight mt-0.5 group-hover:text-slate-300">
+                      {{ asset.nome_completo }}
+                    </span>
+                  </button>
 
-                <div v-if="!carregandoAssets && assetsFiltrados.length === 0" class="p-8 text-center text-slate-600 text-[10px] italic font-medium">
-                  Nenhum ativo disponível.
+                  <div v-if="assetsFiltrados.length === 0" class="p-12 text-center">
+                    <p class="text-slate-600 text-xs italic font-medium">Nenhum ativo com saldo nesta classe.</p>
+                  </div>
                 </div>
               </div>
             </aside>
 
             <main class="flex-1 flex flex-col bg-slate-900/10 overflow-hidden">
               <div v-if="assetSelecionado" class="flex-1 flex flex-col p-4 overflow-hidden">
-                
                 <div class="flex items-center justify-between gap-4 mb-4 bg-slate-800/20 p-4 rounded-xl border border-slate-800 shadow-lg">
                   <div class="flex flex-col border-r border-slate-700 pr-6">
                     <h4 class="text-2xl font-black text-white leading-none uppercase tracking-tighter">{{ assetSelecionado.ticker }}</h4>
                     <span class="text-[10px] text-slate-500 uppercase mt-1.5 font-bold">{{ assetSelecionado.nome_completo }}</span>
                   </div>
-                  
                   <div class="flex-1 grid grid-cols-4 gap-4 px-4">
                     <div class="flex flex-col"><span class="text-[8px] text-slate-500 uppercase font-bold">Saldo</span><span class="text-sm text-white font-semibold">--</span></div>
                     <div class="flex flex-col"><span class="text-[8px] text-slate-500 uppercase font-bold">Investido</span><span class="text-sm text-white font-semibold">--</span></div>
@@ -92,7 +96,7 @@
                   </div>
                 </div>
 
-                <div class="flex-1 bg-slate-900/40 border border-slate-800 rounded-xl overflow-hidden">
+                <div class="flex-1 bg-slate-900/40 border border-slate-800 rounded-xl overflow-hidden shadow-inner">
                   <div class="h-full overflow-y-auto custom-scrollbar">
                     <table class="w-full text-left text-[11px]">
                       <thead class="bg-slate-800 text-slate-400 uppercase font-bold sticky top-0 shadow-sm">
@@ -154,7 +158,7 @@ const urlAtivos = computed(() => {
 });
 const { data: assetsResponse, loading: carregandoAssets } = useApi(urlAtivos);
 
-// --- FILTRO DE BUSCA (POR nome_completo) ---
+// --- FILTRO DE BUSCA ---
 const assetsFiltrados = computed(() => {
   const data = unref(assetsResponse);
   const lista = Array.isArray(data) ? data : (data?.rows || []);
@@ -163,7 +167,6 @@ const assetsFiltrados = computed(() => {
 
   const termo = buscaAsset.value.toLowerCase();
   return lista.filter(a => {
-    // Busca no nome_completo ou no ticker
     const nome = (a.nome_completo || '').toLowerCase();
     const tick = (a.ticker || '').toLowerCase();
     return nome.includes(termo) || tick.includes(termo);
@@ -171,20 +174,33 @@ const assetsFiltrados = computed(() => {
 });
 
 // --- MÉTODOS ---
+
+// Limpa os dados atuais para evitar "vultos" da classe anterior
+const limparDadosAtuais = () => {
+  if (assetsResponse.value) assetsResponse.value = null; 
+  assetSelecionado.value = null;
+  buscaAsset.value = '';
+};
+
 const sincronizarLabelComId = () => {
   const data = unref(classesResponse);
   const lista = Array.isArray(data) ? data : (data?.rows || []);
   
   if (lista.length && props.classeSelecionada) {
     const encontrado = lista.find(c => c.nome === props.classeSelecionada);
-    if (encontrado) idClasseAtiva.value = encontrado.id;
+    if (encontrado && encontrado.id !== idClasseAtiva.value) {
+      limparDadosAtuais(); // Limpa antes de mudar o ID que dispara a nova requisição
+      idClasseAtiva.value = encontrado.id;
+    }
   }
 };
 
 const aoMudarClasseManual = (event) => {
   const novoId = parseInt(event.target.value);
+  if (novoId === idClasseAtiva.value) return;
+
+  limparDadosAtuais(); // Limpa ativos antigos imediatamente
   idClasseAtiva.value = novoId;
-  assetSelecionado.value = null; // Reseta seleção para evitar erro visual
   
   const data = unref(classesResponse);
   const lista = Array.isArray(data) ? data : (data?.rows || []);
@@ -201,7 +217,7 @@ const calcularDatasPadrao = () => {
   else if (props.tipo === 'ano') dataInicio.value = format(new Date(hoje.getFullYear(), 0, 1));
 };
 
-// --- SINCRONIZAÇÃO ---
+// --- WATCHERS ---
 watch([() => props.modelValue, classesResponse], () => {
   if (props.modelValue) {
     calcularDatasPadrao();
@@ -215,9 +231,22 @@ watch(() => props.classeSelecionada, () => {
 </script>
 
 <style scoped>
+/* Estilo do Spinner e Loading */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
-@keyframes modal-in { from { transform: scale(0.98) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+
+@keyframes modal-in { 
+  from { transform: scale(0.98) translateY(10px); opacity: 0; } 
+  to { transform: scale(1) translateY(0); opacity: 1; } 
+}
 .animate-modal { animation: modal-in 0.2s cubic-bezier(0, 0, 0.2, 1); }
 
 .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
