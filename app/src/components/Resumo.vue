@@ -144,7 +144,7 @@
     :subtitle="periodoCalculado"
     @update:classe="(novaClasse) => filtrosAtivos.classe = novaClasse"
   >
-  </ModalDetalhamento
+  </ModalDetalhamento>
 </template>
 
 <script setup>
