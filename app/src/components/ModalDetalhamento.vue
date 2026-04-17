@@ -111,7 +111,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { useApi } from '@/composables/useApi'; // Ajuste o caminho
+import { useApi } from '../composables/useApi';
 
 const props = defineProps({
   modelValue: Boolean,
