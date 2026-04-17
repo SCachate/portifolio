@@ -3,7 +3,7 @@ const asyncHandler = require('../utils/asyncHandler');
 
 // Listar - Sem try/catch!
 exports.getAll = asyncHandler(async (req, res) => {
-    const { userId } = req.userId;
+    const userId = req.userId;
     const [rows] = await db.execute('SELECT * FROM investment_classes WHERE userId = ?', [userId]);
     res.json(rows);
 });

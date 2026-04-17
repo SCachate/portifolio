@@ -91,9 +91,6 @@ exports.getResultado = async (req, res) => {
         const dataOntem  = format(subDays(zonedDate, 1), 'yyyy-MM-dd', { timeZone });
         const inicioMes  = format(endOfMonth(subMonths(zonedDate,1)), 'yyyy-MM-dd', { timeZone });
         const inicioAno  = format(endOfYear(subYears(zonedDate,1)), 'yyyy-MM-dd', { timeZone });
-
-        console.info([userId, dataHoje, dataOntem, inicioMes, inicioAno]);
-
         const [resDia] = await db.query('CALL sp_resultado_periodo_por_classe(?, ?, ?)', [userId, dataOntem, dataHoje]);
         const [resMes] = await db.query('CALL sp_resultado_periodo_por_classe(?, ?, ?)', [userId, inicioMes, dataHoje]);
         const [resAno] = await db.query('CALL sp_resultado_periodo_por_classe(?, ?, ?)', [userId, inicioAno, dataHoje]);
