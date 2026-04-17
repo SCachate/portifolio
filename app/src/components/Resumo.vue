@@ -140,10 +140,10 @@
   <ModalDetalhamento 
     v-model="modalAberto" 
     :title="`Detalhamento: ${filtrosAtivos.classe}`"
-    :subtitle="filtrosAtivos.periodo"
+    :subtitle="filtrosAtivos.tipo"
   >
     <div class="text-slate-300">
-      <p>Lista de ativos para {{ filtrosAtivos.classe }} no período {{ filtrosAtivos.periodo }}...</p>
+      <p>Lista de ativos para {{ filtrosAtivos.classe }} no {{ filtrosAtivos.tipo }}...</p>
       </div>
   </ModalDetalhamento>
 </template>
@@ -155,7 +155,7 @@ import AsyncLoader from './AsyncLoader.vue';
 import ModalDetalhamento from './ModalDetalhamento.vue';
 
 const modalAberto = ref(false);
-const filtrosAtivos = ref({ classe: '', periodo: '' });
+const filtrosAtivos = ref({ classe: '', tipo: '' });
 
 const abrirPeloGrafico = (dados) => {
   filtrosAtivos.value = dados;
