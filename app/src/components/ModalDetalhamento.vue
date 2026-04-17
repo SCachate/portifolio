@@ -129,7 +129,7 @@ const assetSelecionado = ref(null);
 const idClasseAtiva = ref(null);
 
 // BUSCA DE CLASSES
-const { data: classesResponse, loading: carregandoClasses } = useApi('/class/', {method: 'get'});
+const { data: classesResponse, loading: carregandoClasses } = useApi('/classes/', {method: 'get'});
 
 // BUSCA DE ATIVOS REATIVA AO ID DA CLASSE
 const urlAtivos = computed(() => {
