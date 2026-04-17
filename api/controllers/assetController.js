@@ -3,7 +3,7 @@ const asyncHandler = require('../utils/asyncHandler');
 
 
 exports.getByClass = asyncHandler(async (req, res) => {
-    const { userId } = req.userId;
+    const userId = req.userId;
     const { classId } = req.params;
     const [rows] = await db.execute(`
 SELECT 
