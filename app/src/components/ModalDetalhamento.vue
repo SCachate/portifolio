@@ -12,7 +12,7 @@
                   :disabled="carregandoClasses"
                   :value="classeSelecionada" 
                   @change="$emit('update:classe', $event.target.value)" 
-                  class="bg-slate-900 border border-slate-700 text-white font-bold rounded-lg p-1.5 px-3 text-sm outline-none focus:border-blue-500 transition-all"
+                  class="bg-slate-900 border border-slate-700 text-white font-bold rounded-lg p-1.5 px-3 text-sm outline-none focus:border-blue-500 transition-all disabled:opacity-50"
                 >
                   <option v-if="carregandoClasses" value="">Carregando...</option>
                   <option v-for="opt in classesDoBanco" :key="opt" :value="opt">{{ opt }}</option>
@@ -42,6 +42,7 @@
                 <input v-model="buscaAsset" type="text" placeholder="Buscar..." class="w-full bg-slate-900 border border-slate-700 rounded-md py-1.5 px-3 text-xs text-white outline-none focus:border-blue-500" />
               </div>
               <div class="flex-1 overflow-y-auto custom-scrollbar">
+                <div v-if="carregandoAssets" class="p-4 text-center text-slate-500 text-[10px] italic">Buscando ativos...</div>
                 <button v-for="asset in assetsFiltrados" :key="asset.id" @click="assetSelecionado = asset"
                   :class="['w-full p-3 flex flex-col border-b border-slate-800/40 hover:bg-slate-800/60 transition-all text-left', assetSelecionado?.id === asset.id ? 'bg-blue-600/10 border-l-2 border-l-blue-500' : 'border-l-2 border-l-transparent']">
                   <span class="font-bold text-xs" :class="assetSelecionado?.id === asset.id ? 'text-blue-400' : 'text-slate-200'">{{ asset.ticker }}</span>
@@ -64,7 +65,7 @@
                     <div class="flex flex-col"><span class="text-[8px] text-slate-500 uppercase font-bold">P. Médio</span><span class="text-xs text-white font-semibold">R$ 45,20</span></div>
                     <div class="flex flex-col"><span class="text-[8px] text-slate-500 uppercase font-bold">Investido</span><span class="text-xs text-white font-semibold">R$ 6.780,00</span></div>
                     <div class="flex flex-col"><span class="text-[8px] text-slate-500 uppercase font-bold">P. Atual</span><span class="text-xs text-emerald-400 font-semibold">R$ 48,41</span></div>
-                    <div class="flex flex-col bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                    <div class="flex flex-col bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 text-right">
                       <span class="text-[8px] text-emerald-500 uppercase font-black">Resultado Período</span>
                       <span class="text-xs text-emerald-400 font-bold">R$ 482,10</span>
                     </div>
@@ -73,7 +74,7 @@
 
                 <div class="flex-1 bg-slate-900/40 border border-slate-800 rounded-xl overflow-hidden flex flex-col">
                   <div class="overflow-x-auto custom-scrollbar">
-                    <table class="w-full text-left text-xs">
+                    <table class="w-full text-left text-[11px]">
                       <thead class="bg-slate-800 text-slate-400 uppercase font-bold sticky top-0">
                         <tr>
                           <th class="px-4 py-3 border-b border-slate-700">Data</th>
@@ -85,7 +86,7 @@
                         </tr>
                       </thead>
                       <tbody class="divide-y divide-slate-800/60 text-slate-300">
-                        <tr v-for="i in 20" :key="i" class="hover:bg-white/5 transition-colors">
+                        <tr v-for="i in 15" :key="i" class="hover:bg-white/5 transition-colors">
                           <td class="px-4 py-2">12/04/2026</td>
                           <td class="px-4 py-2"><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded text-[9px] font-bold">COMPRA</span></td>
                           <td class="px-4 py-2 text-right">10</td>
@@ -100,7 +101,7 @@
               </div>
 
               <div v-else class="h-full flex flex-col items-center justify-center text-slate-600">
-                <p class="text-sm italic">Selecione um ativo da lista lateral para detalhamento.</p>
+                <p class="text-sm italic">Selecione um ativo para visualizar os detalhes.</p>
               </div>
             </main>
           </div>
@@ -115,7 +116,7 @@ import { ref, computed, watch, onMounted } from 'vue';
 
 const props = defineProps({
   modelValue: Boolean,
-  classeSelecionada: String,
+  classeSelecionada: String, // Recebe a classe clicada no Dashboard
   tipo: String 
 });
 
@@ -128,15 +129,10 @@ const assetSelecionado = ref(null);
 const assets = ref([]); 
 const classesDoBanco = ref([]);
 const carregandoClasses = ref(false);
+const carregandoAssets = ref(false);
 
 const formatDate = (date) => date.toISOString().split('T')[0];
 
-/**
- * REGRAS DE DATAS ATUALIZADAS:
- * Dia: Início hoje, Término hoje
- * Mês: Início dia 1 do mês atual, Término hoje
- * Ano: Início dia 1 do ano atual, Término hoje
- */
 const calcularDatasPadrao = () => {
   const hoje = new Date();
   dataFim.value = formatDate(hoje);
@@ -144,37 +140,51 @@ const calcularDatasPadrao = () => {
   if (props.tipo === 'dia') {
     dataInicio.value = formatDate(hoje);
   } else if (props.tipo === 'mes') {
-    // Primeiro dia do mês atual
-    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-    dataInicio.value = formatDate(inicioMes);
+    dataInicio.value = formatDate(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
   } else if (props.tipo === 'ano') {
-    // Primeiro dia do ano atual
-    const inicioAno = new Date(hoje.getFullYear(), 0, 1);
-    dataInicio.value = formatDate(inicioAno);
+    dataInicio.value = formatDate(new Date(hoje.getFullYear(), 0, 1));
   }
 };
 
-const buscarClasses = async () => {
+const buscarClassesDoServidor = async () => {
   carregandoClasses.value = true;
   try {
-    // const response = await fetch('/api/investimentos/classes');
-    // classesDoBanco.value = await response.json();
+    // Simulação de chamada ao backend
+    // const res = await fetch('/api/classes');
+    // classesDoBanco.value = await res.json();
     classesDoBanco.value = ['Ações', 'FIIs', 'Cripto', 'Renda Fixa'];
-  } catch (error) {
-    console.error("Erro:", error);
+  } catch (e) {
+    console.error(e);
   } finally {
     carregandoClasses.value = false;
   }
 };
 
 const buscarAssets = async () => {
-  if (!props.modelValue) return;
-  assetSelecionado.value = null;
-  assets.value = [
-    { id: 1, ticker: 'PETR4', nome_completo: 'Petróleo Brasileiro S.A.' },
-    { id: 2, ticker: 'VALE3', nome_completo: 'Vale S.A.' },
-    { id: 3, ticker: 'HGLG11', nome_completo: 'CSHG Logística FII' },
-  ];
+  if (!props.modelValue || !props.classeSelecionada) return;
+  
+  carregandoAssets.value = true;
+  assetSelecionado.value = null; // Reseta seleção ao mudar classe
+
+  try {
+    // Aqui você usaria: fetch(`/api/assets?classe=${props.classeSelecionada}`)
+    // Mock de dados filtrados pela classe recebida:
+    if (props.classeSelecionada === 'Ações') {
+      assets.value = [
+        { id: 1, ticker: 'PETR4', nome_completo: 'Petróleo Brasileiro S.A.' },
+        { id: 2, ticker: 'VALE3', nome_completo: 'Vale S.A.' }
+      ];
+    } else if (props.classeSelecionada === 'FIIs') {
+      assets.value = [
+        { id: 3, ticker: 'HGLG11', nome_completo: 'CSHG Logística FII' },
+        { id: 4, ticker: 'XPLG11', nome_completo: 'XP Logística FII' }
+      ];
+    } else {
+      assets.value = [{ id: 99, ticker: 'TESTE', nome_completo: 'Ativo de Teste' }];
+    }
+  } finally {
+    carregandoAssets.value = false;
+  }
 };
 
 const assetsFiltrados = computed(() => {
@@ -184,17 +194,21 @@ const assetsFiltrados = computed(() => {
 });
 
 onMounted(() => {
-  buscarClasses();
+  buscarClassesDoServidor();
 });
 
+// Watcher principal: Sincroniza tudo ao abrir o modal
 watch(() => props.modelValue, (aberto) => {
   if (aberto) {
     calcularDatasPadrao();
-    buscarAssets();
+    buscarAssets(); // Já busca usando props.classeSelecionada
   }
 });
 
-watch(() => props.classeSelecionada, buscarAssets);
+// Watcher para quando o usuário troca a classe manualmente dentro do modal
+watch(() => props.classeSelecionada, () => {
+  if (props.modelValue) buscarAssets();
+});
 </script>
 
 <style scoped>
