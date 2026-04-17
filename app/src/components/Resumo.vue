@@ -295,21 +295,22 @@ const getBarOptions = (tipo) => {
     } 
   },
   colors: ['#10b981'],
-  xaxis: { 
-    // Remova o mapeamento manual de categorias se houver no objeto fixo
-    labels: { 
-      rotate: -45, // Rotaciona o texto para caber
-      rotateAlways: false, // Só rotaciona se necessário
-      style: { 
-        colors: '#94a3b8', 
-        fontSize: '10px' 
-      },
-      hideOverlappingLabels: false, // Garante que não suma nada
-      trim: true, // Corta com "..." se for realmente gigantesco
-    } 
-  },
+  xaxis: {
+      // Mapeia os nomes das classes para as categorias do eixo X
+      categories: dadosResultado.value?.map(item => item.classe) || [], 
+      labels: {
+        rotate: -45,
+        style: { colors: '#94a3b8', fontSize: '10px' }
+      }
+    },
+    // Adicione isso para melhorar o Tooltip
+    tooltip: {
+      theme: 'dark',
+      y: {
+        formatter: (val) => formatCurrency(val)
+      }
+    },
   yaxis: { show: false },
-  tooltip: { theme: 'dark' },
   dataLabels: { enabled: false }
   }
 };
