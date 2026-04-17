@@ -137,12 +137,30 @@
       </div>
     </div>
   </div>
+  <ModalDetalhamento 
+    v-model="modalAberto" 
+    :title="`Detalhamento: ${filtrosAtivos.classe}`"
+    :subtitle="filtrosAtivos.periodo"
+  >
+    <div class="text-slate-300">
+      <p>Lista de ativos para {{ filtrosAtivos.classe }} no período {{ filtrosAtivos.periodo }}...</p>
+      </div>
+  </ModalDetalhamento>
 </template>
 
 <script setup>
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { useApi } from '../composables/useApi';
 import AsyncLoader from './AsyncLoader.vue';
+import ModalDetalhamento from './ModalDetalhamento.vue';
+
+const modalAberto = ref(false);
+const filtrosAtivos = ref({ classe: '', periodo: '' });
+
+const abrirPeloGrafico = (dados) => {
+  filtrosAtivos.value = dados;
+  modalAberto.value = true;
+};
 
 // 1. Lógica da Distribuição (Donut)
 const { data, loading, error, fetchData: fetchResumo } = useApi(`/dashboard/resumo`);
@@ -262,16 +280,11 @@ const getBarOptions = (tipo) => {
     parentHeightOffset: 0,
     events: {
       dataPointSelection: (event, chartContext, config) => {
-        const classeNome = config.w.globals.labels[config.dataPointIndex];;
-        let mesIndex = config.dataPointIndex;    
-        console.info(`Gráfico: ${tipo} | Classe: ${classeNome}`);
-
-        // 3. Abre o Dialog passando os filtros exatos
-        // abrirDialogDetalhamento({
-        //   classe: classeNome,
-        //   periodo: periodoFinal,
-        //   tipo: tipoResultado // 'dia', 'mes' ou 'ano'
-        // });
+        const classeNome = config.w.globals.labels[config.dataPointIndex];
+        abrirPeloGrafico({
+          classe: classeNome,
+          tipo: tipo,
+        });
       }
     },
   },  
@@ -394,8 +407,6 @@ watch(dadosResultado, (newData) => {
         name: 'Resultado', 
         data: newData.map(item => item.ano) 
     }];
-
-    barOptions.xaxis.categories = newData.map(item => item.classe);
   }
 }, { immediate: true });
 
