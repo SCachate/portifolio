@@ -139,11 +139,14 @@
   </div>
   <ModalDetalhamento 
     v-model="modalAberto"
+    :tipo="filtrosAtivos.tipo"
     :classeSelecionada="filtrosAtivos.classe"
-    :listaClasses="dadosResultado?.map(i => i.classe)" 
-    :subtitle="filtrosAtivos.tipo"
-    @update:classe="(novaClasse) => filtrosAtivos.classe = novaClasse"
+    :listaClasses="dadosResultado?.map(i => i.classe) || []"
+    @update:classe="(v) => filtrosAtivos.classe = v"
   >
+    <template #default="{ periodo }">
+      <p class="text-slate-400">Exibindo dados de {{ periodo.inicio }} até {{ periodo.fim }}</p>
+      </template>
   </ModalDetalhamento>
 </template>
 
