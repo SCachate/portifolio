@@ -1,29 +1,30 @@
 const db = require('../config/db');
+const asyncHandler = require('../utils/asyncHandler');
 
-// Busca todos os ativos, corretoras e classes para preencher os "Selects" da tela
-exports.getFormData = async (req, res) => {
-    try {
-        const [assets] = await db.execute('SELECT id, ticket, description FROM assets');
-        const [brokers] = await db.execute('SELECT id, name FROM brokers');
-        const [classes] = await db.execute('SELECT id, name FROM investment_classes WHERE userId = ?', [req.params.userId]);
-        
-        res.json({ assets, brokers, classes });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
 
-// Registra a transação (O Trigger cuidará do resto)
-exports.addTransaction = async (req, res) => {
-    const { userId, assetId, brokerId, quantity, priceUnit, fees } = req.body;
-    try {
-        // O trigger tr_update_balance_after_transaction fará o cálculo do PM e saldo
-        await db.execute(
-            'INSERT INTO transactions (userId, assetId, brokerId, quantity, priceUnit, fees) VALUES (?, ?, ?, ?, ?, ?)',
-            [userId, assetId, brokerId, quantity, priceUnit, fees]
-        );
-        res.json({ success: true, message: 'Transação processada com sucesso!' });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-};
+exports.getByClass = asyncHandler(async (req, res) => {
+    const { userId } = req.userId;
+    const { classId } = req.params;
+    const [rows] = await db.execute(`
+SELECT 
+    a.id AS Id,
+    COALESCE(a.ticket, substr(a.description,1, 5)) as ticker,
+    a.description AS nome_completo
+FROM (
+    SELECT toClassId AS classId, assetId, quantity AS quantidade, userId 
+    FROM allocation_events 
+    WHERE toClassId IS NOT NULL    
+    UNION ALL    
+    SELECT fromClassId AS classId, assetId, -quantity AS quantidade, userId 
+    FROM allocation_events 
+    WHERE fromClassId IS NOT NULL
+) resumo
+JOIN investment_classes ic ON resumo.classId = ic.id
+JOIN assets a ON resumo.assetId = a.id
+WHERE resumo.userId = ?
+    and resumo.classId = ?
+GROUP BY ic.id, a.id
+HAVING SUM(resumo.quantidade)  > 0 
+ORDER BY ic.name, a.ticket;`, [userId,classId]);
+    res.json(rows);
+});

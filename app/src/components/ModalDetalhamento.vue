@@ -129,12 +129,12 @@ const assetSelecionado = ref(null);
 const idClasseAtiva = ref(null);
 
 // BUSCA DE CLASSES
-const { data: classesResponse, loading: carregandoClasses } = useApi('/investimentos/classes');
+const { data: classesResponse, loading: carregandoClasses } = useApi('/class/', {method: 'get'});
 
 // BUSCA DE ATIVOS REATIVA AO ID DA CLASSE
 const urlAtivos = computed(() => {
   return (props.modelValue && idClasseAtiva.value) 
-    ? `/investimentos/ativos?classe_id=${idClasseAtiva.value}` 
+    ? `/assets/ByClass/${idClasseAtiva.value}`
     : null;
 });
 const { data: assetsResponse, loading: carregandoAssets } = useApi(urlAtivos);
