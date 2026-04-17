@@ -264,7 +264,7 @@ const getBarOptions = (tipo) => {
       dataPointSelection: (event, chartContext, config) => {
         // 1. Captura a Classe (Ações, FIIs, etc)
         // Se as classes forem as séries:
-        const classeNome = config.w.config.series[config.seriesIndex].name;
+        const classeNome = config.w.config.series[config.seriesIndex].categories;
         
         // 2. Define o Período com base no tipo do gráfico
         let periodoFinal = '';
