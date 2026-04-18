@@ -26,6 +26,7 @@ WHERE resumo.userId = ?
 GROUP BY ic.id, a.id
 HAVING SUM(resumo.quantidade) <> 0 
 ORDER BY ic.name, a.ticket;`, [userId,classId]);
+        console.info(rows);
     res.json(rows);
 });
 
