@@ -49,6 +49,6 @@ where
     vrda.assetid = ?
     and vrda.classId = ?
     and data between ? and ?
-`, [classId, assetId, inicio, termino]);
+`, [assetId, classId, inicio, termino]);
     res.json(rows);
 });
