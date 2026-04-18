@@ -45,7 +45,9 @@ FROM
 where 
     vrda.assetid = ?
     and vrda.classId = ?
-    and data between ? and ?
+    and vrda.data between ? and ?
+order by
+    vrda.data desc
 `, [assetId, classId, inicio, termino]);
     res.json(rows);
 });
