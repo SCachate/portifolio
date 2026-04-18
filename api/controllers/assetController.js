@@ -24,7 +24,7 @@ JOIN assets a ON resumo.assetId = a.id
 WHERE resumo.userId = ?
     and resumo.classId = ?
 GROUP BY ic.id, a.id
-HAVING SUM(resumo.quantidade)  <> 0 
+HAVING SUM(resumo.quantidade) <> 0 
 ORDER BY ic.name, a.ticket;`, [userId,classId]);
     res.json(rows);
 });
