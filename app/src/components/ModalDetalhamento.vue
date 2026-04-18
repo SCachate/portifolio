@@ -43,7 +43,7 @@
             <main class="flex-1 flex flex-col overflow-hidden bg-slate-950/20">
               <div v-if="assetSelecionado" class="flex-1 flex flex-col p-5 overflow-hidden">
                 
-                <div class="grid grid-cols-4 gap-4 mb-5">
+                <div class="grid grid-cols-4 gap-4 mb-4">
                   <div class="bg-slate-800/20 border border-slate-800 p-3 rounded-xl">
                     <span class="text-[9px] text-slate-500 uppercase font-black block mb-1">Início Período</span>
                     <span class="text-sm font-bold text-white">{{ valorInicialGeral }}</span>
@@ -64,38 +64,36 @@
                   </div>
                 </div>
 
-                <div class="flex-1 bg-slate-900/40 border border-slate-700 rounded-xl overflow-hidden flex flex-col shadow-2xl relative">
+                <div class="flex-1 bg-slate-900/40 border border-slate-700 rounded-xl overflow-hidden flex flex-col relative">
                   <div v-if="carregandoRendimento" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-20 flex items-center justify-center">
-                    <div class="flex items-center gap-3 bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-2xl">
-                        <div class="w-4 h-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-                        <span class="text-blue-400 text-xs font-bold uppercase tracking-widest">Atualizando...</span>
-                    </div>
+                    <div class="w-5 h-5 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
                   </div>
 
                   <div class="h-full overflow-y-auto custom-scrollbar">
                     <table class="w-full text-[11px] border-separate border-spacing-0">
-                      <thead class="bg-slate-800/90 sticky top-0 z-10">
+                      <thead class="bg-slate-800 sticky top-0 z-10">
                         <tr>
-                          <th class="px-4 py-2.5 border-b border-slate-700 text-left text-slate-400 font-bold uppercase tracking-tighter">Data</th>
-                          <th class="px-4 py-2.5 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-tighter">Vl. Inicial</th>
-                          <th class="px-4 py-2.5 border-b border-slate-700 text-right text-blue-500/80 font-bold uppercase tracking-tighter">Aportes</th>
-                          <th class="px-4 py-2.5 border-b border-slate-700 text-right text-orange-500/80 font-bold uppercase tracking-tighter">Prov.</th>
-                          <th class="px-4 py-2.5 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-tighter">Vl. Final</th>
-                          <th class="px-4 py-2.5 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-tighter">Resultado</th>
+                          <th class="px-4 py-2 border-b border-slate-700 text-left text-slate-400 font-bold uppercase">Data</th>
+                          <th class="px-4 py-2 border-b border-slate-700 text-right text-slate-400 font-bold uppercase">Vl. Inicial</th>
+                          <th class="px-4 py-2 border-b border-slate-700 text-right text-blue-500/80 font-bold uppercase">Aportes</th>
+                          <th class="px-4 py-2 border-b border-slate-700 text-right text-orange-500/80 font-bold uppercase">Prov.</th>
+                          <th class="px-4 py-2 border-b border-slate-700 text-right text-slate-400 font-bold uppercase">Vl. Final</th>
+                          <th class="px-4 py-2 border-b border-slate-700 text-right text-slate-400 font-bold uppercase">Resultado</th>
                         </tr>
                       </thead>
-                      <tbody class="divide-y divide-slate-800/50">
-                        <tr v-for="(row, idx) in listaRendimento" :key="idx" class="hover:bg-white/[0.03] transition-colors">
-                          <td class="px-4 py-1.5 font-mono text-slate-200">{{ formatarDataRelatorio(row.data) }}</td>
-                          <td class="px-4 py-1.5 text-right text-slate-400">{{ formatarMoeda(row.inicial) }}</td>
-                          <td class="px-4 py-1.5 text-right font-medium" :class="row.aportes > 0 ? 'text-blue-400' : 'text-slate-700'">
+                      <tbody class="divide-y divide-slate-800/30">
+                        <tr v-for="(row, idx) in listaRendimento" :key="idx" 
+                            class="transition-colors odd:bg-transparent even:bg-white/[0.02] hover:bg-blue-500/10">
+                          <td class="px-4 py-1 font-mono text-slate-300 border-r border-slate-800/30">{{ formatarDataRelatorio(row.data) }}</td>
+                          <td class="px-4 py-1 text-right text-slate-400">{{ formatarMoeda(row.inicial) }}</td>
+                          <td class="px-4 py-1 text-right font-medium" :class="row.aportes > 0 ? 'text-blue-400' : 'text-slate-700'">
                              {{ row.aportes > 0 ? formatarMoeda(row.aportes) : '-' }}
                           </td>
-                          <td class="px-4 py-1.5 text-right font-medium" :class="row.proventos > 0 ? 'text-orange-400' : 'text-slate-700'">
+                          <td class="px-4 py-1 text-right font-medium" :class="row.proventos > 0 ? 'text-orange-400' : 'text-slate-700'">
                              {{ row.proventos > 0 ? formatarMoeda(row.proventos) : '-' }}
                           </td>
-                          <td class="px-4 py-1.5 text-right text-white font-medium">{{ formatarMoeda(row.final) }}</td>
-                          <td class="px-4 py-1.5 text-right font-bold" :class="row.resultado > 0 ? 'text-emerald-500' : row.resultado < 0 ? 'text-red-500' : 'text-slate-600'">
+                          <td class="px-4 py-1 text-right text-white font-medium">{{ formatarMoeda(row.final) }}</td>
+                          <td class="px-4 py-1 text-right font-bold" :class="row.resultado > 0 ? 'text-emerald-500' : row.resultado < 0 ? 'text-red-500' : 'text-slate-600'">
                             {{ row.resultado !== 0 ? formatarMoeda(row.resultado) : '0,00' }}
                           </td>
                         </tr>
@@ -103,10 +101,6 @@
                     </table>
                   </div>
                 </div>
-              </div>
-              <div v-else class="h-full flex flex-col items-center justify-center opacity-20">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                <p class="text-[10px] tracking-[0.3em] uppercase font-bold text-white">Selecione um ativo</p>
               </div>
             </main>
           </div>
@@ -130,9 +124,9 @@ const assetSelecionado = ref(null);
 const idClasseAtiva = ref(null);
 
 // APIs
-const { data: classesResponse, loading: carregandoClasses } = useApi('/classes/', { method: 'get' });
+const { data: classesResponse } = useApi('/classes/', { method: 'get' });
 const urlAtivos = computed(() => (props.modelValue && idClasseAtiva.value) ? `/assets/ByClass/${idClasseAtiva.value}` : null);
-const { data: assetsResponse, loading: carregandoAssets } = useApi(urlAtivos);
+const { data: assetsResponse } = useApi(urlAtivos);
 
 const urlRendimento = computed(() => {
   if (!assetSelecionado.value || !idClasseAtiva.value || !props.modelValue) return null;
@@ -201,10 +195,6 @@ watch([() => props.modelValue, classesResponse], () => {
     if (classesResponse.value) sincronizarLabelComId();
   }
 }, { immediate: true });
-
-watch(() => props.classeSelecionada, () => {
-    if(props.modelValue) sincronizarLabelComId();
-});
 </script>
 
 <style scoped>
@@ -220,10 +210,7 @@ watch(() => props.classeSelecionada, () => {
 .animate-spin { animation: spin 1s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
-
-table th { backdrop-filter: blur(8px); }
 </style>
