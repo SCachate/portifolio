@@ -1,116 +1,112 @@
 <template>
   <Teleport to="body">
     <Transition name="fade">
-      <div v-if="modelValue" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-        <div class="bg-[#1a1c24] border border-slate-700 w-full max-w-[95vw] h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-modal">
+      <div v-if="modelValue" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="bg-[#1a1c24] border border-slate-700 w-full max-w-6xl h-[85vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-modal">
           
-          <header class="p-4 border-b border-slate-700 bg-slate-800/20 flex flex-wrap items-end justify-between gap-4">
-            <div class="flex items-end gap-4">
-              <div class="flex flex-col gap-1">
-                <label class="text-[9px] font-bold text-slate-500 uppercase">Classe</label>
-                <select :value="idClasseAtiva" @change="aoMudarClasseManual" class="bg-slate-900 border border-slate-700 text-white font-bold rounded-lg p-1.5 px-3 text-sm outline-none focus:border-blue-500 cursor-pointer">
-                  <option v-if="carregandoClasses" value="">Carregando...</option>
-                  <option v-for="c in classesResponse" :key="c.id" :value="c.id">{{ c.nome }}</option>
-                </select>
-              </div>
-              <div class="flex flex-col gap-1">
-                <label class="text-[9px] font-bold text-slate-500 uppercase">Início</label>
-                <input type="date" v-model="dataInicio" class="bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs outline-none focus:border-blue-500" />
-              </div>
-              <div class="flex flex-col gap-1">
-                <label class="text-[9px] font-bold text-slate-500 uppercase">Término</label>
-                <input type="date" v-model="dataFim" class="bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs outline-none focus:border-blue-500" />
-              </div>
+          <header class="p-3 border-b border-slate-700 bg-slate-800/30 flex items-center justify-between">
+            <div class="flex items-center gap-6">
+               <div class="flex items-center gap-2">
+                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Classe</label>
+                 <select :value="idClasseAtiva" @change="aoMudarClasseManual" class="bg-slate-900 border border-slate-700 text-white font-bold rounded p-1 px-2 text-xs outline-none focus:border-blue-500 cursor-pointer">
+                    <option v-for="c in classesResponse" :key="c.id" :value="c.id">{{ c.nome }}</option>
+                 </select>
+               </div>
+               <div class="flex items-center gap-2">
+                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Período</label>
+                 <div class="flex items-center bg-slate-900 border border-slate-700 rounded p-0.5">
+                    <input type="date" v-model="dataInicio" class="bg-transparent text-white p-1 text-xs outline-none w-32" />
+                    <span class="text-slate-600 px-1 font-bold text-[10px]">ATÉ</span>
+                    <input type="date" v-model="dataFim" class="bg-transparent text-white p-1 text-xs outline-none w-32" />
+                 </div>
+               </div>
             </div>
-            <button @click="$emit('update:modelValue', false)" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-all">
+            <button @click="$emit('update:modelValue', false)" class="p-1.5 text-slate-500 hover:text-white hover:bg-white/10 rounded-full transition-all">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </header>
 
           <div class="flex flex-1 overflow-hidden">
-            <aside class="w-72 border-r border-slate-700 flex flex-col bg-slate-900/40">
-              <div class="p-3 bg-slate-800/30">
-                <input v-model="buscaAsset" type="text" placeholder="Buscar ativo..." class="w-full bg-slate-900 border border-slate-700 rounded-md py-1.5 px-3 text-xs text-white outline-none focus:border-blue-500" />
+            <aside class="w-60 border-r border-slate-700 flex flex-col bg-slate-900/50">
+              <div class="p-3">
+                <input v-model="buscaAsset" type="text" placeholder="Filtrar ativo..." class="w-full bg-slate-800 border border-slate-700 rounded py-1.5 px-3 text-[11px] text-white outline-none focus:ring-1 focus:ring-blue-500/50" />
               </div>
-
-              <div class="flex-1 overflow-y-auto custom-scrollbar relative">
-                <div v-if="carregandoAssets" class="absolute inset-0 bg-[#1a1c24]/80 z-10 flex flex-col items-center justify-center text-center">
-                  <div class="w-6 h-6 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-2"></div>
-                  <span class="text-blue-400 text-[9px] font-bold uppercase tracking-tighter animate-pulse">Buscando Ativos...</span>
-                </div>
-                
+              <div class="flex-1 overflow-y-auto custom-scrollbar">
                 <button v-for="asset in assetsFiltrados" :key="asset.Id" @click="assetSelecionado = asset"
-                  :class="['w-full p-3 flex flex-col border-b border-slate-800/40 hover:bg-slate-800/60 transition-all text-left group', (assetSelecionado && assetSelecionado.Id === asset.Id) ? 'bg-blue-600/20 border-l-2 border-l-blue-500' : 'border-l-2 border-l-transparent']">
-                  <span class="font-bold text-xs" :class="assetSelecionado?.Id === asset.Id ? 'text-blue-400' : 'text-slate-200'">{{ asset.ticker }}</span>
-                  <span class="text-[10px] text-slate-500 leading-tight mt-0.5 uppercase group-hover:text-slate-300">{{ asset.nome_completo }}</span>
+                  :class="['w-full p-2.5 text-left border-b border-slate-800/40 transition-all group', (assetSelecionado?.Id === asset.Id) ? 'bg-blue-600/10 border-l-2 border-l-blue-500' : 'border-l-2 border-l-transparent hover:bg-white/5']">
+                  <div class="font-bold text-[11px]" :class="assetSelecionado?.Id === asset.Id ? 'text-blue-400' : 'text-slate-300'">{{ asset.ticker }}</div>
+                  <div class="text-[9px] text-slate-500 uppercase truncate leading-tight">{{ asset.nome_completo }}</div>
                 </button>
               </div>
             </aside>
 
-            <main class="flex-1 flex flex-col bg-slate-900/10 overflow-hidden">
-              <div v-if="assetSelecionado" class="flex-1 flex flex-col p-4 overflow-hidden">
+            <main class="flex-1 flex flex-col overflow-hidden bg-slate-950/20">
+              <div v-if="assetSelecionado" class="flex-1 flex flex-col p-5 overflow-hidden">
                 
-                <div class="flex items-center justify-between gap-4 mb-4 bg-slate-800/20 p-4 rounded-xl border border-slate-800 shadow-lg">
-                  <div class="flex flex-col border-r border-slate-700 pr-6">
-                    <h4 class="text-2xl font-black text-white leading-none tracking-tighter uppercase">{{ assetSelecionado.ticker }}</h4>
-                    <span class="text-[9px] text-slate-500 uppercase mt-1.5 font-bold truncate max-w-[150px]">{{ assetSelecionado.nome_completo }}</span>
+                <div class="grid grid-cols-4 gap-4 mb-5">
+                  <div class="bg-slate-800/20 border border-slate-800 p-3 rounded-xl">
+                    <span class="text-[9px] text-slate-500 uppercase font-black block mb-1">Início Período</span>
+                    <span class="text-sm font-bold text-white">{{ valorInicialGeral }}</span>
                   </div>
-                  
-                  <div class="flex-1 grid grid-cols-4 gap-4 px-4">
-                    <div class="flex flex-col"><span class="text-[8px] text-slate-500 uppercase font-bold">Patrimônio Inicial</span><span class="text-sm text-white font-semibold">{{ valorInicialGeral }}</span></div>
-                    <div class="flex flex-col"><span class="text-[8px] text-slate-500 uppercase font-bold text-orange-400">Total Proventos</span><span class="text-sm text-orange-300 font-semibold">{{ totalProventosGeral }}</span></div>
-                    <div class="flex flex-col"><span class="text-[8px] text-slate-500 uppercase font-bold">Patrimônio Final</span><span class="text-sm text-white font-semibold">{{ valorFinalGeral }}</span></div>
-                    
-                    <div class="flex flex-col bg-emerald-500/10 px-3 py-1 rounded border border-emerald-500/20 text-right">
-                      <span class="text-[8px] text-emerald-500 uppercase font-black">Ganho Período</span>
-                      <span class="text-sm font-bold" :class="totalResultado >= 0 ? 'text-emerald-400' : 'text-red-400'">
-                        {{ formatarMoeda(totalResultado) }}
-                      </span>
-                    </div>
+                  <div class="bg-slate-800/20 border border-slate-800 p-3 rounded-xl">
+                    <span class="text-[9px] text-orange-500/70 uppercase font-black block mb-1">Total Proventos</span>
+                    <span class="text-sm font-bold text-orange-400">{{ totalProventosGeral }}</span>
+                  </div>
+                  <div class="bg-slate-800/20 border border-slate-800 p-3 rounded-xl">
+                    <span class="text-[9px] text-slate-500 uppercase font-black block mb-1">Patrimônio Final</span>
+                    <span class="text-sm font-bold text-white">{{ valorFinalGeral }}</span>
+                  </div>
+                  <div class="bg-emerald-500/5 border border-emerald-500/20 p-3 rounded-xl">
+                    <span class="text-[9px] text-emerald-500 uppercase font-black block mb-1">Ganho no Período</span>
+                    <span class="text-sm font-bold" :class="totalResultado >= 0 ? 'text-emerald-400' : 'text-red-400'">
+                      {{ formatarMoeda(totalResultado) }}
+                    </span>
                   </div>
                 </div>
 
-                <div class="flex-1 bg-slate-900/40 border border-slate-800 rounded-xl overflow-hidden flex flex-col shadow-inner relative">
-                  <div v-if="carregandoRendimento" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-10 flex items-center justify-center">
-                    <div class="flex flex-col items-center gap-2">
-                        <div class="w-8 h-8 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-                        <span class="text-blue-400 text-[10px] font-bold animate-pulse uppercase tracking-widest">Processando Relatório...</span>
+                <div class="flex-1 bg-slate-900/40 border border-slate-700 rounded-xl overflow-hidden flex flex-col shadow-2xl relative">
+                  <div v-if="carregandoRendimento" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-20 flex items-center justify-center">
+                    <div class="flex items-center gap-3 bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-2xl">
+                        <div class="w-4 h-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+                        <span class="text-blue-400 text-xs font-bold uppercase tracking-widest">Atualizando...</span>
                     </div>
                   </div>
 
                   <div class="h-full overflow-y-auto custom-scrollbar">
-                    <table class="w-full text-left text-[11px]">
-                      <thead class="bg-slate-800 text-slate-400 uppercase font-bold sticky top-0 z-20">
+                    <table class="w-full text-[11px] border-separate border-spacing-0">
+                      <thead class="bg-slate-800/90 sticky top-0 z-10">
                         <tr>
-                          <th class="px-4 py-3 border-b border-slate-700">Data</th>
-                          <th class="px-4 py-3 border-b border-slate-700 text-right">Início</th>
-                          <th class="px-4 py-3 border-b border-slate-700 text-right text-blue-400">Aportes</th>
-                          <th class="px-4 py-3 border-b border-slate-700 text-right text-orange-400">Proventos</th>
-                          <th class="px-4 py-3 border-b border-slate-700 text-right">Final</th>
-                          <th class="px-4 py-3 border-b border-slate-700 text-right">Resultado</th>
+                          <th class="px-4 py-2.5 border-b border-slate-700 text-left text-slate-400 font-bold uppercase tracking-tighter">Data</th>
+                          <th class="px-4 py-2.5 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-tighter">Vl. Inicial</th>
+                          <th class="px-4 py-2.5 border-b border-slate-700 text-right text-blue-500/80 font-bold uppercase tracking-tighter">Aportes</th>
+                          <th class="px-4 py-2.5 border-b border-slate-700 text-right text-orange-500/80 font-bold uppercase tracking-tighter">Prov.</th>
+                          <th class="px-4 py-2.5 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-tighter">Vl. Final</th>
+                          <th class="px-4 py-2.5 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-tighter">Resultado</th>
                         </tr>
                       </thead>
-                      <tbody class="divide-y divide-slate-800/60 text-slate-300">
-                        <tr v-for="(row, idx) in listaRendimento" :key="idx" class="hover:bg-white/5 transition-colors">
-                          <td class="px-4 py-2 font-mono text-slate-500">{{ formatarData(row.data) }}</td>
-                          <td class="px-4 py-2 text-right text-slate-400">{{ formatarMoeda(row.inicial) }}</td>
-                          <td class="px-4 py-2 text-right" :class="row.aportes > 0 ? 'text-blue-400 font-bold' : 'text-slate-600'">{{ row.aportes > 0 ? formatarMoeda(row.aportes) : '-' }}</td>
-                          <td class="px-4 py-2 text-right" :class="row.proventos > 0 ? 'text-orange-400 font-bold' : 'text-slate-600'">{{ row.proventos > 0 ? formatarMoeda(row.proventos) : '-' }}</td>
-                          <td class="px-4 py-2 text-right font-medium text-white">{{ formatarMoeda(row.final) }}</td>
-                          <td class="px-4 py-2 text-right font-bold" :class="row.resultado > 0 ? 'text-emerald-400' : row.resultado < 0 ? 'text-red-400' : 'text-slate-600'">
+                      <tbody class="divide-y divide-slate-800/50">
+                        <tr v-for="(row, idx) in listaRendimento" :key="idx" class="hover:bg-white/[0.03] transition-colors">
+                          <td class="px-4 py-1.5 font-mono text-slate-200">{{ formatarDataRelatorio(row.data) }}</td>
+                          <td class="px-4 py-1.5 text-right text-slate-400">{{ formatarMoeda(row.inicial) }}</td>
+                          <td class="px-4 py-1.5 text-right font-medium" :class="row.aportes > 0 ? 'text-blue-400' : 'text-slate-700'">
+                             {{ row.aportes > 0 ? formatarMoeda(row.aportes) : '-' }}
+                          </td>
+                          <td class="px-4 py-1.5 text-right font-medium" :class="row.proventos > 0 ? 'text-orange-400' : 'text-slate-700'">
+                             {{ row.proventos > 0 ? formatarMoeda(row.proventos) : '-' }}
+                          </td>
+                          <td class="px-4 py-1.5 text-right text-white font-medium">{{ formatarMoeda(row.final) }}</td>
+                          <td class="px-4 py-1.5 text-right font-bold" :class="row.resultado > 0 ? 'text-emerald-500' : row.resultado < 0 ? 'text-red-500' : 'text-slate-600'">
                             {{ row.resultado !== 0 ? formatarMoeda(row.resultado) : '0,00' }}
                           </td>
                         </tr>
                       </tbody>
                     </table>
-                    <div v-if="listaRendimento.length === 0 && !carregandoRendimento" class="p-20 text-center text-slate-600 italic text-xs">
-                        Nenhum dado de rendimento para este período.
-                    </div>
                   </div>
                 </div>
               </div>
-              <div v-else class="h-full flex flex-col items-center justify-center text-slate-700">
-                <p class="text-[10px] tracking-[0.3em] uppercase opacity-20 font-bold">Selecione um ativo para analisar</p>
+              <div v-else class="h-full flex flex-col items-center justify-center opacity-20">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                <p class="text-[10px] tracking-[0.3em] uppercase font-bold text-white">Selecione um ativo</p>
               </div>
             </main>
           </div>
@@ -135,7 +131,6 @@ const idClasseAtiva = ref(null);
 
 // APIs
 const { data: classesResponse, loading: carregandoClasses } = useApi('/classes/', { method: 'get' });
-
 const urlAtivos = computed(() => (props.modelValue && idClasseAtiva.value) ? `/assets/ByClass/${idClasseAtiva.value}` : null);
 const { data: assetsResponse, loading: carregandoAssets } = useApi(urlAtivos);
 
@@ -166,7 +161,13 @@ const valorFinalGeral = computed(() => listaRendimento.value.length ? formatarMo
 
 // AUXILIARES
 const formatarMoeda = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-const formatarData = (d) => d ? d.split('-').reverse().join('/') : '';
+
+const formatarDataRelatorio = (dataStr) => {
+  if (!dataStr) return '-';
+  const apenasData = dataStr.includes('T') ? dataStr.split('T')[0] : dataStr;
+  const [ano, mes, dia] = apenasData.split('-');
+  return `${dia}/${mes}/${ano}`;
+};
 
 const aoMudarClasseManual = (event) => {
   const novoId = parseInt(event.target.value);
@@ -207,7 +208,6 @@ watch(() => props.classeSelecionada, () => {
 </script>
 
 <style scoped>
-/* ANIMAÇÕES */
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
@@ -217,17 +217,13 @@ watch(() => props.classeSelecionada, () => {
 }
 .animate-modal { animation: modal-in 0.2s cubic-bezier(0, 0, 0.2, 1); }
 
-/* SPINNER */
 .animate-spin { animation: spin 1s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-/* SCROLLBAR CUSTOMIZADA */
 .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
 
-/* REGRAS DE TABELA */
-table { border-spacing: 0; }
-th { backdrop-filter: blur(8px); }
+table th { backdrop-filter: blur(8px); }
 </style>

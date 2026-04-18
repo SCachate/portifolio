@@ -31,9 +31,6 @@ ORDER BY ic.name, a.ticket;`, [userId,classId]);
 
 exports.getRendimentos = asyncHandler(async (req, res) => {
     const { assetId, classId, inicio, termino } = req.params;
-    console.log('--- BUSCANDO RENDIMENTOS ---');
-    console.log('Parametros Recebidos:', { assetId, classId, inicio, termino });
-    
     const [rows] = await db.execute(`
 SELECT
 	data
