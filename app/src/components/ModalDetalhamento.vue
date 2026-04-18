@@ -167,8 +167,8 @@ const listaRendimento = computed(() => {
 
 const totalResultado = computed(() => listaRendimento.value.reduce((acc, row) => acc + (Number(row.resultado) || 0), 0));
 const totalProventosGeral = computed(() => formatarMoeda(listaRendimento.value.reduce((acc, row) => acc + (Number(row.proventos) || 0), 0)));
-const valorInicialGeral = computed(() => listaRendimento.value.length ? formatarMoeda(listaRendimento.value[0].inicial) : 'R$ 0,00');
-const valorFinalGeral = computed(() => listaRendimento.value.length ? formatarMoeda(listaRendimento.value[listaRendimento.value.length - 1].final) : 'R$ 0,00');
+const valorInicialGeral = computed(() => listaRendimento.value.length ? formatarMoeda(listaRendimento.value[listaRendimento.value.length - 1].inicial) : 'R$ 0,00');
+const valorFinalGeral = computed(() => listaRendimento.value.length ? formatarMoeda(listaRendimento.value[0].final) : 'R$ 0,00');
 
 const formatarMoeda = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const formatarDataRelatorio = (dataStr) => {
