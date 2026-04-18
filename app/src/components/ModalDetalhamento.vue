@@ -141,7 +141,7 @@ const { data: assetsResponse, loading: carregandoAssets } = useApi(urlAtivos);
 
 const urlRendimento = computed(() => {
   if (!assetSelecionado.value || !idClasseAtiva.value || !props.modelValue) return null;
-  return `/Rendimentos/${assetSelecionado.value.Id}/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
+  return `/assets/Rendimentos/${assetSelecionado.value.Id}/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
 });
 const { data: rendimentoResponse, loading: carregandoRendimento } = useApi(urlRendimento);
 
