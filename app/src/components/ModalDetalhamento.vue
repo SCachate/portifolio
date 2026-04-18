@@ -31,7 +31,10 @@
               <div class="p-3">
                 <input v-model="buscaAsset" type="text" placeholder="Filtrar ativo..." class="w-full bg-slate-800 border border-slate-700 rounded py-1.5 px-3 text-[11px] text-white outline-none focus:ring-1 focus:ring-blue-500/50" />
               </div>
-              <div class="flex-1 overflow-y-auto custom-scrollbar">
+              <div class="flex-1 overflow-y-auto custom-scrollbar relative">
+                <div v-if="carregandoAssets" class="absolute inset-0 bg-[#1a1c24]/50 z-10 flex items-center justify-center">
+                   <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
                 <button v-for="asset in assetsFiltrados" :key="asset.Id" @click="assetSelecionado = asset"
                   :class="['w-full p-2.5 text-left border-b border-slate-800/40 transition-all group', (assetSelecionado?.Id === asset.Id) ? 'bg-blue-600/10 border-l-2 border-l-blue-500' : 'border-l-2 border-l-transparent hover:bg-white/5']">
                   <div class="font-bold text-[11px]" :class="assetSelecionado?.Id === asset.Id ? 'text-blue-400' : 'text-slate-300'">{{ asset.ticker }}</div>
@@ -66,24 +69,24 @@
 
                 <div class="flex-1 bg-slate-900/40 border border-slate-700 rounded-xl overflow-hidden flex flex-col relative">
                   <div v-if="carregandoRendimento" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-20 flex items-center justify-center">
-                    <div class="w-5 h-5 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+                    <div class="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                   </div>
 
                   <div class="h-full overflow-y-auto custom-scrollbar">
                     <table class="w-full text-[11px] border-separate border-spacing-0">
                       <thead class="bg-slate-800 sticky top-0 z-10">
                         <tr>
-                          <th class="px-4 py-2 border-b border-slate-700 text-left text-slate-400 font-bold uppercase">Data</th>
-                          <th class="px-4 py-2 border-b border-slate-700 text-right text-slate-400 font-bold uppercase">Vl. Inicial</th>
-                          <th class="px-4 py-2 border-b border-slate-700 text-right text-blue-500/80 font-bold uppercase">Aportes</th>
-                          <th class="px-4 py-2 border-b border-slate-700 text-right text-orange-500/80 font-bold uppercase">Prov.</th>
-                          <th class="px-4 py-2 border-b border-slate-700 text-right text-slate-400 font-bold uppercase">Vl. Final</th>
-                          <th class="px-4 py-2 border-b border-slate-700 text-right text-slate-400 font-bold uppercase">Resultado</th>
+                          <th class="px-4 py-2 border-b border-slate-700 text-left text-slate-400 font-bold uppercase tracking-tighter">Data</th>
+                          <th class="px-4 py-2 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-tighter">Vl. Inicial</th>
+                          <th class="px-4 py-2 border-b border-slate-700 text-right text-blue-500/80 font-bold uppercase tracking-tighter">Aportes</th>
+                          <th class="px-4 py-2 border-b border-slate-700 text-right text-orange-500/80 font-bold uppercase tracking-tighter">Prov.</th>
+                          <th class="px-4 py-2 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-tighter">Vl. Final</th>
+                          <th class="px-4 py-2 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-tighter">Resultado</th>
                         </tr>
                       </thead>
                       <tbody class="divide-y divide-slate-800/30">
                         <tr v-for="(row, idx) in listaRendimento" :key="idx" 
-                            class="transition-colors odd:bg-transparent even:bg-white/[0.02] hover:bg-blue-500/10">
+                            class="row-item transition-colors">
                           <td class="px-4 py-1 font-mono text-slate-300 border-r border-slate-800/30">{{ formatarDataRelatorio(row.data) }}</td>
                           <td class="px-4 py-1 text-right text-slate-400">{{ formatarMoeda(row.inicial) }}</td>
                           <td class="px-4 py-1 text-right font-medium" :class="row.aportes > 0 ? 'text-blue-400' : 'text-slate-700'">
@@ -101,6 +104,10 @@
                     </table>
                   </div>
                 </div>
+              </div>
+              <div v-else class="flex-1 flex flex-col items-center justify-center">
+                 <div class="w-8 h-8 border-2 border-slate-700 border-t-slate-500 rounded-full animate-spin mb-4"></div>
+                 <p class="text-[10px] text-slate-500 uppercase tracking-[0.2em]">Aguardando ativos...</p>
               </div>
             </main>
           </div>
@@ -123,10 +130,9 @@ const buscaAsset = ref('');
 const assetSelecionado = ref(null);
 const idClasseAtiva = ref(null);
 
-// APIs
 const { data: classesResponse } = useApi('/classes/', { method: 'get' });
 const urlAtivos = computed(() => (props.modelValue && idClasseAtiva.value) ? `/assets/ByClass/${idClasseAtiva.value}` : null);
-const { data: assetsResponse } = useApi(urlAtivos);
+const { data: assetsResponse, loading: carregandoAssets } = useApi(urlAtivos);
 
 const urlRendimento = computed(() => {
   if (!assetSelecionado.value || !idClasseAtiva.value || !props.modelValue) return null;
@@ -134,7 +140,18 @@ const urlRendimento = computed(() => {
 });
 const { data: rendimentoResponse, loading: carregandoRendimento } = useApi(urlRendimento);
 
-// COMPUTEDS
+// Seleção automática do primeiro item
+watch(assetsResponse, (newAssets) => {
+  if (newAssets) {
+    const lista = Array.isArray(newAssets) ? newAssets : (newAssets.rows || []);
+    if (lista.length > 0 && !assetSelecionado.value) {
+      assetSelecionado.value = lista[0];
+    }
+  }
+}, { deep: true });
+
+watch(idClasseAtiva, () => { assetSelecionado.value = null; });
+
 const assetsFiltrados = computed(() => {
   const data = unref(assetsResponse);
   const lista = Array.isArray(data) ? data : (data?.rows || []);
@@ -153,9 +170,7 @@ const totalProventosGeral = computed(() => formatarMoeda(listaRendimento.value.r
 const valorInicialGeral = computed(() => listaRendimento.value.length ? formatarMoeda(listaRendimento.value[0].inicial) : 'R$ 0,00');
 const valorFinalGeral = computed(() => listaRendimento.value.length ? formatarMoeda(listaRendimento.value[listaRendimento.value.length - 1].final) : 'R$ 0,00');
 
-// AUXILIARES
 const formatarMoeda = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
 const formatarDataRelatorio = (dataStr) => {
   if (!dataStr) return '-';
   const apenasData = dataStr.includes('T') ? dataStr.split('T')[0] : dataStr;
@@ -166,7 +181,6 @@ const formatarDataRelatorio = (dataStr) => {
 const aoMudarClasseManual = (event) => {
   const novoId = parseInt(event.target.value);
   if (novoId !== idClasseAtiva.value) {
-    assetSelecionado.value = null;
     idClasseAtiva.value = novoId;
     const lista = Array.isArray(classesResponse.value) ? classesResponse.value : (classesResponse.value?.rows || []);
     const obj = lista.find(c => c.id === novoId);
@@ -198,6 +212,7 @@ watch([() => props.modelValue, classesResponse], () => {
 </script>
 
 <style scoped>
+/* Animações de Entrada */
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
@@ -207,10 +222,17 @@ watch([() => props.modelValue, classesResponse], () => {
 }
 .animate-modal { animation: modal-in 0.2s cubic-bezier(0, 0, 0.2, 1); }
 
+/* Spinner */
 .animate-spin { animation: spin 1s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
+/* Scrollbar Customizada */
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* Efeito Zebrado nas Linhas */
+.row-item:nth-child(even) { background-color: rgba(255, 255, 255, 0.02); }
+.row-item:hover { background-color: rgba(59, 130, 246, 0.1); }
 </style>
