@@ -28,3 +28,24 @@ HAVING SUM(resumo.quantidade)  > 0
 ORDER BY ic.name, a.ticket;`, [userId,classId]);
     res.json(rows);
 });
+
+exports.getRendimentos = asyncHandler(async (req, res) => {
+    const { assetId, classId, inicio, termino } = req.params;
+    const [rows] = await db.execute(`
+SELECT
+	data
+	, vrda.valor_inicial_brl inicial
+	, vrda.aportes_brl aportes
+	, vrda.retiradas_brl retiradas
+	, vrda.proventos_brl proventos
+	, vrda.valor_final_brl final
+	, vrda.lucro_prejuizo_dia_brl resultado
+FROM 
+    kaxatapi.v_rendimento_diario_asset AS vrda
+where 
+    vrda.assetid = ?
+    and vrda.classId = ?
+    and data between ? and ?
+`, [classId, assetId, inicio, termino]);
+    res.json(rows);
+});
