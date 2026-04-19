@@ -17,6 +17,7 @@ export function useApi(url, options = {}) {
     if (!urlValue) return;
 
     loading.value = true;
+    data.value = null;
     try {
       const headers = {
         'Content-Type': 'application/json'
