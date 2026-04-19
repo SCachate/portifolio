@@ -55,7 +55,7 @@
                       {{ asset.ticker }}
                     </div>
                     <div :class="['text-[10px] font-mono font-bold', asset.resultado >= 0 ? 'text-emerald-500' : 'text-red-500']">
-                      {{ formatarMoedaCurta(asset.resultado) }}
+                      {{ formatarMoeda(asset.resultado) }}
                     </div>
                   </div>
                   <div class="text-[9px] text-slate-600 uppercase truncate leading-tight group-hover:text-slate-400 transition-colors">
@@ -202,7 +202,6 @@ const valorFinalGeral = computed(() => listaRendimento.value.length ? formatarMo
 
 // FORMATADORES
 const formatarMoeda = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-const formatarMoedaCurta = (v) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const formatarDataRelatorio = (dataStr) => {
   if (!dataStr) return '-';
   const apenasData = dataStr.includes('T') ? dataStr.split('T')[0] : dataStr;
