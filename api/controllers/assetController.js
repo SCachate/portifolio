@@ -4,7 +4,7 @@ const asyncHandler = require('../utils/asyncHandler');
 
 exports.getAssetsByClassWithResult = asyncHandler(async (req, res) => {
     const { classId, inicio, termino } = req.params;
-    const userId = req.user.id; // Assumindo que tem o ID do user no token/session
+    const userId = req.userId;
 
     const query = `
         SELECT 
