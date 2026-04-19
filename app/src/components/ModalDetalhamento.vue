@@ -4,21 +4,24 @@
       <div v-if="modelValue" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-[#1a1c24] border border-slate-700 w-full max-w-6xl h-[85vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-modal">
           
-          <header class="p-3 border-b border-slate-700 bg-slate-800/30 flex items-center gap-8">
-            <div class="flex flex-col gap-1">
-              <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Classe de Ativo</label>
-              <select :value="idClasseAtiva" @change="aoMudarClasseManual" 
-                class="bg-slate-900 border border-slate-700 text-white font-bold rounded p-1 px-2 text-xs outline-none focus:border-blue-500 cursor-pointer h-7">
-                <option v-for="c in classesResponse" :key="c.id" :value="c.id">{{ c.nome }}</option>
-              </select>
+          <header class="p-4 border-b border-slate-700 bg-slate-800/30 flex items-center gap-4">
+            
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[9px] font-black text-slate-500 uppercase tracking-[0.1em] ml-1">Classe de Ativo</label>
+              <div class="bg-slate-900/80 border border-slate-700 rounded-xl px-3 h-11 flex items-center min-w-[180px] hover:border-slate-500 transition-colors">
+                <select :value="idClasseAtiva" @change="aoMudarClasseManual" 
+                  class="bg-transparent text-white font-bold text-xs outline-none cursor-pointer w-full">
+                  <option v-for="c in classesResponse" :key="c.id" :value="c.id">{{ c.nome }}</option>
+                </select>
+              </div>
             </div>
 
-            <div class="flex flex-col gap-1">
-              <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Período de Análise</label>
-              <div class="flex items-center bg-slate-900 border border-slate-700 rounded h-7 px-2">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[9px] font-black text-slate-500 uppercase tracking-[0.1em] ml-1">Período de Análise</label>
+              <div class="flex items-center bg-slate-900/80 border border-slate-700 rounded-xl h-11 px-4 gap-3 hover:border-slate-500 transition-colors">
                 <input type="date" v-model="dataInicio" 
                   :class="['bg-transparent text-[11px] outline-none w-[115px] transition-colors', dataEhValida(dataInicio) ? 'text-white font-bold' : 'text-red-400']" />
-                <span class="text-slate-600 px-2 font-black text-[9px]">A</span>
+                <span class="text-slate-600 font-black text-[12px]">→</span>
                 <input type="date" v-model="dataFim" 
                   :class="['bg-transparent text-[11px] outline-none w-[115px] transition-colors', dataEhValida(dataFim) ? 'text-white font-bold' : 'text-red-400']" />
               </div>
@@ -26,14 +29,16 @@
 
             <div class="flex-1"></div>
 
-            <div class="flex flex-col items-end">
-              <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Resultado da Classe</label>
-              <span :class="['text-sm font-mono font-bold leading-none mt-1', totalGeralClasse >= 0 ? 'text-emerald-400' : 'text-red-400']">
-                {{ formatarMoeda(totalGeralClasse) }}
-              </span>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[9px] font-black text-slate-500 uppercase tracking-[0.1em] mr-1 text-right">Resultado da Classe</label>
+              <div class="bg-slate-900/80 border border-slate-700 rounded-xl px-5 h-11 flex items-center justify-center min-w-[160px]">
+                <span :class="['text-sm font-mono font-bold', totalGeralClasse >= 0 ? 'text-emerald-400' : 'text-red-400']">
+                  {{ formatarMoeda(totalGeralClasse) }}
+                </span>
+              </div>
             </div>
 
-            <button @click="$emit('update:modelValue', false)" class="p-1.5 text-slate-500 hover:text-white hover:bg-white/10 rounded-full transition-all">
+            <button @click="$emit('update:modelValue', false)" class="mt-5 p-2.5 text-slate-500 hover:text-white hover:bg-white/10 rounded-xl transition-all">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </header>
@@ -41,8 +46,11 @@
           <div class="flex flex-1 overflow-hidden">
             <aside class="w-[40%] border-r border-slate-700 flex flex-col bg-slate-900/50">
               <div class="p-4">
-                <input v-model="buscaAsset" type="text" placeholder="Filtrar ativo..." 
-                  class="w-full bg-slate-800 border border-slate-700 rounded-lg py-2 px-4 text-xs text-white outline-none focus:ring-1 focus:ring-blue-500/50" />
+                <div class="relative">
+                  <input v-model="buscaAsset" type="text" placeholder="Filtrar ativo..." 
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl py-2.5 px-4 text-xs text-white outline-none focus:ring-1 focus:ring-blue-500/50 pl-10" />
+                  <svg class="w-4 h-4 text-slate-500 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
               </div>
               
               <div class="flex-1 overflow-y-auto custom-scrollbar relative">
@@ -69,30 +77,30 @@
             </aside>
 
             <main class="flex-1 flex flex-col overflow-hidden bg-slate-950/20">
-              <div v-if="assetSelecionado" class="flex-1 flex flex-col p-5 overflow-hidden">
+              <div v-if="assetSelecionado" class="flex-1 flex flex-col p-6 overflow-hidden">
                 
-                <div class="grid grid-cols-4 gap-4 mb-4">
-                  <div class="bg-slate-800/20 border border-slate-800 p-3 rounded-xl text-center">
-                    <span class="text-[9px] text-slate-500 uppercase font-black block mb-1">Início Período</span>
+                <div class="grid grid-cols-4 gap-4 mb-6">
+                  <div class="bg-slate-800/20 border border-slate-800 p-4 rounded-2xl text-center">
+                    <span class="text-[9px] text-slate-500 uppercase font-black block mb-1.5 tracking-widest">Início Período</span>
                     <span class="text-sm font-bold text-white">{{ valorInicialGeral }}</span>
                   </div>
-                  <div class="bg-slate-800/20 border border-slate-800 p-3 rounded-xl text-center">
-                    <span class="text-[9px] text-orange-500/70 uppercase font-black block mb-1">Total Proventos</span>
+                  <div class="bg-slate-800/20 border border-slate-800 p-4 rounded-2xl text-center">
+                    <span class="text-[9px] text-orange-500/70 uppercase font-black block mb-1.5 tracking-widest">Total Proventos</span>
                     <span class="text-sm font-bold text-orange-400">{{ totalProventosGeral }}</span>
                   </div>
-                  <div class="bg-slate-800/20 border border-slate-800 p-3 rounded-xl text-center">
-                    <span class="text-[9px] text-slate-500 uppercase font-black block mb-1">Patrimônio Final</span>
+                  <div class="bg-slate-800/20 border border-slate-800 p-4 rounded-2xl text-center">
+                    <span class="text-[9px] text-slate-500 uppercase font-black block mb-1.5 tracking-widest">Patrimônio Final</span>
                     <span class="text-sm font-bold text-white">{{ valorFinalGeral }}</span>
                   </div>
-                  <div class="bg-emerald-500/5 border border-emerald-500/20 p-3 rounded-xl text-center">
-                    <span class="text-[9px] text-emerald-500 uppercase font-black block mb-1">Ganho no Período</span>
+                  <div class="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-2xl text-center shadow-lg shadow-emerald-500/5">
+                    <span class="text-[9px] text-emerald-500 uppercase font-black block mb-1.5 tracking-widest">Ganho no Período</span>
                     <span class="text-sm font-bold" :class="totalResultado >= 0 ? 'text-emerald-400' : 'text-red-400'">
                       {{ formatarMoeda(totalResultado) }}
                     </span>
                   </div>
                 </div>
 
-                <div class="flex-1 bg-slate-900/40 border border-slate-700 rounded-xl overflow-hidden flex flex-col relative">
+                <div class="flex-1 bg-slate-900/40 border border-slate-700 rounded-2xl overflow-hidden flex flex-col relative">
                   <div v-if="carregandoRendimento" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-20 flex items-center justify-center">
                     <div class="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                   </div>
@@ -101,26 +109,26 @@
                     <table class="w-full text-[11px] border-separate border-spacing-0">
                       <thead class="bg-slate-800 sticky top-0 z-10">
                         <tr>
-                          <th class="px-4 py-2 border-b border-slate-700 text-left text-slate-400 font-bold uppercase tracking-tighter">Data</th>
-                          <th class="px-4 py-2 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-tighter">Vl. Inicial</th>
-                          <th class="px-4 py-2 border-b border-slate-700 text-right text-blue-500/80 font-bold uppercase tracking-tighter">Aportes</th>
-                          <th class="px-4 py-2 border-b border-slate-700 text-right text-orange-500/80 font-bold uppercase tracking-tighter">Prov.</th>
-                          <th class="px-4 py-2 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-tighter">Vl. Final</th>
-                          <th class="px-4 py-2 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-tighter">Resultado</th>
+                          <th class="px-5 py-3 border-b border-slate-700 text-left text-slate-400 font-bold uppercase">Data</th>
+                          <th class="px-5 py-3 border-b border-slate-700 text-right text-slate-400 font-bold uppercase">Vl. Inicial</th>
+                          <th class="px-5 py-3 border-b border-slate-700 text-right text-blue-500/80 font-bold uppercase">Aportes</th>
+                          <th class="px-5 py-3 border-b border-slate-700 text-right text-orange-500/80 font-bold uppercase">Prov.</th>
+                          <th class="px-5 py-3 border-b border-slate-700 text-right text-slate-400 font-bold uppercase">Vl. Final</th>
+                          <th class="px-5 py-3 border-b border-slate-700 text-right text-slate-400 font-bold uppercase">Resultado</th>
                         </tr>
                       </thead>
                       <tbody class="divide-y divide-slate-800/30">
                         <tr v-for="(row, idx) in listaRendimento" :key="idx" class="row-item transition-colors">
-                          <td class="px-4 py-1 font-mono text-slate-300 border-r border-slate-800/30">{{ formatarDataRelatorio(row.data) }}</td>
-                          <td class="px-4 py-1 text-right text-slate-400">{{ formatarMoeda(row.inicial) }}</td>
-                          <td class="px-4 py-1 text-right font-medium" :class="row.aportes > 0 ? 'text-blue-400' : 'text-slate-700'">
+                          <td class="px-5 py-2 font-mono text-slate-300 border-r border-slate-800/30">{{ formatarDataRelatorio(row.data) }}</td>
+                          <td class="px-5 py-2 text-right text-slate-400">{{ formatarMoeda(row.inicial) }}</td>
+                          <td class="px-5 py-2 text-right font-medium" :class="row.aportes > 0 ? 'text-blue-400' : 'text-slate-700'">
                              {{ row.aportes > 0 ? formatarMoeda(row.aportes) : '-' }}
                           </td>
-                          <td class="px-4 py-1 text-right font-medium" :class="row.proventos > 0 ? 'text-orange-400' : 'text-slate-700'">
+                          <td class="px-5 py-2 text-right font-medium" :class="row.proventos > 0 ? 'text-orange-400' : 'text-slate-700'">
                              {{ row.proventos > 0 ? formatarMoeda(row.proventos) : '-' }}
                           </td>
-                          <td class="px-4 py-1 text-right text-white font-medium">{{ formatarMoeda(row.final) }}</td>
-                          <td class="px-4 py-1 text-right font-bold" :class="row.resultado > 0 ? 'text-emerald-500' : row.resultado < 0 ? 'text-red-500' : 'text-slate-600'">
+                          <td class="px-5 py-2 text-right text-white font-medium">{{ formatarMoeda(row.final) }}</td>
+                          <td class="px-5 py-2 text-right font-bold" :class="row.resultado > 0 ? 'text-emerald-500' : row.resultado < 0 ? 'text-red-500' : 'text-slate-600'">
                             {{ row.resultado !== 0 ? formatarMoeda(row.resultado) : '0,00' }}
                           </td>
                         </tr>
@@ -130,8 +138,8 @@
                 </div>
               </div>
               <div v-else class="flex-1 flex flex-col items-center justify-center">
-                 <div class="w-8 h-8 border-2 border-slate-700 border-t-slate-500 rounded-full animate-spin mb-4"></div>
-                 <p class="text-[10px] text-slate-500 uppercase tracking-[0.2em]">Aguardando seleção...</p>
+                 <div class="w-10 h-10 border-2 border-slate-700 border-t-slate-500 rounded-full animate-spin mb-4"></div>
+                 <p class="text-[10px] text-slate-500 uppercase tracking-[0.3em]">Selecione um ativo para detalhar</p>
               </div>
             </main>
           </div>
