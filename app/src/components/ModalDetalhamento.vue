@@ -4,32 +4,32 @@
       <div v-if="modelValue" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-[#1a1c24] border border-slate-700 w-full max-w-6xl h-[85vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-modal">
           
-          <header class="p-3 border-b border-slate-700 bg-slate-800/30 flex items-center">
-            <div class="flex items-center gap-6">
-               <div class="flex items-center gap-2">
-                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Classe</label>
-                 <select :value="idClasseAtiva" @change="aoMudarClasseManual" class="bg-slate-900 border border-slate-700 text-white font-bold rounded p-1 px-2 text-xs outline-none focus:border-blue-500 cursor-pointer">
-                    <option v-for="c in classesResponse" :key="c.id" :value="c.id">{{ c.nome }}</option>
-                 </select>
-               </div>
+          <header class="p-3 border-b border-slate-700 bg-slate-800/30 flex items-center gap-8">
+            
+            <div class="flex flex-col gap-1">
+              <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Classe de Ativo</label>
+              <select :value="idClasseAtiva" @change="aoMudarClasseManual" 
+                class="bg-slate-900 border border-slate-700 text-white font-bold rounded p-1 px-2 text-xs outline-none focus:border-blue-500 cursor-pointer h-7">
+                <option v-for="c in classesResponse" :key="c.id" :value="c.id">{{ c.nome }}</option>
+              </select>
+            </div>
 
-               <div class="flex items-center gap-2">
-                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Período</label>
-                 <div class="flex items-center bg-slate-900 border border-slate-700 rounded p-0.5">
-                    <input type="date" v-model="dataInicio" 
-                      :class="['bg-transparent p-1 text-xs outline-none w-32 transition-colors', dataEhValida(dataInicio) ? 'text-white' : 'text-red-400']" />
-                    <span class="text-slate-600 px-1 font-bold text-[10px]">ATÉ</span>
-                    <input type="date" v-model="dataFim" 
-                      :class="['bg-transparent p-1 text-xs outline-none w-32 transition-colors', dataEhValida(dataFim) ? 'text-white' : 'text-red-400']" />
-                 </div>
-               </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Período de Análise</label>
+              <div class="flex items-center bg-slate-900 border border-slate-700 rounded h-7 px-2">
+                <input type="date" v-model="dataInicio" 
+                  :class="['bg-transparent text-[11px] outline-none w-[115px] transition-colors', dataEhValida(dataInicio) ? 'text-white font-bold' : 'text-red-400']" />
+                <span class="text-slate-600 px-2 font-black text-[9px]">A</span>
+                <input type="date" v-model="dataFim" 
+                  :class="['bg-transparent text-[11px] outline-none w-[115px] transition-colors', dataEhValida(dataFim) ? 'text-white font-bold' : 'text-red-400']" />
+              </div>
             </div>
 
             <div class="flex-1"></div>
 
-            <div class="flex flex-col items-end mr-6">
+            <div class="flex flex-col items-end">
               <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Resultado da Classe</label>
-              <span :class="['text-sm font-mono font-bold', totalGeralClasse >= 0 ? 'text-emerald-400' : 'text-red-400']">
+              <span :class="['text-sm font-mono font-bold leading-none mt-1', totalGeralClasse >= 0 ? 'text-emerald-400' : 'text-red-400']">
                 {{ formatarMoeda(totalGeralClasse) }}
               </span>
             </div>
@@ -42,7 +42,7 @@
           <div class="flex flex-1 overflow-hidden">
             <aside class="w-64 border-r border-slate-700 flex flex-col bg-slate-900/50">
               <div class="p-3">
-                <input v-model="buscaAsset" type="text" placeholder="Filtrar ativo..." class="w-full bg-slate-800 border border-slate-700 rounded py-1.5 px-3 text-[11px] text-white outline-none" />
+                <input v-model="buscaAsset" type="text" placeholder="Filtrar ativo..." class="w-full bg-slate-800 border border-slate-700 rounded py-1.5 px-3 text-[11px] text-white outline-none focus:ring-1 focus:ring-blue-500/50" />
               </div>
               <div class="flex-1 overflow-y-auto custom-scrollbar relative">
                 <div v-if="carregandoAssets" class="absolute inset-0 bg-[#1a1c24]/50 z-10 flex items-center justify-center">
@@ -60,7 +60,7 @@
                       {{ formatarMoeda(asset.resultado) }}
                     </div>
                   </div>
-                  <div class="text-[9px] text-slate-600 uppercase truncate leading-tight group-hover:text-slate-400">
+                  <div class="text-[9px] text-slate-600 uppercase truncate leading-tight group-hover:text-slate-400 transition-colors">
                     {{ asset.nome_completo }}
                   </div>
                 </button>
@@ -69,6 +69,7 @@
 
             <main class="flex-1 flex flex-col overflow-hidden bg-slate-950/20">
               <div v-if="assetSelecionado" class="flex-1 flex flex-col p-5 overflow-hidden">
+                
                 <div class="grid grid-cols-4 gap-4 mb-4">
                   <div class="bg-slate-800/20 border border-slate-800 p-3 rounded-xl text-center">
                     <span class="text-[9px] text-slate-500 uppercase font-black block mb-1">Início Período</span>
@@ -129,7 +130,7 @@
               </div>
               <div v-else class="flex-1 flex flex-col items-center justify-center">
                  <div class="w-8 h-8 border-2 border-slate-700 border-t-slate-500 rounded-full animate-spin mb-4"></div>
-                 <p class="text-[10px] text-slate-500 uppercase tracking-[0.2em]">Aguardando dados ativos...</p>
+                 <p class="text-[10px] text-slate-500 uppercase tracking-[0.2em]">Aguardando dados...</p>
               </div>
             </main>
           </div>
@@ -152,7 +153,7 @@ const buscaAsset = ref('');
 const assetSelecionado = ref(null);
 const idClasseAtiva = ref(null);
 
-// Validação de segurança para as datas
+// Validação de segurança para inputs de data
 const dataEhValida = (d) => {
   if (!d) return false;
   const regex = /^\d{4}-\d{2}-\d{2}$/;
@@ -163,7 +164,7 @@ const dataEhValida = (d) => {
 
 const { data: classesResponse } = useApi('/classes/', { method: 'get' });
 
-// URL Ativos (Lateral)
+// URL Reativa para Ativos (Lateral)
 const urlAtivos = computed(() => {
   if (props.modelValue && idClasseAtiva.value && dataEhValida(dataInicio.value) && dataEhValida(dataFim.value)) {
     return `/assets/ByClass/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
@@ -172,7 +173,7 @@ const urlAtivos = computed(() => {
 });
 const { data: assetsResponse, loading: carregandoAssets } = useApi(urlAtivos);
 
-// URL Rendimento (Tabela Principal)
+// URL Reativa para Tabela (Main)
 const urlRendimento = computed(() => {
   if (assetSelecionado.value && idClasseAtiva.value && props.modelValue && dataEhValida(dataInicio.value) && dataEhValida(dataFim.value)) {
     return `/assets/Rendimentos/${assetSelecionado.value.Id}/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
@@ -181,7 +182,7 @@ const urlRendimento = computed(() => {
 });
 const { data: rendimentoResponse, loading: carregandoRendimento } = useApi(urlRendimento);
 
-// SELEÇÃO AUTOMÁTICA INTELIGENTE
+// SELEÇÃO AUTOMÁTICA DO PRIMEIRO ITEM
 watch(assetsResponse, (newAssets) => {
   if (newAssets) {
     const lista = Array.isArray(newAssets) ? newAssets : (newAssets.rows || []);
@@ -219,7 +220,7 @@ const totalProventosGeral = computed(() => formatarMoeda(listaRendimento.value.r
 const valorInicialGeral = computed(() => listaRendimento.value.length ? formatarMoeda(listaRendimento.value[0].inicial) : 'R$ 0,00');
 const valorFinalGeral = computed(() => listaRendimento.value.length ? formatarMoeda(listaRendimento.value[listaRendimento.value.length - 1].final) : 'R$ 0,00');
 
-// FORMATADORES
+// FORMATADOR ÚNICO
 const formatarMoeda = (v) => {
   return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
@@ -231,7 +232,7 @@ const formatarDataRelatorio = (dataStr) => {
   return `${dia}/${mes}/${ano}`;
 };
 
-// ACÕES
+// AÇÕES
 const aoMudarClasseManual = (event) => {
   const novoId = parseInt(event.target.value);
   if (novoId !== idClasseAtiva.value) {
