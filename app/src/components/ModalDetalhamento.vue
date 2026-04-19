@@ -4,7 +4,7 @@
       <div v-if="modelValue" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-[#1a1c24] border border-slate-700 w-full max-w-6xl h-[85vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-modal">
           
-          <header class="p-3 border-b border-slate-700 bg-slate-800/30 flex items-center justify-between">
+          <header class="p-3 border-b border-slate-700 bg-slate-800/30 flex items-center">
             <div class="flex items-center gap-6">
                <div class="flex items-center gap-2">
                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Classe</label>
@@ -12,6 +12,7 @@
                     <option v-for="c in classesResponse" :key="c.id" :value="c.id">{{ c.nome }}</option>
                  </select>
                </div>
+
                <div class="flex items-center gap-2">
                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Período</label>
                  <div class="flex items-center bg-slate-900 border border-slate-700 rounded p-0.5">
@@ -21,13 +22,23 @@
                  </div>
                </div>
             </div>
+
+            <div class="flex-1"></div>
+
+            <div class="flex flex-col items-end mr-6">
+              <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Resultado da Classe</label>
+              <span :class="['text-sm font-mono font-bold', totalGeralClasse >= 0 ? 'text-emerald-400' : 'text-red-400']">
+                {{ totalGeralClasse > 0 ? '+' : '' }}{{ formatarMoeda(totalGeralClasse) }}
+              </span>
+            </div>
+
             <button @click="$emit('update:modelValue', false)" class="p-1.5 text-slate-500 hover:text-white hover:bg-white/10 rounded-full transition-all">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </header>
 
           <div class="flex flex-1 overflow-hidden">
-            <aside class="w-60 border-r border-slate-700 flex flex-col bg-slate-900/50">
+            <aside class="w-64 border-r border-slate-700 flex flex-col bg-slate-900/50">
               <div class="p-3">
                 <input v-model="buscaAsset" type="text" placeholder="Filtrar ativo..." class="w-full bg-slate-800 border border-slate-700 rounded py-1.5 px-3 text-[11px] text-white outline-none focus:ring-1 focus:ring-blue-500/50" />
               </div>
@@ -35,10 +46,21 @@
                 <div v-if="carregandoAssets" class="absolute inset-0 bg-[#1a1c24]/50 z-10 flex items-center justify-center">
                    <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
+                
                 <button v-for="asset in assetsFiltrados" :key="asset.Id" @click="assetSelecionado = asset"
                   :class="['w-full p-2.5 text-left border-b border-slate-800/40 transition-all group', (assetSelecionado?.Id === asset.Id) ? 'bg-blue-600/10 border-l-2 border-l-blue-500' : 'border-l-2 border-l-transparent hover:bg-white/5']">
-                  <div class="font-bold text-[11px]" :class="assetSelecionado?.Id === asset.Id ? 'text-blue-400' : 'text-slate-300'">{{ asset.ticker }}</div>
-                  <div class="text-[9px] text-slate-500 uppercase truncate leading-tight">{{ asset.nome_completo }}</div>
+                  
+                  <div class="flex justify-between items-center mb-0.5">
+                    <div class="font-bold text-[11px]" :class="assetSelecionado?.Id === asset.Id ? 'text-blue-400' : 'text-slate-300'">
+                      {{ asset.ticker }}
+                    </div>
+                    <div :class="['text-[10px] font-mono font-bold', asset.resultado >= 0 ? 'text-emerald-500' : 'text-red-500']">
+                      {{ asset.resultado > 0 ? '+' : '' }}{{ formatarMoedaCurta(asset.resultado) }}
+                    </div>
+                  </div>
+                  <div class="text-[9px] text-slate-600 uppercase truncate leading-tight group-hover:text-slate-400 transition-colors">
+                    {{ asset.nome_completo }}
+                  </div>
                 </button>
               </div>
             </aside>
@@ -130,8 +152,16 @@ const buscaAsset = ref('');
 const assetSelecionado = ref(null);
 const idClasseAtiva = ref(null);
 
+// APIs
 const { data: classesResponse } = useApi('/classes/', { method: 'get' });
-const urlAtivos = computed(() => (props.modelValue && idClasseAtiva.value) ? `/assets/ByClass/${idClasseAtiva.value}` : null);
+
+// URL da lista lateral agora envia as datas para calcular o lucro do período
+const urlAtivos = computed(() => {
+  if (props.modelValue && idClasseAtiva.value && dataInicio.value && dataFim.value) {
+    return `/assets/ByClass/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
+  }
+  return null;
+});
 const { data: assetsResponse, loading: carregandoAssets } = useApi(urlAtivos);
 
 const urlRendimento = computed(() => {
@@ -140,7 +170,7 @@ const urlRendimento = computed(() => {
 });
 const { data: rendimentoResponse, loading: carregandoRendimento } = useApi(urlRendimento);
 
-// Seleção automática do primeiro item
+// Seleção automática do primeiro item ao carregar lista
 watch(assetsResponse, (newAssets) => {
   if (newAssets) {
     const lista = Array.isArray(newAssets) ? newAssets : (newAssets.rows || []);
@@ -150,14 +180,21 @@ watch(assetsResponse, (newAssets) => {
   }
 }, { deep: true });
 
+// Reinicia seleção ao trocar de classe
 watch(idClasseAtiva, () => { assetSelecionado.value = null; });
 
+// COMPUTEDS
 const assetsFiltrados = computed(() => {
   const data = unref(assetsResponse);
   const lista = Array.isArray(data) ? data : (data?.rows || []);
   if (!buscaAsset.value) return lista;
   const termo = buscaAsset.value.toLowerCase();
   return lista.filter(a => (a.nome_completo || '').toLowerCase().includes(termo) || (a.ticker || '').toLowerCase().includes(termo));
+});
+
+const totalGeralClasse = computed(() => {
+  const lista = assetsFiltrados.value;
+  return lista.reduce((acc, asset) => acc + (Number(asset.resultado) || 0), 0);
 });
 
 const listaRendimento = computed(() => {
@@ -167,10 +204,13 @@ const listaRendimento = computed(() => {
 
 const totalResultado = computed(() => listaRendimento.value.reduce((acc, row) => acc + (Number(row.resultado) || 0), 0));
 const totalProventosGeral = computed(() => formatarMoeda(listaRendimento.value.reduce((acc, row) => acc + (Number(row.proventos) || 0), 0)));
-const valorInicialGeral = computed(() => listaRendimento.value.length ? formatarMoeda(listaRendimento.value[listaRendimento.value.length - 1].inicial) : 'R$ 0,00');
-const valorFinalGeral = computed(() => listaRendimento.value.length ? formatarMoeda(listaRendimento.value[0].final) : 'R$ 0,00');
+const valorInicialGeral = computed(() => listaRendimento.value.length ? formatarMoeda(listaRendimento.value[0].inicial) : 'R$ 0,00');
+const valorFinalGeral = computed(() => listaRendimento.value.length ? formatarMoeda(listaRendimento.value[listaRendimento.value.length - 1].final) : 'R$ 0,00');
 
+// FORMATADORES
 const formatarMoeda = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const formatarMoedaCurta = (v) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 const formatarDataRelatorio = (dataStr) => {
   if (!dataStr) return '-';
   const apenasData = dataStr.includes('T') ? dataStr.split('T')[0] : dataStr;
@@ -178,6 +218,7 @@ const formatarDataRelatorio = (dataStr) => {
   return `${dia}/${mes}/${ano}`;
 };
 
+// ACÕES
 const aoMudarClasseManual = (event) => {
   const novoId = parseInt(event.target.value);
   if (novoId !== idClasseAtiva.value) {
@@ -212,7 +253,6 @@ watch([() => props.modelValue, classesResponse], () => {
 </script>
 
 <style scoped>
-/* Animações de Entrada */
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
@@ -222,17 +262,15 @@ watch([() => props.modelValue, classesResponse], () => {
 }
 .animate-modal { animation: modal-in 0.2s cubic-bezier(0, 0, 0.2, 1); }
 
-/* Spinner */
 .animate-spin { animation: spin 1s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-/* Scrollbar Customizada */
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
 
-/* Efeito Zebrado nas Linhas */
+/* Efeito Zebrado */
 .row-item:nth-child(even) { background-color: rgba(255, 255, 255, 0.02); }
-.row-item:hover { background-color: rgba(59, 130, 246, 0.1); }
+.row-item:hover { background-color: rgba(59, 130, 246, 0.08); }
 </style>
