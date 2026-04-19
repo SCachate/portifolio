@@ -5,7 +5,6 @@
         <div class="bg-[#1a1c24] border border-slate-700 w-full max-w-6xl h-[85vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-modal">
           
           <header class="p-3 border-b border-slate-700 bg-slate-800/30 flex items-center gap-8">
-            
             <div class="flex flex-col gap-1">
               <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Classe de Ativo</label>
               <select :value="idClasseAtiva" @change="aoMudarClasseManual" 
@@ -40,27 +39,29 @@
           </header>
 
           <div class="flex flex-1 overflow-hidden">
-            <aside class="w-64 border-r border-slate-700 flex flex-col bg-slate-900/50">
-              <div class="p-3">
-                <input v-model="buscaAsset" type="text" placeholder="Filtrar ativo..." class="w-full bg-slate-800 border border-slate-700 rounded py-1.5 px-3 text-[11px] text-white outline-none focus:ring-1 focus:ring-blue-500/50" />
+            <aside class="w-[40%] border-r border-slate-700 flex flex-col bg-slate-900/50">
+              <div class="p-4">
+                <input v-model="buscaAsset" type="text" placeholder="Filtrar ativo..." 
+                  class="w-full bg-slate-800 border border-slate-700 rounded-lg py-2 px-4 text-xs text-white outline-none focus:ring-1 focus:ring-blue-500/50" />
               </div>
+              
               <div class="flex-1 overflow-y-auto custom-scrollbar relative">
                 <div v-if="carregandoAssets" class="absolute inset-0 bg-[#1a1c24]/50 z-10 flex items-center justify-center">
-                   <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                   <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
                 
                 <button v-for="asset in assetsFiltrados" :key="asset.Id" @click="assetSelecionado = asset"
-                  :class="['w-full p-2.5 text-left border-b border-slate-800/40 transition-all group', (assetSelecionado?.Id === asset.Id) ? 'bg-blue-600/10 border-l-2 border-l-blue-500' : 'border-l-2 border-l-transparent hover:bg-white/5']">
+                  :class="['w-full p-4 text-left border-b border-slate-800/40 transition-all group', (assetSelecionado?.Id === asset.Id) ? 'bg-blue-600/10 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent hover:bg-white/5']">
                   
-                  <div class="flex justify-between items-center mb-0.5">
-                    <div class="font-bold text-[11px]" :class="assetSelecionado?.Id === asset.Id ? 'text-blue-400' : 'text-slate-300'">
+                  <div class="flex justify-between items-center mb-1.5">
+                    <div class="font-bold text-sm tracking-tight" :class="assetSelecionado?.Id === asset.Id ? 'text-blue-400' : 'text-slate-200'">
                       {{ asset.ticker }}
                     </div>
-                    <div :class="['text-[10px] font-mono font-bold', asset.resultado >= 0 ? 'text-emerald-400' : 'text-red-400']">
+                    <div :class="['text-[12px] font-mono font-bold', asset.resultado >= 0 ? 'text-emerald-400' : 'text-red-400']">
                       {{ formatarMoeda(asset.resultado) }}
                     </div>
                   </div>
-                  <div class="text-[9px] text-slate-600 uppercase truncate leading-tight group-hover:text-slate-400 transition-colors">
+                  <div class="text-[11px] text-slate-500 uppercase truncate font-medium group-hover:text-slate-400 transition-colors">
                     {{ asset.nome_completo }}
                   </div>
                 </button>
@@ -130,7 +131,7 @@
               </div>
               <div v-else class="flex-1 flex flex-col items-center justify-center">
                  <div class="w-8 h-8 border-2 border-slate-700 border-t-slate-500 rounded-full animate-spin mb-4"></div>
-                 <p class="text-[10px] text-slate-500 uppercase tracking-[0.2em]">Aguardando dados...</p>
+                 <p class="text-[10px] text-slate-500 uppercase tracking-[0.2em]">Aguardando seleção...</p>
               </div>
             </main>
           </div>
@@ -153,7 +154,6 @@ const buscaAsset = ref('');
 const assetSelecionado = ref(null);
 const idClasseAtiva = ref(null);
 
-// Validação de segurança para inputs de data
 const dataEhValida = (d) => {
   if (!d) return false;
   const regex = /^\d{4}-\d{2}-\d{2}$/;
@@ -164,7 +164,6 @@ const dataEhValida = (d) => {
 
 const { data: classesResponse } = useApi('/classes/', { method: 'get' });
 
-// URL Reativa para Ativos (Lateral)
 const urlAtivos = computed(() => {
   if (props.modelValue && idClasseAtiva.value && dataEhValida(dataInicio.value) && dataEhValida(dataFim.value)) {
     return `/assets/ByClass/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
@@ -173,7 +172,6 @@ const urlAtivos = computed(() => {
 });
 const { data: assetsResponse, loading: carregandoAssets } = useApi(urlAtivos);
 
-// URL Reativa para Tabela (Main)
 const urlRendimento = computed(() => {
   if (assetSelecionado.value && idClasseAtiva.value && props.modelValue && dataEhValida(dataInicio.value) && dataEhValida(dataFim.value)) {
     return `/assets/Rendimentos/${assetSelecionado.value.Id}/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
@@ -182,22 +180,18 @@ const urlRendimento = computed(() => {
 });
 const { data: rendimentoResponse, loading: carregandoRendimento } = useApi(urlRendimento);
 
-// SELEÇÃO AUTOMÁTICA DO PRIMEIRO ITEM
 watch(assetsResponse, (newAssets) => {
   if (newAssets) {
     const lista = Array.isArray(newAssets) ? newAssets : (newAssets.rows || []);
     if (lista.length > 0) {
       const aindaExiste = lista.find(a => a.Id === assetSelecionado.value?.Id);
-      if (!assetSelecionado.value || !aindaExiste) {
-        assetSelecionado.value = lista[0];
-      }
+      if (!assetSelecionado.value || !aindaExiste) assetSelecionado.value = lista[0];
     } else {
       assetSelecionado.value = null;
     }
   }
 });
 
-// COMPUTEDS
 const assetsFiltrados = computed(() => {
   const data = unref(assetsResponse);
   const lista = Array.isArray(data) ? data : (data?.rows || []);
@@ -206,10 +200,7 @@ const assetsFiltrados = computed(() => {
   return lista.filter(a => (a.nome_completo || '').toLowerCase().includes(termo) || (a.ticker || '').toLowerCase().includes(termo));
 });
 
-const totalGeralClasse = computed(() => {
-  return assetsFiltrados.value.reduce((acc, asset) => acc + (Number(asset.resultado) || 0), 0);
-});
-
+const totalGeralClasse = computed(() => assetsFiltrados.value.reduce((acc, asset) => acc + (Number(asset.resultado) || 0), 0));
 const listaRendimento = computed(() => {
   const data = unref(rendimentoResponse);
   return Array.isArray(data) ? data : (data?.rows || []);
@@ -220,11 +211,7 @@ const totalProventosGeral = computed(() => formatarMoeda(listaRendimento.value.r
 const valorInicialGeral = computed(() => listaRendimento.value.length ? formatarMoeda(listaRendimento.value[0].inicial) : 'R$ 0,00');
 const valorFinalGeral = computed(() => listaRendimento.value.length ? formatarMoeda(listaRendimento.value[listaRendimento.value.length - 1].final) : 'R$ 0,00');
 
-// FORMATADOR ÚNICO
-const formatarMoeda = (v) => {
-  return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-};
-
+const formatarMoeda = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const formatarDataRelatorio = (dataStr) => {
   if (!dataStr) return '-';
   const apenasData = dataStr.includes('T') ? dataStr.split('T')[0] : dataStr;
@@ -232,12 +219,11 @@ const formatarDataRelatorio = (dataStr) => {
   return `${dia}/${mes}/${ano}`;
 };
 
-// AÇÕES
 const aoMudarClasseManual = (event) => {
   const novoId = parseInt(event.target.value);
   if (novoId !== idClasseAtiva.value) {
     idClasseAtiva.value = novoId;
-    assetSelecionado.value = null; 
+    assetSelecionado.value = null;
     const lista = Array.isArray(classesResponse.value) ? classesResponse.value : (classesResponse.value?.rows || []);
     const obj = lista.find(c => c.id === novoId);
     if (obj) emit('update:classe', obj.nome);
@@ -267,22 +253,17 @@ watch(() => props.modelValue, (isOpen) => {
   }
 }, { immediate: true });
 
-watch(() => props.tipo, () => {
-  if (props.modelValue) calcularDatasPadrao();
-});
+watch(() => props.tipo, () => { if (props.modelValue) calcularDatasPadrao(); });
 </script>
 
 <style scoped>
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
-@keyframes modal-in { 
-    from { transform: scale(0.98) translateY(10px); opacity: 0; } 
-    to { transform: scale(1) translateY(0); opacity: 1; } 
-}
+@keyframes modal-in { from { transform: scale(0.98) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
 .animate-modal { animation: modal-in 0.2s cubic-bezier(0, 0, 0.2, 1); }
 .animate-spin { animation: spin 1s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar { width: 5px; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
 .row-item:nth-child(even) { background-color: rgba(255, 255, 255, 0.02); }
 .row-item:hover { background-color: rgba(59, 130, 246, 0.08); }
