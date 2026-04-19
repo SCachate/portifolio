@@ -28,7 +28,7 @@
             <div class="flex flex-col items-end mr-6">
               <label class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Resultado da Classe</label>
               <span :class="['text-sm font-mono font-bold', totalGeralClasse >= 0 ? 'text-emerald-400' : 'text-red-400']">
-                {{ totalGeralClasse > 0 ? '+' : '' }}{{ formatarMoeda(totalGeralClasse) }}
+                {{ formatarMoeda(totalGeralClasse) }}
               </span>
             </div>
 
@@ -40,7 +40,7 @@
           <div class="flex flex-1 overflow-hidden">
             <aside class="w-64 border-r border-slate-700 flex flex-col bg-slate-900/50">
               <div class="p-3">
-                <input v-model="buscaAsset" type="text" placeholder="Filtrar ativo..." class="w-full bg-slate-800 border border-slate-700 rounded py-1.5 px-3 text-[11px] text-white outline-none focus:ring-1 focus:ring-blue-500/50" />
+                <input v-model="buscaAsset" type="text" placeholder="Filtrar ativo..." class="w-full bg-slate-800 border border-slate-700 rounded py-1.5 px-3 text-[11px] text-white outline-none" />
               </div>
               <div class="flex-1 overflow-y-auto custom-scrollbar relative">
                 <div v-if="carregandoAssets" class="absolute inset-0 bg-[#1a1c24]/50 z-10 flex items-center justify-center">
@@ -55,7 +55,7 @@
                       {{ asset.ticker }}
                     </div>
                     <div :class="['text-[10px] font-mono font-bold', asset.resultado >= 0 ? 'text-emerald-500' : 'text-red-500']">
-                      {{ asset.resultado > 0 ? '+' : '' }}{{ formatarMoedaCurta(asset.resultado) }}
+                      {{ formatarMoedaCurta(asset.resultado) }}
                     </div>
                   </div>
                   <div class="text-[9px] text-slate-600 uppercase truncate leading-tight group-hover:text-slate-400 transition-colors">
@@ -67,21 +67,20 @@
 
             <main class="flex-1 flex flex-col overflow-hidden bg-slate-950/20">
               <div v-if="assetSelecionado" class="flex-1 flex flex-col p-5 overflow-hidden">
-                
                 <div class="grid grid-cols-4 gap-4 mb-4">
-                  <div class="bg-slate-800/20 border border-slate-800 p-3 rounded-xl">
+                  <div class="bg-slate-800/20 border border-slate-800 p-3 rounded-xl text-center">
                     <span class="text-[9px] text-slate-500 uppercase font-black block mb-1">Início Período</span>
                     <span class="text-sm font-bold text-white">{{ valorInicialGeral }}</span>
                   </div>
-                  <div class="bg-slate-800/20 border border-slate-800 p-3 rounded-xl">
+                  <div class="bg-slate-800/20 border border-slate-800 p-3 rounded-xl text-center">
                     <span class="text-[9px] text-orange-500/70 uppercase font-black block mb-1">Total Proventos</span>
                     <span class="text-sm font-bold text-orange-400">{{ totalProventosGeral }}</span>
                   </div>
-                  <div class="bg-slate-800/20 border border-slate-800 p-3 rounded-xl">
+                  <div class="bg-slate-800/20 border border-slate-800 p-3 rounded-xl text-center">
                     <span class="text-[9px] text-slate-500 uppercase font-black block mb-1">Patrimônio Final</span>
                     <span class="text-sm font-bold text-white">{{ valorFinalGeral }}</span>
                   </div>
-                  <div class="bg-emerald-500/5 border border-emerald-500/20 p-3 rounded-xl">
+                  <div class="bg-emerald-500/5 border border-emerald-500/20 p-3 rounded-xl text-center">
                     <span class="text-[9px] text-emerald-500 uppercase font-black block mb-1">Ganho no Período</span>
                     <span class="text-sm font-bold" :class="totalResultado >= 0 ? 'text-emerald-400' : 'text-red-400'">
                       {{ formatarMoeda(totalResultado) }}
@@ -107,8 +106,7 @@
                         </tr>
                       </thead>
                       <tbody class="divide-y divide-slate-800/30">
-                        <tr v-for="(row, idx) in listaRendimento" :key="idx" 
-                            class="row-item transition-colors">
+                        <tr v-for="(row, idx) in listaRendimento" :key="idx" class="row-item transition-colors">
                           <td class="px-4 py-1 font-mono text-slate-300 border-r border-slate-800/30">{{ formatarDataRelatorio(row.data) }}</td>
                           <td class="px-4 py-1 text-right text-slate-400">{{ formatarMoeda(row.inicial) }}</td>
                           <td class="px-4 py-1 text-right font-medium" :class="row.aportes > 0 ? 'text-blue-400' : 'text-slate-700'">
@@ -129,7 +127,7 @@
               </div>
               <div v-else class="flex-1 flex flex-col items-center justify-center">
                  <div class="w-8 h-8 border-2 border-slate-700 border-t-slate-500 rounded-full animate-spin mb-4"></div>
-                 <p class="text-[10px] text-slate-500 uppercase tracking-[0.2em]">Aguardando ativos...</p>
+                 <p class="text-[10px] text-slate-500 uppercase tracking-[0.2em]">Aguardando dados...</p>
               </div>
             </main>
           </div>
@@ -152,10 +150,9 @@ const buscaAsset = ref('');
 const assetSelecionado = ref(null);
 const idClasseAtiva = ref(null);
 
-// APIs
 const { data: classesResponse } = useApi('/classes/', { method: 'get' });
 
-// URL da lista lateral agora envia as datas para calcular o lucro do período
+// URL dinâmica para lista lateral - Observando datas e visibilidade do modal
 const urlAtivos = computed(() => {
   if (props.modelValue && idClasseAtiva.value && dataInicio.value && dataFim.value) {
     return `/assets/ByClass/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
@@ -170,7 +167,7 @@ const urlRendimento = computed(() => {
 });
 const { data: rendimentoResponse, loading: carregandoRendimento } = useApi(urlRendimento);
 
-// Seleção automática do primeiro item ao carregar lista
+// SELEÇÃO AUTOMÁTICA
 watch(assetsResponse, (newAssets) => {
   if (newAssets) {
     const lista = Array.isArray(newAssets) ? newAssets : (newAssets.rows || []);
@@ -178,10 +175,7 @@ watch(assetsResponse, (newAssets) => {
       assetSelecionado.value = lista[0];
     }
   }
-}, { deep: true });
-
-// Reinicia seleção ao trocar de classe
-watch(idClasseAtiva, () => { assetSelecionado.value = null; });
+});
 
 // COMPUTEDS
 const assetsFiltrados = computed(() => {
@@ -193,8 +187,7 @@ const assetsFiltrados = computed(() => {
 });
 
 const totalGeralClasse = computed(() => {
-  const lista = assetsFiltrados.value;
-  return lista.reduce((acc, asset) => acc + (Number(asset.resultado) || 0), 0);
+  return assetsFiltrados.value.reduce((acc, asset) => acc + (Number(asset.resultado) || 0), 0);
 });
 
 const listaRendimento = computed(() => {
@@ -210,7 +203,6 @@ const valorFinalGeral = computed(() => listaRendimento.value.length ? formatarMo
 // FORMATADORES
 const formatarMoeda = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const formatarMoedaCurta = (v) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
 const formatarDataRelatorio = (dataStr) => {
   if (!dataStr) return '-';
   const apenasData = dataStr.includes('T') ? dataStr.split('T')[0] : dataStr;
@@ -223,6 +215,7 @@ const aoMudarClasseManual = (event) => {
   const novoId = parseInt(event.target.value);
   if (novoId !== idClasseAtiva.value) {
     idClasseAtiva.value = novoId;
+    assetSelecionado.value = null; // Limpa ao trocar classe
     const lista = Array.isArray(classesResponse.value) ? classesResponse.value : (classesResponse.value?.rows || []);
     const obj = lista.find(c => c.id === novoId);
     if (obj) emit('update:classe', obj.nome);
@@ -244,33 +237,36 @@ const calcularDatasPadrao = () => {
   else dataInicio.value = format(hoje);
 };
 
-watch([() => props.modelValue, classesResponse], () => {
-  if (props.modelValue) {
+// WATCH PRINCIPAL: Garante que as datas sejam recalculadas e os ativos buscados sempre que o modal abrir ou o tipo mudar
+watch(() => props.modelValue, (isOpen) => {
+  if (isOpen) {
+    assetSelecionado.value = null; // Reseta seleção para forçar auto-seleção do primeiro
     calcularDatasPadrao();
     if (classesResponse.value) sincronizarLabelComId();
   }
 }, { immediate: true });
+
+// Monitora mudança de tipo (diario/mensal) enquanto o modal está aberto
+watch(() => props.tipo, () => {
+  if (props.modelValue) {
+    calcularDatasPadrao();
+  }
+});
 </script>
 
 <style scoped>
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
-
 @keyframes modal-in { 
     from { transform: scale(0.98) translateY(10px); opacity: 0; } 
     to { transform: scale(1) translateY(0); opacity: 1; } 
 }
 .animate-modal { animation: modal-in 0.2s cubic-bezier(0, 0, 0.2, 1); }
-
 .animate-spin { animation: spin 1s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
-
-/* Efeito Zebrado */
 .row-item:nth-child(even) { background-color: rgba(255, 255, 255, 0.02); }
 .row-item:hover { background-color: rgba(59, 130, 246, 0.08); }
 </style>
