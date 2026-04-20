@@ -120,7 +120,17 @@
               </div>
 
               <div v-else class="flex-1 flex flex-col items-center justify-center p-12 text-center">
-                 <p class="text-xs text-slate-500 uppercase tracking-widest">Aguardando seleção ou dados...</p>
+                 <div v-if="carregandoAssets" class="flex flex-col items-center">
+                    <div class="w-10 h-10 border-2 border-slate-700 border-t-slate-500 rounded-full animate-spin mb-4"></div>
+                    <p class="text-[10px] text-slate-500 uppercase tracking-[0.3em]">Buscando dados...</p>
+                 </div>
+                 <div v-else class="flex flex-col items-center max-w-xs animate-modal">
+                    <div class="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center mb-6">
+                      <svg class="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    </div>
+                    <h3 class="text-white font-bold text-sm mb-2">Sem movimentações</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">Não há ativos para mostrar nesta classe.</p>
+                 </div>
               </div>
             </main>
           </div>
@@ -159,7 +169,7 @@ const urlRendimento = computed(() => {
 });
 const { data: rendimentoResponse, loading: carregandoRendimento } = useApi(urlRendimento);
 
-// Auto-seleção
+// Auto-seleção do primeiro item quando a lista de ativos mudar
 watch(assetsResponse, (newVal) => {
   const lista = Array.isArray(newVal) ? newVal : (newVal?.rows || []);
   if (lista.length > 0) {
@@ -184,11 +194,11 @@ const assetsFiltrados = computed(() => {
 const totalGeralClasse = computed(() => assetsFiltrados.value.reduce((acc, a) => acc + (Number(a.resultado) || 0), 0));
 const listaRendimento = computed(() => Array.isArray(unref(rendimentoResponse)) ? unref(rendimentoResponse) : (unref(rendimentoResponse)?.rows || []));
 
-// CORREÇÃO DOS CARDS (Considerando que a lista está em ordem DESC)
+// CARDS INDICADORES (Lógica corrigida para ordem DESC vinda do SQL)
 const cardsIndicadores = computed(() => {
   if (!listaRendimento.value.length) return [];
   
-  // Como está DESC: [0] é a data mais recente (Final), [length-1] é a data mais antiga (Inicial)
+  // Ordem DESC: [0] é a data mais recente (Patrimônio Final), [último] é a data mais antiga (Início)
   const dadoMaisRecente = listaRendimento.value[0];
   const dadoMaisAntigo = listaRendimento.value[listaRendimento.value.length - 1];
   
@@ -205,7 +215,7 @@ const cardsIndicadores = computed(() => {
 
 const aoMudarClasseManual = (e) => {
   idClasseAtiva.value = parseInt(e.target.value);
-  assetSelecionado.value = null;
+  assetSelecionado.value = null; // Limpa para forçar o auto-select da nova classe
 };
 
 const calcularDatasPadrao = () => {
@@ -217,8 +227,14 @@ const calcularDatasPadrao = () => {
   else dataInicio.value = f(hoje);
 };
 
+// RESET DE ESTADO AO ABRIR O MODAL
 watch(() => props.modelValue, (val) => {
   if (val) {
+    // 1. Limpa resquícios de classes anteriores
+    assetSelecionado.value = null;
+    buscaAsset.value = ''; 
+    
+    // 2. Setup inicial
     calcularDatasPadrao();
     const lista = Array.isArray(classesResponse.value) ? classesResponse.value : (classesResponse.value?.rows || []);
     const found = lista.find(c => c.nome === props.classeSelecionada);
