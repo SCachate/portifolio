@@ -5,7 +5,6 @@
         <div class="bg-[#1a1c24] border border-slate-700 w-full max-w-6xl h-[85vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-modal">
           
           <header class="p-4 border-b border-slate-700 bg-slate-800/30 flex items-center gap-4">
-            
             <div class="bg-slate-900/80 border border-slate-800 p-2 rounded-2xl flex flex-col items-center min-w-[200px] h-[64px] justify-center hover:border-slate-600 transition-colors relative group">
               <span class="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-0.5">Classe de Ativo</span>
               <div class="relative w-full flex items-center justify-center">
@@ -54,21 +53,31 @@
                 </div>
               </div>
               
-              <div class="flex-1 overflow-y-auto custom-scrollbar">
-                <button v-for="asset in assetsFiltrados" :key="asset.Id" @click="assetSelecionado = asset"
-                  :class="['w-full p-4 text-left border-b border-slate-800/40 transition-all group', (assetSelecionado?.Id === asset.Id) ? 'bg-blue-600/10 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent hover:bg-white/5']">
-                  <div class="flex justify-between items-center mb-1.5">
-                    <div class="font-bold text-sm tracking-tight" :class="assetSelecionado?.Id === asset.Id ? 'text-blue-400' : 'text-slate-200'">{{ asset.ticker }}</div>
-                    <div :class="['text-[13px] font-mono font-bold', asset.resultado >= 0 ? 'text-emerald-400' : 'text-red-400']">{{ formatarMoeda(asset.resultado) }}</div>
-                  </div>
-                  <div class="text-[11px] text-slate-500 uppercase truncate font-medium group-hover:text-slate-400 transition-colors">{{ asset.nome_completo }}</div>
-                </button>
+              <div class="flex-1 overflow-y-auto custom-scrollbar relative">
+                <div v-if="carregandoAssets" class="absolute inset-0 bg-[#1a1c24]/50 z-10 flex items-center justify-center">
+                   <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+
+                <template v-if="assetsFiltrados.length > 0">
+                  <button v-for="asset in assetsFiltrados" :key="asset.Id" @click="assetSelecionado = asset"
+                    :class="['w-full p-4 text-left border-b border-slate-800/40 transition-all group', (assetSelecionado?.Id === asset.Id) ? 'bg-blue-600/10 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent hover:bg-white/5']">
+                    <div class="flex justify-between items-center mb-1.5">
+                      <div class="font-bold text-sm tracking-tight" :class="assetSelecionado?.Id === asset.Id ? 'text-blue-400' : 'text-slate-200'">{{ asset.ticker }}</div>
+                      <div :class="['text-[13px] font-mono font-bold', asset.resultado >= 0 ? 'text-emerald-400' : 'text-red-400']">{{ formatarMoeda(asset.resultado) }}</div>
+                    </div>
+                    <div class="text-[11px] text-slate-500 uppercase truncate font-medium group-hover:text-slate-400 transition-colors">{{ asset.nome_completo }}</div>
+                  </button>
+                </template>
+
+                <div v-else-if="!carregandoAssets" class="p-10 text-center flex flex-col items-center justify-center h-full">
+                  <svg class="w-10 h-10 text-slate-700 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                  <p class="text-[11px] text-slate-500 uppercase tracking-widest font-bold">Nenhum ativo encontrado</p>
+                </div>
               </div>
             </aside>
 
             <main class="flex-1 flex flex-col overflow-hidden bg-slate-950/20">
               <div v-if="assetSelecionado" class="flex-1 flex flex-col p-6 overflow-hidden">
-                
                 <div class="grid grid-cols-4 gap-4 mb-6">
                   <div v-for="card in cardsIndicadores" :key="card.label" class="bg-slate-800/20 border border-slate-800 p-3.5 rounded-2xl text-center h-[64px] flex flex-col justify-center">
                     <span class="text-[9px] text-slate-500 uppercase font-black block mb-0.5 tracking-widest">{{ card.label }}</span>
@@ -77,6 +86,9 @@
                 </div>
 
                 <div class="flex-1 bg-slate-900/40 border border-slate-700 rounded-2xl overflow-hidden flex flex-col relative">
+                  <div v-if="carregandoRendimento" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-20 flex items-center justify-center">
+                    <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
                   <div class="h-full overflow-y-auto custom-scrollbar">
                     <table class="w-full text-[11px] border-separate border-spacing-0">
                       <thead class="bg-slate-800 sticky top-0 z-10">
@@ -105,6 +117,20 @@
                   </div>
                 </div>
               </div>
+
+              <div v-else class="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                 <div v-if="carregandoAssets" class="flex flex-col items-center">
+                    <div class="w-10 h-10 border-2 border-slate-700 border-t-slate-500 rounded-full animate-spin mb-4"></div>
+                    <p class="text-[10px] text-slate-500 uppercase tracking-[0.3em]">Carregando dados...</p>
+                 </div>
+                 <div v-else class="flex flex-col items-center max-w-xs">
+                    <div class="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center mb-6">
+                      <svg class="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    </div>
+                    <h3 class="text-white font-bold text-sm mb-2">Sem movimentações</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">Não encontramos ativos para esta classe no período selecionado. Tente alterar as datas ou a classe acima.</p>
+                 </div>
+              </div>
             </main>
           </div>
         </div>
@@ -132,13 +158,13 @@ const urlAtivos = computed(() => {
   if (props.modelValue && idClasseAtiva.value && dataEhValida(dataInicio.value)) return `/assets/ByClass/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
   return null;
 });
-const { data: assetsResponse } = useApi(urlAtivos);
+const { data: assetsResponse, loading: carregandoAssets } = useApi(urlAtivos);
 
 const urlRendimento = computed(() => {
   if (assetSelecionado.value && idClasseAtiva.value && props.modelValue) return `/assets/Rendimentos/${assetSelecionado.value.Id}/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
   return null;
 });
-const { data: rendimentoResponse } = useApi(urlRendimento);
+const { data: rendimentoResponse, loading: carregandoRendimento } = useApi(urlRendimento);
 
 const dataEhValida = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d);
 const formatarMoeda = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
