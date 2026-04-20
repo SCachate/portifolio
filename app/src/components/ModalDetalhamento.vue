@@ -71,7 +71,7 @@
 
                 <div v-else-if="!carregandoAssets" class="p-10 text-center flex flex-col items-center justify-center h-full">
                   <svg class="w-10 h-10 text-slate-700 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                  <p class="text-[11px] text-slate-500 uppercase tracking-widest font-bold">Nenhum ativo encontrado</p>
+                  <p class="text-[11px] text-slate-500 uppercase tracking-widest font-bold">Nenhum ativo</p>
                 </div>
               </div>
             </aside>
@@ -121,14 +121,14 @@
               <div v-else class="flex-1 flex flex-col items-center justify-center p-12 text-center">
                  <div v-if="carregandoAssets" class="flex flex-col items-center">
                     <div class="w-10 h-10 border-2 border-slate-700 border-t-slate-500 rounded-full animate-spin mb-4"></div>
-                    <p class="text-[10px] text-slate-500 uppercase tracking-[0.3em]">Carregando dados...</p>
+                    <p class="text-[10px] text-slate-500 uppercase tracking-[0.3em]">Buscando dados...</p>
                  </div>
-                 <div v-else class="flex flex-col items-center max-w-xs">
+                 <div v-else class="flex flex-col items-center max-w-xs animate-modal">
                     <div class="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center mb-6">
                       <svg class="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                     </div>
                     <h3 class="text-white font-bold text-sm mb-2">Sem movimentações</h3>
-                    <p class="text-xs text-slate-500 leading-relaxed">Não encontramos ativos para esta classe no período selecionado. Tente alterar as datas ou a classe acima.</p>
+                    <p class="text-xs text-slate-500 leading-relaxed">Não há ativos para mostrar. Tente ajustar os filtros acima.</p>
                  </div>
               </div>
             </main>
@@ -155,16 +155,32 @@ const idClasseAtiva = ref(null);
 const { data: classesResponse } = useApi('/classes/', { method: 'get' });
 
 const urlAtivos = computed(() => {
-  if (props.modelValue && idClasseAtiva.value && dataEhValida(dataInicio.value)) return `/assets/ByClass/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
+  if (props.modelValue && idClasseAtiva.value && dataEhValida(dataInicio.value)) 
+    return `/assets/ByClass/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
   return null;
 });
 const { data: assetsResponse, loading: carregandoAssets } = useApi(urlAtivos);
 
 const urlRendimento = computed(() => {
-  if (assetSelecionado.value && idClasseAtiva.value && props.modelValue) return `/assets/Rendimentos/${assetSelecionado.value.Id}/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
+  if (assetSelecionado.value && idClasseAtiva.value && props.modelValue) 
+    return `/assets/Rendimentos/${assetSelecionado.value.Id}/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
   return null;
 });
 const { data: rendimentoResponse, loading: carregandoRendimento } = useApi(urlRendimento);
+
+// LÓGICA DE AUTO-SELEÇÃO CORRIGIDA
+watch(assetsResponse, (newVal) => {
+  const lista = Array.isArray(newVal) ? newVal : (newVal?.rows || []);
+  if (lista.length > 0) {
+    // Se não tiver nada selecionado OU o que estava selecionado não existe mais na nova lista
+    const aindaExiste = lista.find(a => a.Id === assetSelecionado.value?.Id);
+    if (!assetSelecionado.value || !aindaExiste) {
+      assetSelecionado.value = lista[0];
+    }
+  } else {
+    assetSelecionado.value = null;
+  }
+}, { deep: true });
 
 const dataEhValida = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d);
 const formatarMoeda = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -177,9 +193,20 @@ const assetsFiltrados = computed(() => {
   return lista.filter(a => a.nome_completo?.toLowerCase().includes(t) || a.ticker?.toLowerCase().includes(t));
 });
 
+// Watch adicional para quando o usuário filtra a lista, selecionar o primeiro do filtro
+watch(assetsFiltrados, (newFiltrados) => {
+  if (newFiltrados.length > 0) {
+    const aindaEstaNoFiltro = newFiltrados.find(a => a.Id === assetSelecionado.value?.Id);
+    if (!aindaEstaNoFiltro) {
+      assetSelecionado.value = newFiltrados[0];
+    }
+  } else {
+    assetSelecionado.value = null;
+  }
+});
+
 const totalGeralClasse = computed(() => assetsFiltrados.value.reduce((acc, a) => acc + (Number(a.resultado) || 0), 0));
 const listaRendimento = computed(() => Array.isArray(unref(rendimentoResponse)) ? unref(rendimentoResponse) : (unref(rendimentoResponse)?.rows || []));
-
 const totalResultado = computed(() => listaRendimento.value.reduce((acc, r) => acc + (Number(r.resultado) || 0), 0));
 
 const cardsIndicadores = computed(() => [
@@ -191,7 +218,7 @@ const cardsIndicadores = computed(() => [
 
 const aoMudarClasseManual = (e) => {
   idClasseAtiva.value = parseInt(e.target.value);
-  assetSelecionado.value = null;
+  assetSelecionado.value = null; // Limpa para o watch do assetsResponse cuidar da nova seleção
 };
 
 const calcularDatasPadrao = () => {
