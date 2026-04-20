@@ -68,9 +68,7 @@
                     <div class="text-[11px] text-slate-500 uppercase truncate font-medium group-hover:text-slate-400 transition-colors">{{ asset.nome_completo }}</div>
                   </button>
                 </template>
-
                 <div v-else-if="!carregandoAssets" class="p-10 text-center flex flex-col items-center justify-center h-full">
-                  <svg class="w-10 h-10 text-slate-700 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                   <p class="text-[11px] text-slate-500 uppercase tracking-widest font-bold">Nenhum ativo</p>
                 </div>
               </div>
@@ -78,6 +76,7 @@
 
             <main class="flex-1 flex flex-col overflow-hidden bg-slate-950/20">
               <div v-if="assetSelecionado" class="flex-1 flex flex-col p-6 overflow-hidden">
+                
                 <div class="grid grid-cols-4 gap-4 mb-6">
                   <div v-for="card in cardsIndicadores" :key="card.label" class="bg-slate-800/20 border border-slate-800 p-3.5 rounded-2xl text-center h-[64px] flex flex-col justify-center">
                     <span class="text-[9px] text-slate-500 uppercase font-black block mb-0.5 tracking-widest">{{ card.label }}</span>
@@ -90,25 +89,27 @@
                     <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                   </div>
                   <div class="h-full overflow-y-auto custom-scrollbar">
-                    <table class="w-full text-[11px] border-separate border-spacing-0">
+                    <table class="w-full text-[10px] border-separate border-spacing-0">
                       <thead class="bg-slate-800 sticky top-0 z-10">
                         <tr>
-                          <th class="px-5 py-3 border-b border-slate-700 text-left text-slate-400 font-bold uppercase tracking-widest">Data</th>
-                          <th class="px-5 py-3 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-widest">Vl. Inicial</th>
-                          <th class="px-5 py-3 border-b border-slate-700 text-right text-blue-500 font-bold uppercase tracking-widest">Aportes</th>
-                          <th class="px-5 py-3 border-b border-slate-700 text-right text-orange-500 font-bold uppercase tracking-widest">Prov.</th>
-                          <th class="px-5 py-3 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-widest">Vl. Final</th>
-                          <th class="px-5 py-3 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-widest">Resultado</th>
+                          <th class="px-3 py-3 border-b border-slate-700 text-left text-slate-400 font-bold uppercase tracking-widest">Data</th>
+                          <th class="px-3 py-3 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-widest">Vl. Inicial</th>
+                          <th class="px-3 py-3 border-b border-slate-700 text-right text-blue-500 font-bold uppercase tracking-widest">Aportes</th>
+                          <th class="px-3 py-3 border-b border-slate-700 text-right text-rose-500 font-bold uppercase tracking-widest">Retiradas</th>
+                          <th class="px-3 py-3 border-b border-slate-700 text-right text-orange-500 font-bold uppercase tracking-widest">Prov.</th>
+                          <th class="px-3 py-3 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-widest">Vl. Final</th>
+                          <th class="px-3 py-3 border-b border-slate-700 text-right text-slate-400 font-bold uppercase tracking-widest">Resultado</th>
                         </tr>
                       </thead>
                       <tbody class="divide-y divide-slate-800/30">
                         <tr v-for="(row, idx) in listaRendimento" :key="idx" class="row-item transition-colors">
-                          <td class="px-5 py-2.5 font-mono text-slate-300 border-r border-slate-800/30">{{ formatarDataRelatorio(row.data) }}</td>
-                          <td class="px-5 py-2.5 text-right text-slate-400">{{ formatarMoeda(row.inicial) }}</td>
-                          <td class="px-5 py-2.5 text-right font-medium" :class="row.aportes > 0 ? 'text-blue-400' : 'text-slate-700'">{{ row.aportes > 0 ? formatarMoeda(row.aportes) : '-' }}</td>
-                          <td class="px-5 py-2.5 text-right font-medium" :class="row.proventos > 0 ? 'text-orange-400' : 'text-slate-700'">{{ row.proventos > 0 ? formatarMoeda(row.proventos) : '-' }}</td>
-                          <td class="px-5 py-2.5 text-right text-white font-medium">{{ formatarMoeda(row.final) }}</td>
-                          <td class="px-5 py-2.5 text-right font-bold" :class="row.resultado > 0 ? 'text-emerald-500' : row.resultado < 0 ? 'text-red-500' : 'text-slate-600'">
+                          <td class="px-3 py-2.5 font-mono text-slate-300 border-r border-slate-800/30">{{ formatarDataRelatorio(row.data) }}</td>
+                          <td class="px-3 py-2.5 text-right text-slate-400">{{ formatarMoeda(row.inicial) }}</td>
+                          <td class="px-3 py-2.5 text-right font-medium" :class="row.aportes > 0 ? 'text-blue-400' : 'text-slate-700'">{{ row.aportes > 0 ? formatarMoeda(row.aportes) : '-' }}</td>
+                          <td class="px-3 py-2.5 text-right font-medium" :class="row.retiradas > 0 ? 'text-rose-500' : 'text-slate-700'">{{ row.retiradas > 0 ? formatarMoeda(row.retiradas) : '-' }}</td>
+                          <td class="px-3 py-2.5 text-right font-medium" :class="row.proventos > 0 ? 'text-orange-400' : 'text-slate-700'">{{ row.proventos > 0 ? formatarMoeda(row.proventos) : '-' }}</td>
+                          <td class="px-3 py-2.5 text-right text-white font-medium">{{ formatarMoeda(row.final) }}</td>
+                          <td class="px-3 py-2.5 text-right font-bold" :class="row.resultado > 0 ? 'text-emerald-500' : row.resultado < 0 ? 'text-red-500' : 'text-slate-600'">
                             {{ row.resultado !== 0 ? formatarMoeda(row.resultado) : '0,00' }}
                           </td>
                         </tr>
@@ -119,17 +120,7 @@
               </div>
 
               <div v-else class="flex-1 flex flex-col items-center justify-center p-12 text-center">
-                 <div v-if="carregandoAssets" class="flex flex-col items-center">
-                    <div class="w-10 h-10 border-2 border-slate-700 border-t-slate-500 rounded-full animate-spin mb-4"></div>
-                    <p class="text-[10px] text-slate-500 uppercase tracking-[0.3em]">Buscando dados...</p>
-                 </div>
-                 <div v-else class="flex flex-col items-center max-w-xs animate-modal">
-                    <div class="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center mb-6">
-                      <svg class="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                    </div>
-                    <h3 class="text-white font-bold text-sm mb-2">Sem movimentações</h3>
-                    <p class="text-xs text-slate-500 leading-relaxed">Não há ativos para mostrar. Tente ajustar os filtros acima.</p>
-                 </div>
+                 <p class="text-xs text-slate-500 uppercase tracking-widest">Aguardando seleção ou dados...</p>
               </div>
             </main>
           </div>
@@ -144,7 +135,7 @@ import { ref, computed, watch, unref } from 'vue';
 import { useApi } from '../composables/useApi';
 
 const props = defineProps({ modelValue: Boolean, classeSelecionada: String, tipo: String });
-const emit = defineEmits(['update:modelValue', 'update:classe']);
+const emit = defineEmits(['update:modelValue']);
 
 const dataInicio = ref('');
 const dataFim = ref('');
@@ -168,15 +159,12 @@ const urlRendimento = computed(() => {
 });
 const { data: rendimentoResponse, loading: carregandoRendimento } = useApi(urlRendimento);
 
-// LÓGICA DE AUTO-SELEÇÃO CORRIGIDA
+// Auto-seleção
 watch(assetsResponse, (newVal) => {
   const lista = Array.isArray(newVal) ? newVal : (newVal?.rows || []);
   if (lista.length > 0) {
-    // Se não tiver nada selecionado OU o que estava selecionado não existe mais na nova lista
     const aindaExiste = lista.find(a => a.Id === assetSelecionado.value?.Id);
-    if (!assetSelecionado.value || !aindaExiste) {
-      assetSelecionado.value = lista[0];
-    }
+    if (!assetSelecionado.value || !aindaExiste) assetSelecionado.value = lista[0];
   } else {
     assetSelecionado.value = null;
   }
@@ -193,32 +181,31 @@ const assetsFiltrados = computed(() => {
   return lista.filter(a => a.nome_completo?.toLowerCase().includes(t) || a.ticker?.toLowerCase().includes(t));
 });
 
-// Watch adicional para quando o usuário filtra a lista, selecionar o primeiro do filtro
-watch(assetsFiltrados, (newFiltrados) => {
-  if (newFiltrados.length > 0) {
-    const aindaEstaNoFiltro = newFiltrados.find(a => a.Id === assetSelecionado.value?.Id);
-    if (!aindaEstaNoFiltro) {
-      assetSelecionado.value = newFiltrados[0];
-    }
-  } else {
-    assetSelecionado.value = null;
-  }
-});
-
 const totalGeralClasse = computed(() => assetsFiltrados.value.reduce((acc, a) => acc + (Number(a.resultado) || 0), 0));
 const listaRendimento = computed(() => Array.isArray(unref(rendimentoResponse)) ? unref(rendimentoResponse) : (unref(rendimentoResponse)?.rows || []));
-const totalResultado = computed(() => listaRendimento.value.reduce((acc, r) => acc + (Number(r.resultado) || 0), 0));
 
-const cardsIndicadores = computed(() => [
-  { label: 'Início Período', valor: listaRendimento.value.length ? formatarMoeda(listaRendimento.value[0].inicial) : 'R$ 0,00' },
-  { label: 'Total Proventos', valor: formatarMoeda(listaRendimento.value.reduce((acc, r) => acc + (Number(r.proventos) || 0), 0)), color: 'text-orange-400' },
-  { label: 'Patrimônio Final', valor: listaRendimento.value.length ? formatarMoeda(listaRendimento.value[listaRendimento.value.length - 1].final) : 'R$ 0,00' },
-  { label: 'Ganho no Período', valor: formatarMoeda(totalResultado.value), color: totalResultado.value >= 0 ? 'text-emerald-400' : 'text-red-400' }
-]);
+// CORREÇÃO DOS CARDS (Considerando que a lista está em ordem DESC)
+const cardsIndicadores = computed(() => {
+  if (!listaRendimento.value.length) return [];
+  
+  // Como está DESC: [0] é a data mais recente (Final), [length-1] é a data mais antiga (Inicial)
+  const dadoMaisRecente = listaRendimento.value[0];
+  const dadoMaisAntigo = listaRendimento.value[listaRendimento.value.length - 1];
+  
+  const totalProv = listaRendimento.value.reduce((acc, r) => acc + (Number(r.proventos) || 0), 0);
+  const totalRes = listaRendimento.value.reduce((acc, r) => acc + (Number(r.resultado) || 0), 0);
+
+  return [
+    { label: 'Início Período', valor: formatarMoeda(dadoMaisAntigo.inicial) },
+    { label: 'Total Proventos', valor: formatarMoeda(totalProv), color: 'text-orange-400' },
+    { label: 'Patrimônio Final', valor: formatarMoeda(dadoMaisRecente.final) },
+    { label: 'Ganho no Período', valor: formatarMoeda(totalRes), color: totalRes >= 0 ? 'text-emerald-400' : 'text-red-400' }
+  ];
+});
 
 const aoMudarClasseManual = (e) => {
   idClasseAtiva.value = parseInt(e.target.value);
-  assetSelecionado.value = null; // Limpa para o watch do assetsResponse cuidar da nova seleção
+  assetSelecionado.value = null;
 };
 
 const calcularDatasPadrao = () => {
