@@ -33,7 +33,7 @@ exports.getAssetsByClassWithResult = asyncHandler(async (req, res) => {
               AND vrda.data BETWEEN ? AND ?
             GROUP BY vrda.assetId
         ) stats ON a.id = stats.assetId
-        ORDER BY a.ticket ASC;
+        ORDER BY COALESCE(stats.total_lucro, 0) DESC;
     `;
 
   
