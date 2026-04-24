@@ -4,10 +4,10 @@ const transactionController = require('../controllers/transactionController');
 const authMiddleware = require('../middlewares/auth');
 const multer = require('multer');
 
-// Configuração do upload aqui nas rotas
+// Configuração do Multer para usar a pasta temporária do sistema
 const upload = multer({ dest: '/tmp/' });
 
-// Rota POST com o middleware upload.single
+// Rota para processar o PDF (POST é obrigatório para uploads)
 router.post('/addPDF', authMiddleware, upload.single('nota'), transactionController.addPDF);
 
 module.exports = router;
