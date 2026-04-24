@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const classController = require('../controllers/classController');
+const transactionController = require('../controllers/transactionController');
 const authMiddleware = require('../middlewares/auth');
 
-router.get('/addPDF', authMiddleware, classController.getAll);
+router.get('/addPDF', authMiddleware, classController.addPDF);
 
 module.exports = router;
