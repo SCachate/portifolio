@@ -25,10 +25,13 @@ exports.addPDF = asyncHandler(async (req, res) => {
     });
 
     // 2. Configurar o modelo (Gemini 1.5 Flash)
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash-001",
-      generationConfig: { responseMimeType: "application/json" }
-    });
+    const model = genAI.getGenerativeModel(
+      { 
+        model: "gemini-1.5-flash-latest",      
+        generationConfig: { responseMimeType: "application/json" }
+      },
+      { apiVersion: 'v1beta' }
+    );
 
     // 3. Prompt para extração
     const prompt = `
