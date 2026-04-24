@@ -1,53 +1,54 @@
 const db = require('../config/db');
 const asyncHandler = require('../utils/asyncHandler');
-const multer = require('multer');
-const fs = require('fs'); // Faltava este
-const { GoogleGenerativeAI } = require("@google/generative-ai"); // Faltava este
-const { GoogleAIFileManager } = require("@google/generative-ai/server"); // Faltava este
+const fs = require('fs');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleAIFileManager } = require("@google/generative-ai/server");
 
-// Inicialização necessária
+// Inicialização das APIs do Google
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 
-const upload = multer({ dest: 'uploads/' });
-
 exports.addPDF = asyncHandler(async (req, res) => {
   const userId = req.userId;
-  try {
-    const filePath = req.file.path;
 
-    // 1. Upload do arquivo para o File Manager do Google
+  if (!req.file) {
+    return res.status(400).send("Nenhum arquivo enviado.");
+  }
+
+  const filePath = req.file.path;
+
+  try {
+    // 1. Upload do arquivo para o Google
     const uploadResponse = await fileManager.uploadFile(filePath, {
       mimeType: "application/pdf",
       displayName: "Nota de Corretagem",
     });
 
-    // 2. Inicializar o modelo
+    // 2. Configurar o modelo (Gemini 1.5 Flash)
     const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        generationConfig: { responseMimeType: "application/json" } // Força saída JSON
+      model: "gemini-1.5-flash",
+      generationConfig: { responseMimeType: "application/json" }
     });
 
-    // 3. Prompt detalhado para garantir a estrutura do banco MySQL
+    // 3. Prompt para extração
     const prompt = `
-      Analise esta nota de corretagem. Extraia as operações de compra e venda.
+      Analise esta nota de corretagem financeira. Extraia as operações de compra e venda.
       Retorne um objeto JSON seguindo estritamente este esquema:
       {
         "transacoes": [
           {
-            "data": "ISO Date",
+            "data": "YYYY-MM-DD",
             "ticker": "string",
-            "tipo": "COMPRA ou VENDA",
-            "quantidade": "number",
-            "preco_unitario": "number",
-            "custos_operacionais": "number"
+            "tipo": "C ou V",
+            "quantidade": number,
+            "preco_unitario": number,
+            "custos_operacionais": number
           }
-        ],
-        "total_liquido": "number"
+        ]
       }
     `;
 
-    // 4. Gerar o conteúdo
+    // 4. Gerar resposta
     const result = await model.generateContent([
       {
         fileData: {
@@ -60,14 +61,16 @@ exports.addPDF = asyncHandler(async (req, res) => {
 
     const dadosExtraidos = JSON.parse(result.response.text());
 
-    // 5. Limpeza: Deletar arquivo temporário local
-    fs.unlinkSync(filePath);
+    // 5. Limpeza: Deletar arquivo temporário no servidor
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
 
-    // Retorna os dados para o seu Vue.js conferir antes de salvar no MySQL
     res.json(dadosExtraidos);
 
   } catch (error) {
-    console.error("Erro no processamento:", error);
-    res.status(500).send("Erro ao processar a nota.");
+    console.error("Erro no processamento Gemini:", error);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    res.status(500).json({ error: "Erro ao processar a nota de corretagem." });
   }
 });
