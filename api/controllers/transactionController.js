@@ -8,10 +8,28 @@ const { GoogleAIFileManager } = require("@google/generative-ai/server");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 
-// ... (seu código anterior)
+async function listModels() {
+  try {
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    // Usamos o fetch nativo ou o interno da lib para listar
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`);
+    const data = await response.json();
+    
+    console.log("Modelos disponíveis para sua chave:");
+    if (data.models) {
+      data.models.forEach(m => console.log("- " + m.name));
+    } else {
+      console.log("Nenhum modelo encontrado ou erro na resposta:", data);
+    }
+  } catch (e) {
+    console.error("Erro ao conectar:", e);
+  }
+}
 
 exports.addPDF = asyncHandler(async (req, res) => {
   const userId = req.userId;
+
+  await listModels();
 
   if (!req.file) {
     return res.status(400).send("Nenhum arquivo enviado.");
