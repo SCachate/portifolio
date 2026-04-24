@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const asyncHandler = require('../utils/asyncHandler');
+const multer = require('multer');
 
 const upload = multer({ dest: 'uploads/' });
 
