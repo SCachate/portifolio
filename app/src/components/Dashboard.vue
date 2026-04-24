@@ -33,7 +33,7 @@ import DashboardLayout from './DashboardLayout.vue';
 import PendenciasAlert from './PendenciasAlert.vue';
 import Resumo from './Resumo.vue';
 import AsyncLoader from './AsyncLoader.vue';
-import TransactionView from './Transaction.vue'; // 3. Importar a sua nova tela
+import TransactionView from './Transactions.vue'; // 3. Importar a sua nova tela
 
 defineProps({ userId: [String, Number], user: Object });
 
