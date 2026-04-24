@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
 const authRoutes = require('./routes/authRoutes');
 const classRoutes = require('./routes/classRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
@@ -10,38 +11,44 @@ const errorHandler = require('./middlewares/errorMiddleware');
 
 const app = express();
 
+// Garantir que a pasta temporária exista para o multer
+const uploadDir = '/tmp';
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 // Middlewares
 app.use(cors({
-  origin: '*', // Permite que o seu frontend (localhost) acesse o servidor
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'] // Isso é o que faltava!
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json());
+// Aumentando o limite para suportar PDFs mais pesados
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use((req, res, next) => {
-    // Isso diz ao navegador: "Permita que o Google fale com esta página"
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
     res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
     next();
 });
 
-
 app.use((req, res, next) => {
-    const authHeader = req.headers.authorization;
-    console.log(`[${req.method}] ${req.url}`);
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     next();
 });
 
-// Rotas (Modularizadas)
+// Rotas
 app.use('/auth', authRoutes);
-app.use('/classes/', classRoutes);
-app.use('/assets/', assetRoutes);
-app.use('/dashboard/',dashboardRoutes);
-app.use('/transactions/', transactionRoutes);
+app.use('/classes', classRoutes);
+app.use('/assets', assetRoutes);
+app.use('/dashboard', dashboardRoutes);
+app.use('/transactions', transactionRoutes);
+
 app.use(errorHandler);
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 K-Portfolio rodando sob Arquitetura Limpa na porta ${PORT}`);
 });
