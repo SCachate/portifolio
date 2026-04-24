@@ -1,6 +1,13 @@
 const db = require('../config/db');
 const asyncHandler = require('../utils/asyncHandler');
 const multer = require('multer');
+const fs = require('fs'); // Faltava este
+const { GoogleGenerativeAI } = require("@google/generative-ai"); // Faltava este
+const { GoogleAIFileManager } = require("@google/generative-ai/server"); // Faltava este
+
+// Inicialização necessária
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 
 const upload = multer({ dest: 'uploads/' });
 
