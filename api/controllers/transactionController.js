@@ -1,7 +1,7 @@
 const db = require('../config/db');
 const asyncHandler = require('../utils/asyncHandler');
 
-// const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: 'uploads/' });
 
 exports.addPDF = asyncHandler(async (req, res) => {
   const userId = req.userId;
