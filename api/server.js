@@ -38,7 +38,7 @@ app.use('/auth', authRoutes);
 app.use('/classes/', classRoutes);
 app.use('/assets/', assetRoutes);
 app.use('/dashboard/',dashboardRoutes);
-app.user('/transactions/', transactionRoutes);
+app.use('/transactions/', transactionRoutes);
 app.use(errorHandler);
 
 const PORT = 3000;
