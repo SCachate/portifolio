@@ -1,6 +1,5 @@
 import { ref, watch, unref } from 'vue';
 import axios from 'axios';
-import { useRouter } from 'vue-router'; 
 import { useToast } from 'vue-toastification'; 
 
 export function useApi(url, options = {}) {
@@ -10,17 +9,17 @@ export function useApi(url, options = {}) {
   const toast = useToast();  
 
   const fetchData = async () => {
-
     const urlValue = unref(url);
     const token = localStorage.getItem('user_token');
     
     if (!urlValue) return;
 
     loading.value = true;
-    data.value = null;
     try {
+      // Configuramos os headers base, mas permitimos que as 'options' sobrescrevam
       const headers = {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...options.headers
       };
 
       if (token && urlValue !== '/auth/google') {
@@ -33,25 +32,17 @@ export function useApi(url, options = {}) {
         data: options.data || null,
         headers: headers 
       });
+
       data.value = response.data;
     } catch (err) {
       error.value = err;
 
-      // --- TRATAMENTO DE ERRO COM TOAST ---
       if (err.response && err.response.status === 401) {
-
         localStorage.removeItem('user_token');
-
-        toast.error("Sua sessão expirou. Faça login novamente.", {
-          timeout: false,       
-          closeOnClick: true,   
-          draggable: false,      
-          closeButton: "button", 
-        });
-
+        toast.error("Sua sessão expirou. Faça login novamente.");
         window.location.reload();
       } else {
-          toast.warning("Ocorreu um erro na requisição.");
+        toast.error(err.response?.data?.error || "Erro na requisição.");
       }
       console.error("Erro na API:", err);
     } finally {
@@ -59,13 +50,11 @@ export function useApi(url, options = {}) {
     }
   };
 
-  if (typeof url === 'function' || (url && url.value !== undefined)) {
-    watch(() => unref(url), () => {
-      fetchData();
-    });
+  // Se for um método imediato (GET), executa na hora. 
+  // Se for POST com dados, geralmente chamamos manualmente o fetchData
+  if (options.immediate !== false) {
+    fetchData();
   }
-
-  fetchData();
 
   return { data, loading, error, fetchData };
 }
