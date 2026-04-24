@@ -8,6 +8,8 @@ const { GoogleAIFileManager } = require("@google/generative-ai/server");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 
+// ... (seu código anterior)
+
 exports.addPDF = asyncHandler(async (req, res) => {
   const userId = req.userId;
 
@@ -18,25 +20,25 @@ exports.addPDF = asyncHandler(async (req, res) => {
   const filePath = req.file.path;
 
   try {
-    // 1. Upload do arquivo para o Google
+    // 1. Upload do arquivo
     const uploadResponse = await fileManager.uploadFile(filePath, {
       mimeType: "application/pdf",
       displayName: "Nota de Corretagem",
     });
 
-    // 2. Configurar o modelo (Gemini 1.5 Flash)
-    const model = genAI.getGenerativeModel(
-      { 
-        model: "gemini-1.5-pro",      
-//        generationConfig: { responseMimeType: "application/json" }
+    // 2. Configurar o modelo (Usando 1.5-flash que é mais estável para v1beta)
+    // E forçando a resposta em JSON
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash", // Altere para "gemini-1.5-pro-latest" se realmente precisar do Pro
+      generationConfig: {
+        responseMimeType: "application/json",
       },
-  //    { apiVersion: 'v1beta' }
-    );
+    });
 
-    // 3. Prompt para extração
+    // 3. Prompt (Melhorado para garantir JSON puro)
     const prompt = `
       Analise esta nota de corretagem financeira. Extraia as operações de compra e venda.
-      Retorne um objeto JSON seguindo estritamente este esquema:
+      Retorne um objeto JSON seguindo exatamente este esquema:
       {
         "transacoes": [
           {
@@ -62,9 +64,10 @@ exports.addPDF = asyncHandler(async (req, res) => {
       { text: prompt },
     ]);
 
-    const dadosExtraidos = JSON.parse(result.response.text());
+    const textResponse = result.response.text();
+    const dadosExtraidos = JSON.parse(textResponse);
 
-    // 5. Limpeza: Deletar arquivo temporário no servidor
+    // 5. Limpeza
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
@@ -72,8 +75,8 @@ exports.addPDF = asyncHandler(async (req, res) => {
     res.json(dadosExtraidos);
 
   } catch (error) {
-    console.error("Erro no processamento Gemini:", error);
+    console.error("Erro detalhado:", error);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    res.status(500).json({ error: "Erro ao processar a nota de corretagem." });
+    res.status(500).json({ error: error.message || "Erro ao processar a nota." });
   }
 });
