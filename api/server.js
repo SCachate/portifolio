@@ -5,6 +5,7 @@ const authRoutes = require('./routes/authRoutes');
 const classRoutes = require('./routes/classRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const assetRoutes = require('./routes/assetRoutes');
+const transcationRoutes = require('./routes/transactionRoutes');
 const errorHandler = require('./middlewares/errorMiddleware');
 
 const app = express();
@@ -37,6 +38,7 @@ app.use('/auth', authRoutes);
 app.use('/classes/', classRoutes);
 app.use('/assets/', assetRoutes);
 app.use('/dashboard/',dashboardRoutes);
+app.user('/transactions/', transactionRoutes);
 app.use(errorHandler);
 
 const PORT = 3000;
