@@ -5,16 +5,16 @@
     @logout="handleLogout"
     @navigate="currentTab = $event"
   >
-    <div class="w-full min-h-screen bg-[#0a0f18] p-4 md:p-8 flex justify-center">
+    <div class="w-full p-6 md:p-10">
       
-      <div class="w-full max-w-[1400px]">
+      <div class="max-w-[1400px] mx-auto">
         
-        <transition name="fade-page" mode="out-in">
-          <div :key="currentTab" class="w-full">
+        <transition name="page" mode="out-in">
+          <div :key="currentTab">
 
             <template v-if="currentTab === 'dashboard'">
               <AsyncLoader :loading="loading" :error="!!error">
-                <div class="w-full space-y-6">
+                <div class="space-y-8">
                   <PendenciasAlert v-if="data?.length > 0" :lista="data" />
                   <Resumo v-else />
                 </div>
@@ -22,18 +22,14 @@
             </template>
 
             <template v-else-if="currentTab === 'transacoes'">
-              <div class="w-full">
-                <TransactionView /> 
-              </div>
+              <TransactionView /> 
             </template>
 
             <template v-else-if="currentTab === 'ativos'">
-              <div class="w-full bg-slate-900/40 border border-white/5 rounded-3xl p-20 flex flex-col items-center justify-center text-center">
-                <div class="bg-slate-800 p-6 rounded-full mb-6">
-                  <span class="text-4xl">🏗️</span>
-                </div>
-                <h3 class="text-white font-bold text-2xl mb-2">Meus Ativos</h3>
-                <p class="text-slate-500 max-w-sm">Esta funcionalidade está sendo construída para você.</p>
+              <div class="w-full min-h-[400px] bg-slate-900/40 border border-white/5 rounded-3xl flex flex-col items-center justify-center text-center p-10">
+                 <div class="text-4xl mb-4">🏗️</div>
+                 <h2 class="text-white font-bold text-xl">Módulo em Obras</h2>
+                 <p class="text-slate-500 mt-2">Estamos integrando sua custódia em tempo real.</p>
               </div>
             </template>
 
@@ -54,27 +50,17 @@ import Resumo from './Resumo.vue';
 import AsyncLoader from './AsyncLoader.vue';
 import TransactionView from './Transactions.vue';
 
-defineProps({ 
-  userId: [String, Number], 
-  user: Object 
-});
-
 const currentTab = ref('dashboard');
 const { data, loading, error } = useApi(`/dashboard/pendencias`);
 
 const handleLogout = () => {
   localStorage.removeItem('user_token');
-  window.location.reload();
+  window.location.href = '/login';
 };
 </script>
 
 <style scoped>
-.fade-page-enter-active,
-.fade-page-leave-active {
-  transition: opacity 0.2s ease;
-}
-.fade-page-enter-from,
-.fade-page-leave-to {
-  opacity: 0;
-}
+.page-enter-active, .page-leave-active { transition: all 0.2s ease; }
+.page-enter-from { opacity: 0; transform: translateY(5px); }
+.page-leave-to { opacity: 0; transform: translateY(-5px); }
 </style>
