@@ -1,64 +1,64 @@
 <template>
-  <div class="flex h-screen w-full bg-[#0a0f18] overflow-hidden">
-    <aside class="w-64 flex-shrink-0 bg-slate-900 border-r border-white/10 hidden md:flex flex-col">
-      <div class="p-6 font-bold text-emerald-500 text-2xl shrink-0">K-Portfolio</div>
-      
-      <nav class="mt-6 px-4 space-y-2 flex-1">
-        <div 
-          @click="$emit('navigate', 'dashboard')"
-          :class="activePage === 'dashboard' ? 'bg-emerald-500/10 text-emerald-500' : 'text-slate-400 hover:text-white hover:bg-white/5'"
-          class="p-3 rounded-xl font-medium cursor-pointer flex items-center gap-3 transition-all"
-        >
-          <span>📊</span> Dashboard
+  <div class="grid grid-cols-[280px_1fr] min-h-screen w-full bg-[#0a0f18] overflow-x-hidden">
+    
+    <aside class="w-[280px] h-screen sticky top-0 border-r border-white/5 bg-[#0a0f18] z-50">
+      <div class="p-6">
+        <div class="text-emerald-500 font-black text-2xl flex items-center gap-2 mb-10">
+          <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center text-[#0a0f18]">K</div>
+          K-Portfolio
         </div>
+        
+        <nav class="space-y-2">
+          <button 
+            @click="$emit('navigate', 'dashboard')"
+            :class="activePage === 'dashboard' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'text-slate-400 border-transparent hover:bg-white/5'"
+            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all font-medium text-sm"
+          >
+            📊 Dashboard
+          </button>
+          <button 
+            @click="$emit('navigate', 'ativos')"
+            :class="activePage === 'ativos' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'text-slate-400 border-transparent hover:bg-white/5'"
+            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all font-medium text-sm"
+          >
+            💰 Meus Ativos
+          </button>
+          <button 
+            @click="$emit('navigate', 'transacoes')"
+            :class="activePage === 'transacoes' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'text-slate-400 border-transparent hover:bg-white/5'"
+            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all font-medium text-sm"
+          >
+            🔄 Transações
+          </button>
+        </nav>
+      </div>
 
-        <div 
-          @click="$emit('navigate', 'ativos')"
-          :class="activePage === 'ativos' ? 'bg-emerald-500/10 text-emerald-500' : 'text-slate-400 hover:text-white hover:bg-white/5'"
-          class="p-3 rounded-xl font-medium cursor-pointer flex items-center gap-3 transition-all"
-        >
-          <span>💰</span> Meus Ativos
+      <div class="absolute bottom-0 w-full p-6 border-t border-white/5">
+        <div class="flex items-center justify-between">
+          <div class="text-xs text-slate-600 font-mono italic">v1.2.0</div>
+          <button @click="$emit('logout')" class="text-xs text-red-500 font-bold hover:underline">Sair</button>
         </div>
-
-        <div 
-          @click="$emit('navigate', 'transacoes')"
-          :class="activePage === 'transacoes' ? 'bg-emerald-500/10 text-emerald-500' : 'text-slate-400 hover:text-white hover:bg-white/5'"
-          class="p-3 rounded-xl font-medium cursor-pointer flex items-center gap-3 transition-all"
-        >
-          <span>🔄</span> Transações
-        </div>
-      </nav>
-
-      <div class="p-4 border-t border-white/5 text-slate-500 text-xs text-center">v1.2.0</div>
+      </div>
     </aside>
 
-    <div class="flex-1 flex flex-col min-w-0 h-full">
-      <header class="h-20 bg-slate-900/50 border-b border-white/10 flex items-center justify-between px-4 md:px-8 shrink-0 z-10">
-        <h2 class="text-white font-semibold text-lg capitalize">
-          {{ activePage === 'transacoes' ? 'Histórico de Transações' : activePage }}
-        </h2>
-        
-        <div class="flex items-center gap-3 md:gap-6 shrink-0">
-          <div class="flex flex-col items-end">
-            <span class="text-xs md:text-sm text-slate-300">{{ user?.name || 'Investidor' }}</span>
-            <span class="text-[10px] text-emerald-500">Premium</span>
+    <main class="w-full h-full overflow-y-auto">
+      <header class="w-full h-16 border-b border-white/5 flex items-center justify-between px-8 bg-[#0a0f18]/80 backdrop-blur-xl sticky top-0 z-40">
+        <div class="text-white font-bold capitalize">{{ activePage }}</div>
+        <div class="flex items-center gap-4">
+          <div class="text-right">
+            <div class="text-xs text-white font-bold">{{ user?.name || 'Sidnei Cachate' }}</div>
+            <div class="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Premium</div>
           </div>
-          <button @click="$emit('logout')" class="text-red-400 text-sm hover:bg-red-400/10 px-3 py-1.5 rounded-lg transition-all font-medium border border-red-400/20">
-            Sair
-          </button>
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600"></div>
         </div>
       </header>
 
-      <main class="flex-1 overflow-y-auto bg-[#0a0f18] scrollbar-thin scrollbar-thumb-slate-700">      
-        <div class="flex-1 flex flex-col items-stretch">
-          <slot />
-        </div>      
-      </main>
-    </div>
+      <slot />
+    </main>
   </div>
 </template>
 
 <script setup>
-defineProps(['user', 'activePage']); // Recebe qual página está ativa para pintar o menu
+defineProps(['user', 'activePage']);
 defineEmits(['logout', 'navigate']);
 </script>
