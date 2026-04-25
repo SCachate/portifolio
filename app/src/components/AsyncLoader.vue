@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <div v-if="loading" class="w-full min-h-[400px] flex flex-col items-center justify-center">
+    <div v-if="loading" class="w-full h-[60vh] flex flex-col items-center justify-center">
       <div class="relative flex items-center justify-center">
         <div class="w-16 h-16 border-4 border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
         <div class="absolute text-xl">💎</div>
@@ -23,8 +23,30 @@
 </template>
 
 <script setup>
+/**
+ * Define as propriedades que o componente pai (Dashboard.vue) passará.
+ * Sem isso, as diretivas v-if="loading" resultam em erro.
+ */
 defineProps({
-  loading: Boolean,
-  error: Boolean
+  loading: {
+    type: Boolean,
+    default: false
+  },
+  error: {
+    type: Boolean,
+    default: false
+  }
 });
 </script>
+
+<style scoped>
+/* Animações simples para uma entrada suave do conteúdo */
+.animate-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
