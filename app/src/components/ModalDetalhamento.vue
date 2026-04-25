@@ -54,15 +54,20 @@
               </div>
               
               <div class="flex-1 overflow-y-auto custom-scrollbar relative">
-                <div v-if="carregandoAssets" class="absolute inset-0 bg-[#1a1c24]/50 z-10 flex items-center justify-center">
-                   <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <div v-if="carregandoAssets" class="absolute inset-0 bg-[#1a1c24]/80 z-20 flex items-center justify-center backdrop-blur-[2px]">
+                  <div class="relative flex items-center justify-center w-12 h-12">
+                    <div class="w-12 h-12 border-2 border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
+                    <div class="absolute flex items-center justify-center w-6 h-6 bg-emerald-500 rounded-lg shadow-sm">
+                      <span class="text-black font-black text-[10px] select-none">K</span>
+                    </div>
+                  </div>
                 </div>
 
                 <template v-if="assetsFiltrados.length > 0">
                   <button v-for="asset in assetsFiltrados" :key="asset.Id" @click="assetSelecionado = asset"
-                    :class="['w-full p-4 text-left border-b border-slate-800/40 transition-all group', (assetSelecionado?.Id === asset.Id) ? 'bg-blue-600/10 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent hover:bg-white/5']">
+                    :class="['w-full p-4 text-left border-b border-slate-800/40 transition-all group', (assetSelecionado?.Id === asset.Id) ? 'bg-emerald-500/10 border-l-4 border-l-emerald-500' : 'border-l-4 border-l-transparent hover:bg-white/5']">
                     <div class="flex justify-between items-center mb-1.5">
-                      <div class="font-bold text-sm tracking-tight" :class="assetSelecionado?.Id === asset.Id ? 'text-blue-400' : 'text-slate-200'">{{ asset.ticker }}</div>
+                      <div class="font-bold text-sm tracking-tight" :class="assetSelecionado?.Id === asset.Id ? 'text-emerald-400' : 'text-slate-200'">{{ asset.ticker }}</div>
                       <div :class="['text-[13px] font-mono font-bold', asset.resultado >= 0 ? 'text-emerald-400' : 'text-red-400']">{{ formatarMoeda(asset.resultado) }}</div>
                     </div>
                     <div class="text-[11px] text-slate-500 uppercase truncate font-medium group-hover:text-slate-400 transition-colors">{{ asset.nome_completo }}</div>
@@ -84,9 +89,15 @@
                 </div>
 
                 <div class="flex-1 bg-slate-900/40 border border-slate-700 rounded-2xl overflow-hidden flex flex-col relative">
-                  <div v-if="carregandoRendimento" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-20 flex items-center justify-center">
-                    <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <div v-if="carregandoRendimento" class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm z-30 flex items-center justify-center">
+                    <div class="relative flex items-center justify-center w-20 h-20">
+                      <div class="w-20 h-20 border-[3px] border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
+                      <div class="absolute flex items-center justify-center w-10 h-10 bg-emerald-500 rounded-xl shadow-lg">
+                        <span class="text-black font-black text-xl select-none">K</span>
+                      </div>
+                    </div>
                   </div>
+
                   <div class="h-full overflow-y-auto custom-scrollbar">
                     <table class="w-full text-[10px] border-separate border-spacing-0">
                       <thead class="bg-slate-800 sticky top-0 z-10">
@@ -259,7 +270,7 @@ const aoMudarClasseManual = (e) => {
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
 
-.row-item:hover { background-color: rgba(59, 130, 246, 0.05); }
+.row-item:hover { background-color: rgba(16, 185, 129, 0.05); }
 select option { background-color: #1a1c24; color: white; }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
