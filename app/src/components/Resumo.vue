@@ -156,7 +156,8 @@ const modalAberto = ref(false);
 const filtrosAtivos = ref({ classe: '', tipo: '' });
 
 const abrirPeloGrafico = (dados) => {
-  filtrosAtivos.value = dados;
+  console.log("🟢 Abrindo modal para:", dados); // DEBUG
+  filtrosAtivos.value = { ...dados }; // Spread para garantir nova referência
   modalAberto.value = true;
 };
 
@@ -257,7 +258,6 @@ const getBarOptions = (tipo) => {
       parentHeightOffset: 0,
       events: {
         dataPointSelection: (event, chartContext, config) => {
-          // CORREÇÃO: Busca o nome da classe diretamente dos dados reativos
           const item = dadosResultado.value[config.dataPointIndex];
           if (item) {
             abrirPeloGrafico({
