@@ -17,9 +17,18 @@
         :error="error" 
       />
 
-      <div v-else class="h-full w-full flex flex-col items-center justify-center gap-4">
-        <div class="animate-spin text-4xl text-emerald-500">🔄</div>
-        <p class="text-slate-400 font-medium animate-pulse">Sincronizando K-Portfolio...</p>
+      <div v-else class="h-full w-full flex flex-col items-center justify-center bg-[#0a0f18]/90 backdrop-blur-sm relative z-[300]">
+        <div class="relative flex items-center justify-center w-24 h-24 mb-12">
+          <div class="w-24 h-24 border-4 border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
+          
+          <div class="absolute flex items-center justify-center w-12 h-12 bg-emerald-500 rounded-xl shadow-lg">
+            <span class="text-black font-black text-3xl select-none">K</span>
+          </div>
+        </div>
+        
+        <p class="text-slate-500 font-mono text-[11px] uppercase tracking-[0.4em] animate-pulse">
+          Sincronizando K-Portfolio...
+        </p>
       </div>
 
     </transition>
@@ -33,7 +42,8 @@ import Dashboard from './components/Dashboard.vue';
 import api from './api/axiosConfig';
 
 const user = ref(null);
-const loading = ref(true); // Começamos como true para verificar o token silenciosamente
+// Começamos como true para verificar o token silenciosamente no onMounted
+const loading = ref(true); 
 const error = ref(false);
 
 const callback = async (response) => {
@@ -75,7 +85,7 @@ const login = async (token) => {
 </script>
 
 <style>
-/* Transição global para troca de estado de autenticação */
+/* Transição global para troca de estado de autenticação (Dashboard <-> Login <-> Loading) */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
@@ -86,10 +96,18 @@ const login = async (token) => {
   opacity: 0;
 }
 
-/* Reset básico para evitar saltos de layout globais */
+/* Reset básico para evitar saltos de layout globais ao carregar o Vue */
 body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+}
+
+/* Estilos adicionais para o logotipo K ficar robusto */
+.font-black {
+  font-weight: 900;
+}
+.select-none {
+  user-select: none;
 }
 </style>
