@@ -10,7 +10,7 @@
               <div class="relative w-full flex items-center justify-center">
                 <select :value="idClasseAtiva" @change="aoMudarClasseManual" 
                   class="bg-transparent text-white font-bold text-xs outline-none cursor-pointer w-full text-center appearance-none z-10 px-6">
-                  <option v-for="c in classesResponse" :key="c.id" :value="c.id" class="bg-[#1a1c24] text-white">{{ c.nome }}</option>
+                  <option v-for="c in (classesResponse?.rows || classesResponse || [])" :key="c.id" :value="c.id" class="bg-[#1a1c24] text-white">{{ c.nome }}</option>
                 </select>
                 <div class="absolute right-4 pointer-events-none text-slate-600 group-hover:text-slate-400">
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
@@ -169,7 +169,6 @@ const urlRendimento = computed(() => {
 });
 const { data: rendimentoResponse, loading: carregandoRendimento } = useApi(urlRendimento);
 
-// Auto-seleção do primeiro item quando a lista de ativos mudar
 watch(assetsResponse, (newVal) => {
   const lista = Array.isArray(newVal) ? newVal : (newVal?.rows || []);
   if (lista.length > 0) {
@@ -194,14 +193,10 @@ const assetsFiltrados = computed(() => {
 const totalGeralClasse = computed(() => assetsFiltrados.value.reduce((acc, a) => acc + (Number(a.resultado) || 0), 0));
 const listaRendimento = computed(() => Array.isArray(unref(rendimentoResponse)) ? unref(rendimentoResponse) : (unref(rendimentoResponse)?.rows || []));
 
-// CARDS INDICADORES (Lógica corrigida para ordem DESC vinda do SQL)
 const cardsIndicadores = computed(() => {
   if (!listaRendimento.value.length) return [];
-  
-  // Ordem DESC: [0] é a data mais recente (Patrimônio Final), [último] é a data mais antiga (Início)
   const dadoMaisRecente = listaRendimento.value[0];
   const dadoMaisAntigo = listaRendimento.value[listaRendimento.value.length - 1];
-  
   const totalProv = listaRendimento.value.reduce((acc, r) => acc + (Number(r.proventos) || 0), 0);
   const totalRes = listaRendimento.value.reduce((acc, r) => acc + (Number(r.resultado) || 0), 0);
 
@@ -215,32 +210,52 @@ const cardsIndicadores = computed(() => {
 
 const aoMudarClasseManual = (e) => {
   idClasseAtiva.value = parseInt(e.target.value);
-  assetSelecionado.value = null; // Limpa para forçar o auto-select da nova classe
+  assetSelecionado.value = null;
 };
 
 const calcularDatasPadrao = () => {
   const hoje = new Date();
+  const offset = hoje.getTimezoneOffset() * 60000;
+  const dataLocal = new Date(hoje.getTime() - offset);
   const f = (d) => d.toISOString().split('T')[0];
-  dataFim.value = f(hoje);
-  if (props.tipo === 'mes') dataInicio.value = f(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
-  else if (props.tipo === 'ano') dataInicio.value = f(new Date(hoje.getFullYear(), 0, 1));
-  else dataInicio.value = f(hoje);
+  
+  dataFim.value = f(dataLocal);
+  if (props.tipo === 'mes') {
+    dataInicio.value = f(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+  } else if (props.tipo === 'ano') {
+    dataInicio.value = f(new Date(hoje.getFullYear(), 0, 1));
+  } else {
+    dataInicio.value = f(dataLocal);
+  }
 };
 
 // RESET DE ESTADO AO ABRIR O MODAL
 watch(() => props.modelValue, (val) => {
   if (val) {
-    // 1. Limpa resquícios de classes anteriores
     assetSelecionado.value = null;
     buscaAsset.value = ''; 
-    
-    // 2. Setup inicial
     calcularDatasPadrao();
-    const lista = Array.isArray(classesResponse.value) ? classesResponse.value : (classesResponse.value?.rows || []);
-    const found = lista.find(c => c.nome === props.classeSelecionada);
-    if (found) idClasseAtiva.value = found.id;
+    
+    // Função para encontrar o ID da classe
+    const findID = () => {
+      const lista = Array.isArray(classesResponse.value) ? classesResponse.value : (classesResponse.value?.rows || []);
+      if (lista.length > 0) {
+        const found = lista.find(c => c.nome?.toLowerCase().trim() === props.classeSelecionada?.toLowerCase().trim());
+        if (found) idClasseAtiva.value = found.id;
+      }
+    };
+    findID();
   }
 }, { immediate: true });
+
+// Sincroniza se o carregamento da lista de classes demorar mais que a abertura do modal
+watch(classesResponse, () => {
+  if (props.modelValue && !idClasseAtiva.value) {
+    const lista = Array.isArray(classesResponse.value) ? classesResponse.value : (classesResponse.value?.rows || []);
+    const found = lista.find(c => c.nome?.toLowerCase().trim() === props.classeSelecionada?.toLowerCase().trim());
+    if (found) idClasseAtiva.value = found.id;
+  }
+});
 </script>
 
 <style scoped>
