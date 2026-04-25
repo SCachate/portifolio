@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-screen w-full bg-[#0a0f18] overflow-hidden">
     
-    <aside class="w-[30%] h-full border-r border-white/5 bg-[#0a0f18] flex flex-col relative">
+    <aside class="w-[20%] h-full border-r border-white/5 bg-[#0a0f18] flex flex-col relative">
       <div class="p-6">
         <div class="text-emerald-500 font-black text-2xl flex items-center gap-2 mb-10">
           <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center text-[#0a0f18]">K</div>
@@ -35,13 +35,13 @@
 
       <div class="absolute bottom-0 w-full p-6 border-t border-white/5">
         <div class="flex items-center justify-between">
-          <div class="text-xs text-slate-600 font-mono italic">v1.2.1</div>
+          <div class="text-xs text-slate-600 font-mono italic">v1.2.0</div>
           <button @click="$emit('logout')" class="text-xs text-red-500 font-bold hover:underline">Sair</button>
         </div>
       </div>
     </aside>
 
-    <main class="w-[70%] h-full flex flex-col overflow-hidden">
+    <main class="w-[80%] h-full flex flex-col overflow-hidden">
       <header class="w-full h-16 border-b border-white/5 flex items-center justify-between px-8 bg-[#0a0f18]/80 backdrop-blur-xl sticky top-0 z-40 flex-shrink-0">
         <div class="text-white font-bold capitalize">{{ activePage }}</div>
         <div class="flex items-center gap-4">
@@ -54,11 +54,16 @@
       </header>
 
       <div class="flex-1 overflow-y-auto">
-         <slot />
+        testando ...
       </div>
     </main>
   </div>
 </template>
+
+<script setup>
+defineProps(['user', 'activePage']);
+defineEmits(['logout', 'navigate']);
+</script>
 
 <script setup>
 defineProps(['user', 'activePage']);
