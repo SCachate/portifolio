@@ -144,7 +144,12 @@
 import { ref, computed, watch, unref } from 'vue';
 import { useApi } from '../composables/useApi';
 
-const props = defineProps({ modelValue: Boolean, classeSelecionada: String, tipo: String });
+const props = defineProps({ 
+  modelValue: Boolean, 
+  classeSelecionada: String, 
+  tipo: String,
+  listaClasses: Array // Recebendo a lista para redundância
+});
 const emit = defineEmits(['update:modelValue']);
 
 const dataInicio = ref('');
@@ -153,11 +158,14 @@ const buscaAsset = ref('');
 const assetSelecionado = ref(null);
 const idClasseAtiva = ref(null);
 
+// Busca a lista oficial de classes do banco
 const { data: classesResponse } = useApi('/classes/', { method: 'get' });
 
+// URL para buscar os ativos (Só ativa se tiver ID e Datas)
 const urlAtivos = computed(() => {
-  if (props.modelValue && idClasseAtiva.value && dataEhValida(dataInicio.value)) 
+  if (props.modelValue && idClasseAtiva.value && dataEhValida(dataInicio.value)) {
     return `/assets/ByClass/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
+  }
   return null;
 });
 const { data: assetsResponse, loading: carregandoAssets } = useApi(urlAtivos);
@@ -169,15 +177,49 @@ const urlRendimento = computed(() => {
 });
 const { data: rendimentoResponse, loading: carregandoRendimento } = useApi(urlRendimento);
 
+// Lógica de seleção de ID baseada no nome recebido do Resumo.vue
+const sincronizarClasse = () => {
+  const lista = Array.isArray(classesResponse.value) ? classesResponse.value : (classesResponse.value?.rows || []);
+  
+  if (lista.length > 0 && props.classeSelecionada) {
+    console.log("🔍 Buscando ID para a classe:", props.classeSelecionada);
+    
+    // Tenta achar o ID pelo nome vindo do gráfico
+    const found = lista.find(c => 
+      c.nome.toLowerCase().trim() === props.classeSelecionada.toLowerCase().trim()
+    );
+
+    if (found) {
+      idClasseAtiva.value = found.id;
+      console.log("✅ ID Encontrado:", found.id);
+    } else {
+      console.error("❌ Não encontrei a classe na lista oficial:", props.classeSelecionada);
+    }
+  }
+};
+
+// Observa abertura do modal
+watch(() => props.modelValue, (val) => {
+  if (val) {
+    assetSelecionado.value = null;
+    buscaAsset.value = ''; 
+    calcularDatasPadrao();
+    sincronizarClasse();
+  }
+});
+
+// Observa se os dados da API de classes chegaram (importante no primeiro carregamento)
+watch(classesResponse, () => {
+  if (props.modelValue) sincronizarClasse();
+});
+
+// Auto-seleção do primeiro ativo
 watch(assetsResponse, (newVal) => {
   const lista = Array.isArray(newVal) ? newVal : (newVal?.rows || []);
   if (lista.length > 0) {
-    const aindaExiste = lista.find(a => a.Id === assetSelecionado.value?.Id);
-    if (!assetSelecionado.value || !aindaExiste) assetSelecionado.value = lista[0];
-  } else {
-    assetSelecionado.value = null;
+    assetSelecionado.value = lista[0];
   }
-}, { deep: true });
+});
 
 const dataEhValida = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d);
 const formatarMoeda = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -186,8 +228,10 @@ const formatarDataRelatorio = (d) => d ? d.split('T')[0].split('-').reverse().jo
 const assetsFiltrados = computed(() => {
   const lista = Array.isArray(unref(assetsResponse)) ? unref(assetsResponse) : (unref(assetsResponse)?.rows || []);
   if (!buscaAsset.value) return lista;
-  const t = buscaAsset.value.toLowerCase();
-  return lista.filter(a => a.nome_completo?.toLowerCase().includes(t) || a.ticker?.toLowerCase().includes(t));
+  return lista.filter(a => 
+    a.nome_completo?.toLowerCase().includes(buscaAsset.value.toLowerCase()) || 
+    a.ticker?.toLowerCase().includes(buscaAsset.value.toLowerCase())
+  );
 });
 
 const totalGeralClasse = computed(() => assetsFiltrados.value.reduce((acc, a) => acc + (Number(a.resultado) || 0), 0));
@@ -197,65 +241,29 @@ const cardsIndicadores = computed(() => {
   if (!listaRendimento.value.length) return [];
   const dadoMaisRecente = listaRendimento.value[0];
   const dadoMaisAntigo = listaRendimento.value[listaRendimento.value.length - 1];
-  const totalProv = listaRendimento.value.reduce((acc, r) => acc + (Number(r.proventos) || 0), 0);
-  const totalRes = listaRendimento.value.reduce((acc, r) => acc + (Number(r.resultado) || 0), 0);
-
   return [
     { label: 'Início Período', valor: formatarMoeda(dadoMaisAntigo.inicial) },
-    { label: 'Total Proventos', valor: formatarMoeda(totalProv), color: 'text-orange-400' },
+    { label: 'Total Proventos', valor: formatarMoeda(listaRendimento.value.reduce((acc, r) => acc + (Number(r.proventos) || 0), 0)), color: 'text-orange-400' },
     { label: 'Patrimônio Final', valor: formatarMoeda(dadoMaisRecente.final) },
-    { label: 'Ganho no Período', valor: formatarMoeda(totalRes), color: totalRes >= 0 ? 'text-emerald-400' : 'text-red-400' }
+    { label: 'Ganho no Período', valor: formatarMoeda(listaRendimento.value.reduce((acc, r) => acc + (Number(r.resultado) || 0), 0)), color: 'text-emerald-400' }
   ];
 });
-
-const aoMudarClasseManual = (e) => {
-  idClasseAtiva.value = parseInt(e.target.value);
-  assetSelecionado.value = null;
-};
 
 const calcularDatasPadrao = () => {
   const hoje = new Date();
   const offset = hoje.getTimezoneOffset() * 60000;
   const dataLocal = new Date(hoje.getTime() - offset);
   const f = (d) => d.toISOString().split('T')[0];
-  
   dataFim.value = f(dataLocal);
-  if (props.tipo === 'mes') {
-    dataInicio.value = f(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
-  } else if (props.tipo === 'ano') {
-    dataInicio.value = f(new Date(hoje.getFullYear(), 0, 1));
-  } else {
-    dataInicio.value = f(dataLocal);
-  }
+  if (props.tipo === 'mes') dataInicio.value = f(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+  else if (props.tipo === 'ano') dataInicio.value = f(new Date(hoje.getFullYear(), 0, 1));
+  else dataInicio.value = f(dataLocal);
 };
 
-// RESET DE ESTADO AO ABRIR O MODAL
-watch(() => props.modelValue, (val) => {
-  if (val) {
-    assetSelecionado.value = null;
-    buscaAsset.value = ''; 
-    calcularDatasPadrao();
-    
-    // Função para encontrar o ID da classe
-    const findID = () => {
-      const lista = Array.isArray(classesResponse.value) ? classesResponse.value : (classesResponse.value?.rows || []);
-      if (lista.length > 0) {
-        const found = lista.find(c => c.nome?.toLowerCase().trim() === props.classeSelecionada?.toLowerCase().trim());
-        if (found) idClasseAtiva.value = found.id;
-      }
-    };
-    findID();
-  }
-}, { immediate: true });
-
-// Sincroniza se o carregamento da lista de classes demorar mais que a abertura do modal
-watch(classesResponse, () => {
-  if (props.modelValue && !idClasseAtiva.value) {
-    const lista = Array.isArray(classesResponse.value) ? classesResponse.value : (classesResponse.value?.rows || []);
-    const found = lista.find(c => c.nome?.toLowerCase().trim() === props.classeSelecionada?.toLowerCase().trim());
-    if (found) idClasseAtiva.value = found.id;
-  }
-});
+const aoMudarClasseManual = (e) => {
+  idClasseAtiva.value = parseInt(e.target.value);
+  assetSelecionado.value = null;
+};
 </script>
 
 <style scoped>
