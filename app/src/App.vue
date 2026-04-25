@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen w-full bg-[#0a0f18] text-white overflow-hidden">
+  <div class="h-screen w-full bg-[#05070a] text-white overflow-hidden">
     
     <transition name="fade" mode="out-in">
       
@@ -17,19 +17,19 @@
         :error="error" 
       />
 
-      <div v-else class="h-full w-full flex flex-col items-center justify-center bg-[#05070a]">
+      <div v-else class="h-full w-full flex justify-center items-center">
         
-        <div class="w-full max-w-4xl h-full flex flex-col items-center justify-center bg-[#0a0f18] border-x border-white/5 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+        <div class="w-[60%] h-full flex flex-col items-center justify-center bg-[#0a0f18] border-x border-white/[0.03] shadow-[0_0_60px_rgba(0,0,0,0.5)]">
           
-          <div class="relative flex items-center justify-center w-24 h-24 mb-10">
-            <div class="w-24 h-24 border-4 border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
+          <div class="relative flex items-center justify-center w-28 h-28 mb-10">
+            <div class="w-28 h-28 border-4 border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
             
-            <div class="absolute flex items-center justify-center w-12 h-12 bg-emerald-500 rounded-xl shadow-lg">
-              <span class="text-black font-black text-3xl select-none">K</span>
+            <div class="absolute flex items-center justify-center w-14 h-14 bg-emerald-500 rounded-2xl shadow-lg">
+              <span class="text-black font-black text-4xl select-none">K</span>
             </div>
           </div>
           
-          <p class="text-slate-500 font-mono text-[11px] uppercase tracking-[0.6em] animate-pulse text-center">
+          <p class="text-slate-500 font-mono text-[12px] uppercase tracking-[0.8em] animate-pulse text-center">
             Sincronizando K-Portfolio...
           </p>
           
