@@ -32,7 +32,7 @@
           <div class="flex items-center gap-4">
             <div class="text-right">
               <div class="text-xs text-white font-bold">{{ user?.name || 'Sidnei Cachate' }}</div>
-              <div class="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Premium</div>
+              <div class="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">XISTO</div>
             </div>
             <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600"></div>
           </div>
