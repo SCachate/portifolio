@@ -136,69 +136,90 @@ const buscaAsset = ref('');
 const assetSelecionado = ref(null);
 const idClasseAtiva = ref(null);
 
+// 1. Busca de Classes (Fixa)
 const { data: classesResponse } = useApi('/classes/', { method: 'get' });
 
-const urlAtivos = computed(() => {
-  if (props.modelValue && idClasseAtiva.value && dataEhValida(dataInicio.value) && dataEhValida(dataFim.value)) {
-    return `/assets/ByClass/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
-  }
-  return null;
-});
-const { data: assetsResponse, loading: carregandoAssets } = useApi(urlAtivos);
+// 2. Componíveis de API (URLs começam nulas)
+const urlAtivos = ref(null);
+const { data: assetsResponse, loading: carregandoAssets, fetchData: carregarAssets } = useApi(urlAtivos);
 
-const urlRendimento = computed(() => {
-  if (assetSelecionado.value && idClasseAtiva.value && props.modelValue) 
-    return `/assets/Rendimentos/${assetSelecionado.value.Id}/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
-  return null;
-});
-const { data: rendimentoResponse, loading: carregandoRendimento } = useApi(urlRendimento);
+const urlRendimento = ref(null);
+const { data: rendimentoResponse, loading: carregandoRendimento, fetchData: carregarRendimento } = useApi(urlRendimento);
 
-// Auxiliares
+// Auxiliares de validação e formato
 const dataEhValida = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d);
 const formatarMoeda = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const formatarDataRelatorio = (d) => d ? d.split('T')[0].split('-').reverse().join('/') : '-';
 
-const sincronizarID = () => {
+// MÉTODO MESTRE: Sincroniza o ID e dispara a busca
+const sincronizarEBuscar = async () => {
   const lista = Array.isArray(classesResponse.value) ? classesResponse.value : (classesResponse.value?.rows || []);
+  
   if (lista.length > 0 && props.classeSelecionada) {
     const found = lista.find(c => c.nome.toLowerCase().trim() === props.classeSelecionada.toLowerCase().trim());
-    if (found) idClasseAtiva.value = found.id;
+    if (found) {
+      idClasseAtiva.value = found.id;
+      
+      // Se datas são válidas, monta a URL e força o fetchData
+      if (dataEhValida(dataInicio.value) && dataEhValida(dataFim.value)) {
+        urlAtivos.value = `/assets/ByClass/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
+        await nextTick();
+        carregarAssets(); // Força a chamada da API
+      }
+    }
   }
 };
 
-const calcularDatasPadrao = () => {
-  const agora = new Date();
-  const formatLocal = (date) => {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  };
+// Monitora mudança de datas ou ID para atualizar ativos
+watch([idClasseAtiva, dataInicio, dataFim], () => {
+  if (props.modelValue && idClasseAtiva.value && dataEhValida(dataInicio.value) && dataEhValida(dataFim.value)) {
+    urlAtivos.value = `/assets/ByClass/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
+    nextTick(() => carregarAssets());
+  }
+});
 
-  dataFim.value = formatLocal(agora);
-  if (props.tipo === 'mes') dataInicio.value = formatLocal(new Date(agora.getFullYear(), agora.getMonth(), 1));
-  else if (props.tipo === 'ano') dataInicio.value = formatLocal(new Date(agora.getFullYear(), 0, 1));
-  else dataInicio.value = formatLocal(agora);
-};
+// Monitora seleção de ativo para buscar rendimentos
+watch(assetSelecionado, (novoAsset) => {
+  if (novoAsset?.Id && idClasseAtiva.value && dataEhValida(dataInicio.value)) {
+    urlRendimento.value = `/assets/Rendimentos/${novoAsset.Id}/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
+    nextTick(() => carregarRendimento());
+  } else {
+    urlRendimento.value = null;
+  }
+});
 
+// Ao abrir o modal
 watch(() => props.modelValue, async (val) => {
   if (val) {
     assetSelecionado.value = null;
     buscaAsset.value = '';
-    calcularDatasPadrao();
+    
+    // 1. Define datas primeiro
+    const agora = new Date();
+    const f = (d) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+    dataFim.value = f(agora);
+    if (props.tipo === 'mes') dataInicio.value = f(new Date(agora.getFullYear(), agora.getMonth(), 1));
+    else if (props.tipo === 'ano') dataInicio.value = f(new Date(agora.getFullYear(), 0, 1));
+    else dataInicio.value = f(agora);
+
+    // 2. Espera as datas serem processadas e busca o ID/Dados
     await nextTick();
-    sincronizarID();
+    sincronizarEBuscar();
   }
 });
 
-watch(classesResponse, sincronizarID);
-
+// Auto-seleciona primeiro ativo da lista
 watch(assetsResponse, (newVal) => {
   const lista = Array.isArray(newVal) ? newVal : (newVal?.rows || []);
-  if (lista.length > 0) assetSelecionado.value = lista[0];
-  else assetSelecionado.value = null;
+  assetSelecionado.value = lista.length > 0 ? lista[0] : null;
 });
 
+// Computeds de interface
 const assetsFiltrados = computed(() => {
   const lista = Array.isArray(unref(assetsResponse)) ? unref(assetsResponse) : (unref(assetsResponse)?.rows || []);
   if (!buscaAsset.value) return lista;
@@ -213,13 +234,11 @@ const cardsIndicadores = computed(() => {
   if (!listaRendimento.value.length) return [];
   const rec = listaRendimento.value[0];
   const ant = listaRendimento.value[listaRendimento.value.length - 1];
-  const prov = listaRendimento.value.reduce((acc, r) => acc + (Number(r.proventos) || 0), 0);
-  const res = listaRendimento.value.reduce((acc, r) => acc + (Number(r.resultado) || 0), 0);
   return [
     { label: 'Início Período', valor: formatarMoeda(ant.inicial) },
-    { label: 'Total Proventos', valor: formatarMoeda(prov), color: 'text-orange-400' },
+    { label: 'Total Proventos', valor: formatarMoeda(listaRendimento.value.reduce((acc, r) => acc + (Number(r.proventos) || 0), 0)), color: 'text-orange-400' },
     { label: 'Patrimônio Final', valor: formatarMoeda(rec.final) },
-    { label: 'Ganho no Período', valor: formatarMoeda(res), color: res >= 0 ? 'text-emerald-400' : 'text-red-400' }
+    { label: 'Ganho no Período', valor: formatarMoeda(listaRendimento.value.reduce((acc, r) => acc + (Number(r.resultado) || 0), 0)), color: 'text-emerald-400' }
   ];
 });
 
