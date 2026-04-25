@@ -3,8 +3,12 @@
     <div v-if="loading" class="w-full h-[60vh] flex flex-col items-center justify-center">
       <div class="relative flex items-center justify-center">
         <div class="w-16 h-16 border-4 border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
-        <div class="absolute text-xl">💎</div>
+        
+        <div class="absolute flex items-center justify-center w-8 h-8 bg-emerald-500 rounded-lg shadow-lg">
+          <span class="text-black font-black text-lg select-none">K</span>
+        </div>
       </div>
+      
       <p class="mt-6 text-slate-500 font-mono text-[10px] uppercase tracking-[0.4em] animate-pulse">
         Sincronizando K-Portfolio...
       </p>
@@ -23,10 +27,6 @@
 </template>
 
 <script setup>
-/**
- * Define as propriedades que o componente pai (Dashboard.vue) passará.
- * Sem isso, as diretivas v-if="loading" resultam em erro.
- */
 defineProps({
   loading: {
     type: Boolean,
@@ -40,7 +40,6 @@ defineProps({
 </script>
 
 <style scoped>
-/* Animações simples para uma entrada suave do conteúdo */
 .animate-in {
   animation: fadeIn 0.5s ease-out;
 }
@@ -48,5 +47,12 @@ defineProps({
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Garante que o K fique centralizado perfeitamente no spinner de 16 (4rem) */
+.absolute {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 </style>
