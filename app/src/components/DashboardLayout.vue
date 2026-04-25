@@ -54,7 +54,7 @@
       </header>
 
       <div class="flex-1 overflow-y-auto">
-        testando ...
+        <slot/>
       </div>
     </main>
   </div>
