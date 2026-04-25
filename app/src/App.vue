@@ -17,18 +17,23 @@
         :error="error" 
       />
 
-      <div v-else class="h-full w-full flex flex-col items-center justify-center bg-[#0a0f18]/90 backdrop-blur-sm relative z-[300]">
-        <div class="relative flex items-center justify-center w-24 h-24 mb-12">
-          <div class="w-24 h-24 border-4 border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
-          
-          <div class="absolute flex items-center justify-center w-12 h-12 bg-emerald-500 rounded-xl shadow-lg">
-            <span class="text-black font-black text-3xl select-none">K</span>
-          </div>
-        </div>
+      <div v-else class="h-full w-full flex flex-col items-center justify-center bg-[#0a0f18]">
         
-        <p class="text-slate-500 font-mono text-[11px] uppercase tracking-[0.4em] animate-pulse">
-          Sincronizando K-Portfolio...
-        </p>
+        <div class="w-full max-w-2xl flex flex-col items-center justify-center py-20 bg-[#0a0f18]/50 backdrop-blur-sm">
+          
+          <div class="relative flex items-center justify-center w-24 h-24 mb-10">
+            <div class="w-24 h-24 border-4 border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
+            
+            <div class="absolute flex items-center justify-center w-12 h-12 bg-emerald-500 rounded-xl shadow-lg">
+              <span class="text-black font-black text-3xl select-none">K</span>
+            </div>
+          </div>
+          
+          <p class="text-slate-500 font-mono text-[11px] uppercase tracking-[0.6em] animate-pulse text-center">
+            Sincronizando K-Portfolio...
+          </p>
+          
+        </div>
       </div>
 
     </transition>
