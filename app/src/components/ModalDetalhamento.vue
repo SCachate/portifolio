@@ -138,7 +138,6 @@ const idClasseAtiva = ref(null);
 
 const { data: classesResponse } = useApi('/classes/', { method: 'get' });
 
-// Só gera a URL se o ID existir e as datas forem válidas
 const urlAtivos = computed(() => {
   if (props.modelValue && idClasseAtiva.value && dataEhValida(dataInicio.value) && dataEhValida(dataFim.value)) {
     return `/assets/ByClass/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
@@ -168,15 +167,20 @@ const sincronizarID = () => {
 };
 
 const calcularDatasPadrao = () => {
-  const hoje = new Date();
-  const f = (d) => d.toISOString().split('T')[0];
-  dataFim.value = f(hoje);
-  if (props.tipo === 'mes') dataInicio.value = f(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
-  else if (props.tipo === 'ano') dataInicio.value = f(new Date(hoje.getFullYear(), 0, 1));
-  else dataInicio.value = f(hoje);
+  const agora = new Date();
+  const formatLocal = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  dataFim.value = formatLocal(agora);
+  if (props.tipo === 'mes') dataInicio.value = formatLocal(new Date(agora.getFullYear(), agora.getMonth(), 1));
+  else if (props.tipo === 'ano') dataInicio.value = formatLocal(new Date(agora.getFullYear(), 0, 1));
+  else dataInicio.value = formatLocal(agora);
 };
 
-// Ao abrir o modal
 watch(() => props.modelValue, async (val) => {
   if (val) {
     assetSelecionado.value = null;
@@ -187,10 +191,8 @@ watch(() => props.modelValue, async (val) => {
   }
 });
 
-// Se os dados da API de classes chegarem depois do modal abrir
 watch(classesResponse, sincronizarID);
 
-// Auto-seleciona primeiro ativo
 watch(assetsResponse, (newVal) => {
   const lista = Array.isArray(newVal) ? newVal : (newVal?.rows || []);
   if (lista.length > 0) assetSelecionado.value = lista[0];
@@ -226,3 +228,25 @@ const aoMudarClasseManual = (e) => {
   assetSelecionado.value = null;
 };
 </script>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+@keyframes modal-in { from { transform: scale(0.98) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+.animate-modal { animation: modal-in 0.2s ease-out; }
+
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+.row-item:hover { background-color: rgba(59, 130, 246, 0.05); }
+select option { background-color: #1a1c24; color: white; }
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+  opacity: 0.5;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+</style>
