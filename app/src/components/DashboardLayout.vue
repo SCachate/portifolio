@@ -50,7 +50,7 @@
       </header>
 
       <main class="flex-1 overflow-y-auto bg-[#0a0f18] scrollbar-thin scrollbar-thumb-slate-700">      
-        <div class="w-full max-w-[1400px] mx-auto p-4 md:p-8 min-h-full">
+        <div class="flex-1 flex flex-col items-stretch">
           <slot />
         </div>      
       </main>
