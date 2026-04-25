@@ -1,6 +1,6 @@
 <template>
-  <div class="h-screen w-full bg-[#05070a] text-white overflow-hidden">
-    
+  <div class="h-screen w-screen bg-[#05070a] text-white overflow-hidden flex flex-col items-stretch">
+  
     <transition name="fade" mode="out-in">
       
       <Dashboard 
