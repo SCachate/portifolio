@@ -156,7 +156,6 @@ const modalAberto = ref(false);
 const filtrosAtivos = ref({ classe: '', tipo: '' });
 
 const abrirPeloGrafico = (dados) => {
-  console.log("🟢 Abrindo modal para:", dados); // DEBUG
   filtrosAtivos.value = { ...dados }; // Spread para garantir nova referência
   modalAberto.value = true;
 };
