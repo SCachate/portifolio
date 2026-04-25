@@ -35,7 +35,7 @@
 
       <div class="absolute bottom-0 w-full p-6 border-t border-white/5">
         <div class="flex items-center justify-between">
-          <div class="text-xs text-slate-600 font-mono italic">v1.2.1</div>
+          <div class="text-xs text-slate-600 font-mono italic">v1.2.0</div>
           <button @click="$emit('logout')" class="text-xs text-red-500 font-bold hover:underline">Sair</button>
         </div>
       </div>
@@ -54,7 +54,7 @@
       </header>
 
       <div class="flex-1 overflow-y-auto">
-        <slot />
+        testando ...
       </div>
     </main>
   </div>
