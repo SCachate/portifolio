@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-screen w-full bg-[#0a0f18] overflow-hidden">
     
-    <aside class="w-[20%] h-full border-r border-white/5 bg-[#0a0f18] flex flex-col relative">
+    <aside class="w-[20%] min-w-[250px] h-full border-r border-white/5 bg-[#0a0f18] flex flex-col relative flex-shrink-0">
       <div class="p-6">
         <div class="text-emerald-500 font-black text-2xl flex items-center gap-2 mb-10">
           <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center text-[#0a0f18]">K</div>
@@ -12,21 +12,21 @@
           <button 
             @click="$emit('navigate', 'dashboard')"
             :class="activePage === 'dashboard' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'text-slate-400 border-transparent hover:bg-white/5'"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all font-medium text-sm"
+            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all font-medium text-sm text-left"
           >
             📊 Dashboard
           </button>
           <button 
             @click="$emit('navigate', 'ativos')"
             :class="activePage === 'ativos' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'text-slate-400 border-transparent hover:bg-white/5'"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all font-medium text-sm"
+            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all font-medium text-sm text-left"
           >
             💰 Meus Ativos
           </button>
           <button 
             @click="$emit('navigate', 'transacoes')"
             :class="activePage === 'transacoes' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'text-slate-400 border-transparent hover:bg-white/5'"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all font-medium text-sm"
+            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all font-medium text-sm text-left"
           >
             🔄 Transações
           </button>
@@ -41,7 +41,7 @@
       </div>
     </aside>
 
-    <main class="w-[80%] h-full flex flex-col overflow-hidden">
+    <main class="w-[80%] h-full flex flex-col overflow-hidden min-w-0">
       <header class="w-full h-16 border-b border-white/5 flex items-center justify-between px-8 bg-[#0a0f18]/80 backdrop-blur-xl sticky top-0 z-40 flex-shrink-0">
         <div class="text-white font-bold capitalize">{{ activePage }}</div>
         <div class="flex items-center gap-4">
@@ -54,7 +54,7 @@
       </header>
 
       <div class="flex-1 overflow-y-auto">
-        testando ...
+        <slot />
       </div>
     </main>
   </div>
@@ -64,4 +64,3 @@
 defineProps(['user', 'activePage']);
 defineEmits(['logout', 'navigate']);
 </script>
-
