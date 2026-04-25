@@ -1,46 +1,40 @@
 <template>
   <div class="w-full">
     <div class="flex justify-between items-center mb-6">
-  <!-- Título à esquerda -->
-  <h2 class="text-white text-xl font-bold">Meu Patrimônio</h2>
+      <h2 class="text-white text-xl font-bold">Meu Patrimônio</h2>
 
-  <!-- Botão moderno à direita -->
-  <button 
-    @click="atualizarTudo" 
-    :disabled="loading"
-    class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-md active:scale-95"
-  >
-    <!-- Ícone de atualização (SVG para um visual mais profissional que emoji) -->
-    <svg 
-      v-if="!loading"
-      xmlns="http://www.w3.org/2000/svg" 
-      class="h-4 w-4" 
-      fill="none" 
-      viewBox="0 0 24 24" 
-      stroke="currentColor"
-    >
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-    </svg>
-    
-    <!-- Ícone de carregamento animado -->
-    <svg 
-      v-else 
-      class="animate-spin h-4 w-4 text-white" 
-      xmlns="http://www.w3.org/2000/svg" 
-      fill="none" 
-      viewBox="0 0 24 24"
-    >
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
+      <button 
+        @click="atualizarTudo" 
+        :disabled="loading"
+        class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-md active:scale-95"
+      >
+        <svg 
+          v-if="!loading"
+          xmlns="http://www.w3.org/2000/svg" 
+          class="h-4 w-4" 
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        
+        <svg 
+          v-else 
+          class="animate-spin h-4 w-4 text-white" 
+          xmlns="http://www.w3.org/2000/svg" 
+          fill="none" 
+          viewBox="0 0 24 24"
+        >
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
 
-    <span>{{ loading ? 'Atualizando...' : 'Atualizar' }}</span>
-  </button>
-</div>
+        <span>{{ loading ? 'Atualizando...' : 'Atualizar' }}</span>
+      </button>
+    </div>
     
     <div class="charts-grid">
-
-      
       <div class="chart-card donut-wrapper flex flex-col items-center">
         <h3 class="chart-title text-center w-full">Distribuição</h3>
         <AsyncLoader :loading="loading" :error="error" class="flex-grow-loader">
@@ -108,8 +102,8 @@
           <apexchart type="bar" height="100%" :options="getBarOptions('dia')" :series="diaSeries" />
         </AsyncLoader>
       </div>
-      <div class="chart-card">
 
+      <div class="chart-card">
         <AsyncLoader 
           :loading="loadingResultado" 
           :error="errorResultado" 
@@ -122,6 +116,7 @@
           <apexchart type="bar" height="100%" :options="getBarOptions('mes')" :series="mesSeries" />
         </AsyncLoader>
       </div>
+
       <div class="chart-card">
         <AsyncLoader 
           :loading="loadingResultado" 
@@ -137,6 +132,7 @@
       </div>
     </div>
   </div>
+
   <ModalDetalhamento 
     v-model="modalAberto"
     :tipo="filtrosAtivos.tipo"
@@ -146,12 +142,12 @@
   >
     <template #default="{ periodo }">
       <p class="text-slate-400">Exibindo dados de {{ periodo.inicio }} até {{ periodo.fim }}</p>
-      </template>
+    </template>
   </ModalDetalhamento>
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useApi } from '../composables/useApi';
 import AsyncLoader from './AsyncLoader.vue';
 import ModalDetalhamento from './ModalDetalhamento.vue';
@@ -170,7 +166,7 @@ const series = ref([]);
 
 // 2. Lógica da Evolução (API Reativa por Ano)
 const anoVisualizado = ref(new Date().getFullYear());
-const urlEvolucao = computed(() => { return `/dashboard/evolucao?ano=${anoVisualizado.value}`; });
+const urlEvolucao = computed(() => `/dashboard/evolucao?ano=${anoVisualizado.value}`);
 
 const { 
   data: dadosEvolucao, 
@@ -185,8 +181,6 @@ const {
   error: errorResultado,
   fetchData: fetchResultado
 } = useApi(`/dashboard/resultado`);
-
-let intervalId = null;
 
 const formatCurrency = (val) => {
   if (val === undefined || val === null) return 'R$ 0,00';
@@ -205,48 +199,30 @@ const atualizarTudo = async () => {
       fetchEvolucao(),
       fetchResultado()
     ]);
-    
-    console.info("Dashboard atualizado com sucesso!");
   } catch (error) {
     console.error("Erro na atualização global:", error);
   }
 };
+
 const evolucaoSeries = computed(() => {
-  return (dadosEvolucao.value && Array.isArray(dadosEvolucao.value)) 
-    ? dadosEvolucao.value 
-    : [];
+  return (dadosEvolucao.value && Array.isArray(dadosEvolucao.value)) ? dadosEvolucao.value : [];
 });
 
 const mudarAno = (delta) => { 
   anoVisualizado.value += delta; 
 };
 
-// Opções do Gráfico de Evolução
 const evolucaoOptions = computed(() => ({
-  chart: { 
-    stacked: true, 
-    toolbar: { show: false }, 
-    fontFamily: 'inherit', 
-  },
+  chart: { stacked: true, toolbar: { show: false }, fontFamily: 'inherit' },
   stroke: { width: [0, 0, 0, 0, 0, 3], curve: 'smooth' },
   colors: ['#A78BFA', '#F472B6', '#FBBF24', '#60A5FA', '#34D399', '#F87171'],
-  grid: { 
-    borderColor: '#334155', 
-    strokeDashArray: 4,
-    padding: { left: 10, right: 10, bottom: 0, top: 10 } 
-  },
+  grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 10 } },
   xaxis: { 
     categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
     labels: { style: { colors: '#94a3b8', fontSize: '10px' } }
   },
   yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
-  legend: { 
-    position: 'top', 
-    horizontalAlign: 'center',
-    labels: { colors: '#f1f5f9' },
-    fontSize: '11px',
-    offsetY: 0
-  },
+  legend: { position: 'top', horizontalAlign: 'center', labels: { colors: '#f1f5f9' }, fontSize: '11px', offsetY: 0 },
   dataLabels: { enabled: false },
   tooltip: {
     theme: 'dark',
@@ -274,54 +250,34 @@ const evolucaoOptions = computed(() => ({
   }
 }));
 
-
 const getBarOptions = (tipo) => {
   return {
-  chart: { 
-    toolbar: { show: false },
-    parentHeightOffset: 0,
-    events: {
-      dataPointSelection: (event, chartContext, config) => {
-        const classeNome = config.w.globals.labels[config.dataPointIndex];
-        abrirPeloGrafico({
-          classe: classeNome,
-          tipo: tipo,
-        });
-      }
-    },
-  },  
-  grid: {
-    padding: {
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0
-    }
-  },
-  plotOptions: { 
-    bar: { 
-      borderRadius: 4, 
-      colors: { ranges: [{ from: -9999, to: 0, color: '#f87171' }] } 
-    } 
-  },
-  colors: ['#10b981'],
-  xaxis: {
-      // Mapeia os nomes das classes para as categorias do eixo X
+    chart: { 
+      toolbar: { show: false },
+      parentHeightOffset: 0,
+      events: {
+        dataPointSelection: (event, chartContext, config) => {
+          // CORREÇÃO: Busca o nome da classe diretamente dos dados reativos
+          const item = dadosResultado.value[config.dataPointIndex];
+          if (item) {
+            abrirPeloGrafico({
+              classe: item.classe,
+              tipo: tipo,
+            });
+          }
+        }
+      },
+    },  
+    grid: { padding: { top: 0, right: 0, bottom: 0, left: 0 } },
+    plotOptions: { bar: { borderRadius: 4, colors: { ranges: [{ from: -9999, to: 0, color: '#f87171' }] } } },
+    colors: ['#10b981'],
+    xaxis: {
       categories: dadosResultado.value?.map(item => item.classe) || [], 
-      labels: {
-        rotate: -45,
-        style: { colors: '#94a3b8', fontSize: '10px' }
-      }
+      labels: { rotate: -45, style: { colors: '#94a3b8', fontSize: '10px' } }
     },
-    // Adicione isso para melhorar o Tooltip
-    tooltip: {
-      theme: 'dark',
-      y: {
-        formatter: (val) => formatCurrency(val)
-      }
-    },
-  yaxis: { show: false },
-  dataLabels: { enabled: false }
+    tooltip: { theme: 'dark', y: { formatter: (val) => formatCurrency(val) } },
+    yaxis: { show: false },
+    dataLabels: { enabled: false }
   }
 };
 
@@ -344,7 +300,6 @@ const chartOptions = ref({
             show: true,
             label: 'TOTAL',
             color: '#94a3b8',
-            // Formata o valor total no centro
             formatter: function (w) {
               const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
               return `R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -353,7 +308,6 @@ const chartOptions = ref({
           value: {
             show: true,
             color: '#fff',
-            // Formata o valor de cada fatia individual quando selecionada
             formatter: function (val) {
               return `R$ ${parseFloat(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             }
@@ -362,12 +316,7 @@ const chartOptions = ref({
       }
     }
   },
-  // Opcional: formata também o valor que aparece no balãozinho (tooltip)
-  tooltip: {
-    y: {
-      formatter: (val) => `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-    }
-  }
+  tooltip: { y: { formatter: (val) => `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` } }
 });
 
 watch(data, (newData) => {
@@ -378,9 +327,7 @@ watch(data, (newData) => {
 }, { immediate: true });
 
 const totaisResultado = computed(() => {
-  if (!dadosResultado.value || !Array.isArray(dadosResultado.value)) {
-    return { dia: 0, mes: 0, ano: 0 };
-  }
+  if (!dadosResultado.value || !Array.isArray(dadosResultado.value)) return { dia: 0, mes: 0, ano: 0 };
   return dadosResultado.value.reduce((acc, item) => {
     acc.dia += Number(item.dia) || 0;
     acc.mes += Number(item.mes) || 0;
@@ -391,95 +338,33 @@ const totaisResultado = computed(() => {
 
 watch(dadosResultado, (newData) => {
   if (newData && Array.isArray(newData) && newData.length > 0) {
-    
-    // Atualiza o gráfico do Dia
-    diaSeries.value = [{ 
-        name: 'Resultado', 
-        data: newData.map(item => item.dia) 
-    }];
-
-    // Atualiza o gráfico do Mês
-    mesSeries.value = [{ 
-        name: 'Resultado', 
-        data: newData.map(item => item.mes) 
-    }];
-
-    // Atualiza o gráfico do Ano
-    anoSeries.value = [{ 
-        name: 'Resultado', 
-        data: newData.map(item => item.ano) 
-    }];
+    diaSeries.value = [{ name: 'Resultado', data: newData.map(item => item.dia) }];
+    mesSeries.value = [{ name: 'Resultado', data: newData.map(item => item.mes) }];
+    anoSeries.value = [{ name: 'Resultado', data: newData.map(item => item.ano) }];
   }
 }, { immediate: true });
-
 </script>
 
 <style scoped>
-.result-header {
-  display: flex;
-  justify-content: space-between; /* Título na esquerda, Valor na direita */
-  align-items: center;
-  margin-bottom: 12px;
-  width: 100%;
-}
-
-.result-value {
-  font-variant-numeric: tabular-nums; /* Mantém os números com a mesma largura */
-  font-family: 'Inter', sans-serif; /* Ou outra fonte sans-serif moderna */
-  font-weight: 700;
-}
-
-.chart-title {
-  margin: 0;
-  line-height: 1;
-}
-
+.result-value { font-variant-numeric: tabular-nums; font-family: 'Inter', sans-serif; font-weight: 700; }
 .charts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; }
-.chart-card { 
-  background: #1a1c24;
-  padding: 20px;
-  border-radius: 12px;
-  height: 320px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding-bottom: 20px;
-}
-.bar-chart-wrapper {
-  flex: 1;
-  width: 100%;
-  min-height: 0;
-}
-
+.chart-card { background: #1a1c24; padding: 20px; border-radius: 12px; height: 320px; display: flex; flex-direction: column; overflow: hidden; }
 .card-span-2 { grid-column: span 2; }
-.chart-title { color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-
-/* Layout Flexbox para os Cards */
+.chart-title { color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
 .flex-col-container { display: flex; flex-direction: column; }
-.header-top-row { flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-.card-body-v2 { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
-
-/* Correção de Altura do AsyncLoader */
-.flex-grow-loader { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; width: 100%; }
-:deep(.flex-grow-loader > div) { flex: 1 1 auto; display: flex; flex-direction: column; height: 100%; width: 100%; }
-
-.chart-wrapper-dynamic { flex: 1 1 auto; height: 100%; width: 100%; min-height: 0; }
-
-/* Seletor de Ano */
+.header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.card-body-v2 { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.flex-grow-loader { flex: 1; display: flex; flex-direction: column; width: 100%; }
+:deep(.flex-grow-loader > div) { flex: 1; display: flex; flex-direction: column; height: 100%; }
+.chart-wrapper-dynamic { flex: 1; height: 100%; width: 100%; }
 .year-navigator { display: flex; align-items: center; background: #0f172a; border-radius: 6px; padding: 2px; border: 1px solid #334155; }
 .nav-btn { background: transparent; border: none; color: #10b981; padding: 0 10px; cursor: pointer; font-size: 14px; font-weight: bold; }
-.nav-btn:disabled { color: #475569; cursor: not-allowed; }
+.nav-btn:disabled { color: #475569; }
 .year-display { color: #fff; font-size: 0.85rem; font-weight: 600; min-width: 45px; text-align: center; border-left: 1px solid #334155; border-right: 1px solid #334155; }
-
-/* Tooltip Customizado */
 :deep(.custom-tooltip-box) { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; min-width: 180px; }
-:deep(.tooltip-header) { border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 8px; color: #f1f5f9; font-weight: bold; text-align: center; }
-:deep(.tooltip-row) { display: flex; justify-content: space-between; font-size: 11px; padding: 1px 0; }
+:deep(.tooltip-header) { border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 8px; color: #f1f5f9; font-weight: bold; }
+:deep(.tooltip-row) { display: flex; justify-content: space-between; font-size: 11px; padding: 2px 0; }
 :deep(.dot) { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
 :deep(.tooltip-total) { border-top: 1px solid #475569; margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-weight: 700; color: #34d399; }
-:deep(.apexcharts-canvas) {
-  width: 100% !important;
-  height: 100% !important;
-}
 @media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr; } .card-span-2 { grid-column: span 1; } }
 </style>
