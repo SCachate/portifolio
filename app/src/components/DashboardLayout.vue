@@ -41,8 +41,8 @@
       </div>
     </aside>
 
-    <main class="w-full h-full overflow-y-auto">
-      <header class="w-full h-16 border-b border-white/5 flex items-center justify-between px-8 bg-[#0a0f18]/80 backdrop-blur-xl sticky top-0 z-40">
+    <main class="w-full h-screen overflow-y-auto bg-[#0a0f18] flex flex-col">
+      <header class="w-full h-16 border-b border-white/5 flex items-center justify-between px-8 bg-[#0a0f18]/80 backdrop-blur-xl sticky top-0 z-40 flex-shrink-0">
         <div class="text-white font-bold capitalize">{{ activePage }}</div>
         <div class="flex items-center gap-4">
           <div class="text-right">
@@ -53,7 +53,9 @@
         </div>
       </header>
 
-      <slot />
+      <div class="w-full max-w-7xl mx-auto p-8 flex-1">
+        <slot />
+      </div>
     </main>
   </div>
 </template>
