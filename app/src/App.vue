@@ -17,9 +17,9 @@
         :error="error" 
       />
 
-      <div v-else class="h-full w-full flex flex-col items-center justify-center bg-[#0a0f18]">
+      <div v-else class="h-full w-full flex flex-col items-center justify-center bg-[#05070a]">
         
-        <div class="w-full max-w-4xl flex flex-col items-center justify-center py-20 bg-[#0a0f18]/50 backdrop-blur-sm">
+        <div class="w-full max-w-4xl h-full flex flex-col items-center justify-center bg-[#0a0f18] border-x border-white/5 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
           
           <div class="relative flex items-center justify-center w-24 h-24 mb-10">
             <div class="w-24 h-24 border-4 border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
