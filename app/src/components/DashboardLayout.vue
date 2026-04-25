@@ -65,8 +65,3 @@ defineProps(['user', 'activePage']);
 defineEmits(['logout', 'navigate']);
 </script>
 
-<script setup>
-defineProps(['user', 'activePage']);
-defineEmits(['logout', 'navigate']);
-</script>
-
