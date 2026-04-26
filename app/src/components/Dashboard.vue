@@ -46,7 +46,6 @@ import Resumo from './Resumo.vue';
 import AsyncLoader from './AsyncLoader.vue';
 import TransactionView from './Transactions.vue';
 import AssetView from './Assets.vue';
-
 const currentTab = ref('dashboard');
 const { data, loading, error } = useApi(`/dashboard/pendencias`);
 
