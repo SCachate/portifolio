@@ -251,8 +251,7 @@ const evolucaoOptions = computed(() => ({
 }));
 
 const getBarOptions = (tipo) => {
-  // Cores que vêm do backend para as barras
-  const coresBackend = dadosResultado.value?.map(item => item.color) || ['#10b981'];
+  const coresBackend = dadosResultado.value?.map(item => item.cor) || ['#10b981'];
 
   return {
     chart: { 
@@ -272,20 +271,24 @@ const getBarOptions = (tipo) => {
     },  
     grid: { padding: { top: 0, right: 10, bottom: 10, left: 10 } },
     
-    // As barras usarão estas cores sempre
     colors: coresBackend,
 
     plotOptions: { 
       bar: { 
         borderRadius: 4, 
-        distributed: true, // Garante uma cor do array para cada barra
+        distributed: true,
         columnWidth: '70%',
         colors: {
-          // REMOVIDO: O bloco 'ranges' que forçava a barra a ficar vermelha
           ranges: [] 
         } 
       } 
     },
+
+    fill: {
+      type: 'solid',
+      colors: coresBackend
+    },
+
     xaxis: {
       categories: dadosResultado.value?.map(item => item.classe) || [], 
       labels: { 
@@ -309,7 +312,6 @@ const getBarOptions = (tipo) => {
         const label = w.globals.labels[dataPointIndex];
         const isPositive = val >= 0;
         
-        // A bolinha (marker) e o texto do valor mudam conforme o resultado
         const statusColor = isPositive ? '#10b981' : '#f87171';
         
         return `
@@ -342,7 +344,7 @@ const getBarOptions = (tipo) => {
     }
   }
 };
-
+  
 const diaSeries = ref([]);
 const mesSeries = ref([]);
 const anoSeries = ref([]);
