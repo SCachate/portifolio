@@ -252,7 +252,7 @@ const evolucaoOptions = computed(() => ({
 
 const getBarOptions = (tipo) => {
   // Mapeia as cores vindas do backend na mesma ordem dos itens
-  const coresBackend = dadosResultado.value?.map(item => item.color) || ['#10b981'];
+  const coresBackend = dadosResultado.value?.map(item => item.cor) || ['#10b981'];
 
   return {
     chart: { 
