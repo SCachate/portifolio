@@ -5,5 +5,6 @@ const assetController = require('../controllers/assetController');
 
 router.get('/ByClass/:classId/:inicio/:termino', authMiddleware, assetController.getAssetsByClassWithResult);
 router.get('/Rendimentos/:assetId/:classId/:inicio/:termino', authMiddleware, assetController.getRendimentos);
+router.get('/patrimonio', authMiddleware, assetController.getPatrimoio);
 
 module.exports = router;
