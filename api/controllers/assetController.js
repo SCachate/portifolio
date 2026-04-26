@@ -67,3 +67,27 @@ order by
 `, [assetId, classId, inicio, termino]);
     res.json(rows);
 });
+
+exports.getPatrimoio = asyncHandler(async (req, res) => {
+	const userId = req.userId;
+	const [rows] = await db.execute(`
+SELECT 
+	vpc.classe
+	, vpc.ativo
+	, vpc.description
+	, vpc.corretora
+	, vpc.moeda_origem
+	, vpc.cotacao_atual_brl
+	, vpc.preco_medio_brl
+	, vpc.quantidade
+	, vpc.valor_mercado_brl
+FROM
+	v_patrimonio_consolidado vpc
+where
+	vpc.userId = ?
+order BY
+	vpc.classe,
+	vpc.valor_mercado_brl desc	
+	`, [userId]);
+	res.json(rows);
+});
