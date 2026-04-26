@@ -107,7 +107,8 @@ exports.getResultado = async (req, res) => {
                     // Garante que a classe existe no objeto agrupador
                     if (!resultadoPorClasse[row.nome_classe]) {
                         resultadoPorClasse[row.nome_classe] = { 
-                            classe: row.nome_classe, 
+                            classe: row.nome_classe,
+                            cor: row.cor_classe,
                             dia: 0, 
                             mes: 0, 
                             ano: 0 
