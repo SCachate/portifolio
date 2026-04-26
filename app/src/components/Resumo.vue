@@ -271,14 +271,18 @@ const getBarOptions = (tipo) => {
       },
     },  
     grid: { padding: { top: 0, right: 10, bottom: 10, left: 10 } },
+    
+    // As barras usarão estas cores sempre
     colors: coresBackend,
+
     plotOptions: { 
       bar: { 
         borderRadius: 4, 
-        distributed: true,
+        distributed: true, // Garante uma cor do array para cada barra
         columnWidth: '70%',
         colors: {
-          ranges: [{ from: -999999, to: -0.01, color: '#f87171' }] 
+          // REMOVIDO: O bloco 'ranges' que forçava a barra a ficar vermelha
+          ranges: [] 
         } 
       } 
     },
@@ -298,7 +302,6 @@ const getBarOptions = (tipo) => {
     yaxis: { show: false },
     dataLabels: { enabled: false },
     
-    // --- ALTERAÇÃO AQUI: TOOLTIP CUSTOMIZADO ---
     tooltip: {
       theme: 'dark',
       custom: function({ series, seriesIndex, dataPointIndex, w }) {
@@ -306,7 +309,7 @@ const getBarOptions = (tipo) => {
         const label = w.globals.labels[dataPointIndex];
         const isPositive = val >= 0;
         
-        // Cores para o indicador (Bolinha e Valor)
+        // A bolinha (marker) e o texto do valor mudam conforme o resultado
         const statusColor = isPositive ? '#10b981' : '#f87171';
         
         return `
@@ -339,7 +342,7 @@ const getBarOptions = (tipo) => {
     }
   }
 };
-  
+
 const diaSeries = ref([]);
 const mesSeries = ref([]);
 const anoSeries = ref([]);
