@@ -26,11 +26,7 @@
             </template>
 
             <template v-else-if="currentTab === 'ativos'">
-              <div class="w-full min-h-[400px] bg-slate-900/40 border border-white/5 rounded-3xl flex flex-col items-center justify-center text-center p-10">
-                 <div class="text-4xl mb-4">🏗️</div>
-                 <h2 class="text-white font-bold text-xl">Módulo em Obras</h2>
-                 <p class="text-slate-500 mt-2">Estamos integrando sua custódia em tempo real.</p>
-              </div>
+              <AssetView />
             </template>
 
           </div>
@@ -49,6 +45,7 @@ import PendenciasAlert from './PendenciasAlert.vue';
 import Resumo from './Resumo.vue';
 import AsyncLoader from './AsyncLoader.vue';
 import TransactionView from './Transactions.vue';
+import AssetView from './Assets.vue';
 
 const currentTab = ref('dashboard');
 const { data, loading, error } = useApi(`/dashboard/pendencias`);
