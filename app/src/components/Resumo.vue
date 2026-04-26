@@ -278,13 +278,8 @@ const getBarOptions = (tipo) => {
     plotOptions: { 
       bar: { 
         borderRadius: 4, 
-        distributed: true, // IMPORTANTE: Isso faz com que cada barra use uma cor do array 'colors'
+        distributed: true,
         columnWidth: '70%',
-        colors: {
-          // Se você quiser que o negativo PREVALEÇA sobre a cor da classe, mantenha este bloco.
-          // Se quiser que a cor da classe apareça mesmo no negativo, remova o 'ranges'.
-          ranges: [{ from: -999999, to: -0.01, color: '#f87171' }] 
-        } 
       } 
     },
     xaxis: {
@@ -302,7 +297,7 @@ const getBarOptions = (tipo) => {
       axisBorder: { show: false },
       axisTicks: { show: false }
     },
-    legend: { show: false }, // Esconde a legenda automática que o modo 'distributed' cria
+    legend: { show: false },
     tooltip: { 
       theme: 'dark', 
       y: { formatter: (val) => formatCurrency(val) } 
