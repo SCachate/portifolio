@@ -249,30 +249,44 @@ const evolucaoOptions = computed(() => ({
     }
   }
 }));
-
 const getBarOptions = (tipo) => {
   return {
     chart: { 
       toolbar: { show: false },
       parentHeightOffset: 0,
-      events: {
-        dataPointSelection: (event, chartContext, config) => {
-          const item = dadosResultado.value[config.dataPointIndex];
-          if (item) {
-            abrirPeloGrafico({
-              classe: item.classe,
-              tipo: tipo,
-            });
-          }
-        }
-      },
+
     },  
-    grid: { padding: { top: 0, right: 0, bottom: 0, left: 0 } },
-    plotOptions: { bar: { borderRadius: 4, colors: { ranges: [{ from: -9999, to: 0, color: '#f87171' }] } } },
+    grid: { 
+      padding: { 
+        top: 0, 
+        right: 10, 
+        bottom: 10,
+        left: 10 
+      } 
+    },
+    plotOptions: { 
+      bar: { 
+        borderRadius: 4, 
+        colors: { ranges: [{ from: -9999, to: 0, color: '#f87171' }] } 
+      } 
+    },
     colors: ['#10b981'],
     xaxis: {
       categories: dadosResultado.value?.map(item => item.classe) || [], 
-      labels: { rotate: -45, style: { colors: '#94a3b8', fontSize: '10px' } }
+      labels: { 
+        show: true, 
+        rotate: -45, 
+        rotateAlways: true,
+        hideOverlappingLabels: false, 
+        trim: true,
+        style: { 
+          colors: '#94a3b8', 
+          fontSize: '9px', 
+          fontFamily: 'Inter, sans-serif'
+        } 
+      },
+      axisBorder: { show: false },
+      axisTicks: { show: false }
     },
     tooltip: { theme: 'dark', y: { formatter: (val) => formatCurrency(val) } },
     yaxis: { show: false },
