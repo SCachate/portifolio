@@ -249,51 +249,69 @@ const evolucaoOptions = computed(() => ({
     }
   }
 }));
+
 const getBarOptions = (tipo) => {
+  // Mapeia as cores vindas do backend na mesma ordem dos itens
+  const coresBackend = dadosResultado.value?.map(item => item.color) || ['#10b981'];
+
   return {
     chart: { 
       toolbar: { show: false },
       parentHeightOffset: 0,
-
+      events: {
+        dataPointSelection: (event, chartContext, config) => {
+          const item = dadosResultado.value[config.dataPointIndex];
+          if (item) {
+            abrirPeloGrafico({
+              classe: item.classe,
+              tipo: tipo,
+            });
+          }
+        }
+      },
     },  
-    grid: { 
-      padding: { 
-        top: 0, 
-        right: 10, 
-        bottom: 10,
-        left: 10 
-      } 
-    },
+    grid: { padding: { top: 0, right: 10, bottom: 10, left: 10 } },
+    
+    // Define o array de cores vindo do backend
+    colors: coresBackend,
+
     plotOptions: { 
       bar: { 
         borderRadius: 4, 
-        colors: { ranges: [{ from: -9999, to: 0, color: '#f87171' }] } 
+        distributed: true, // IMPORTANTE: Isso faz com que cada barra use uma cor do array 'colors'
+        columnWidth: '70%',
+        colors: {
+          // Se você quiser que o negativo PREVALEÇA sobre a cor da classe, mantenha este bloco.
+          // Se quiser que a cor da classe apareça mesmo no negativo, remova o 'ranges'.
+          ranges: [{ from: -999999, to: -0.01, color: '#f87171' }] 
+        } 
       } 
     },
-    colors: ['#10b981'],
     xaxis: {
       categories: dadosResultado.value?.map(item => item.classe) || [], 
       labels: { 
-        show: true, 
+        show: true,
         rotate: -45, 
         rotateAlways: true,
-        hideOverlappingLabels: false, 
-        trim: true,
+        hideOverlappingLabels: false,
         style: { 
           colors: '#94a3b8', 
-          fontSize: '9px', 
-          fontFamily: 'Inter, sans-serif'
+          fontSize: '9px' 
         } 
       },
       axisBorder: { show: false },
       axisTicks: { show: false }
     },
-    tooltip: { theme: 'dark', y: { formatter: (val) => formatCurrency(val) } },
+    legend: { show: false }, // Esconde a legenda automática que o modo 'distributed' cria
+    tooltip: { 
+      theme: 'dark', 
+      y: { formatter: (val) => formatCurrency(val) } 
+    },
     yaxis: { show: false },
     dataLabels: { enabled: false }
   }
 };
-
+  
 const diaSeries = ref([]);
 const mesSeries = ref([]);
 const anoSeries = ref([]);
