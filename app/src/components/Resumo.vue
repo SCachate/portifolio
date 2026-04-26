@@ -251,8 +251,8 @@ const evolucaoOptions = computed(() => ({
 }));
 
 const getBarOptions = (tipo) => {
-  // Mapeia as cores vindas do backend na mesma ordem dos itens
-  const coresBackend = dadosResultado.value?.map(item => item.cor) || ['#10b981'];
+  // Cores que vêm do backend para as barras
+  const coresBackend = dadosResultado.value?.map(item => item.color) || ['#10b981'];
 
   return {
     chart: { 
@@ -271,15 +271,15 @@ const getBarOptions = (tipo) => {
       },
     },  
     grid: { padding: { top: 0, right: 10, bottom: 10, left: 10 } },
-    
-    // Define o array de cores vindo do backend
     colors: coresBackend,
-
     plotOptions: { 
       bar: { 
         borderRadius: 4, 
         distributed: true,
         columnWidth: '70%',
+        colors: {
+          ranges: [{ from: -999999, to: -0.01, color: '#f87171' }] 
+        } 
       } 
     },
     xaxis: {
@@ -289,21 +289,54 @@ const getBarOptions = (tipo) => {
         rotate: -45, 
         rotateAlways: true,
         hideOverlappingLabels: false,
-        style: { 
-          colors: '#94a3b8', 
-          fontSize: '9px' 
-        } 
+        style: { colors: '#94a3b8', fontSize: '9px' } 
       },
       axisBorder: { show: false },
       axisTicks: { show: false }
     },
     legend: { show: false },
-    tooltip: { 
-      theme: 'dark', 
-      y: { formatter: (val) => formatCurrency(val) } 
-    },
     yaxis: { show: false },
-    dataLabels: { enabled: false }
+    dataLabels: { enabled: false },
+    
+    // --- ALTERAÇÃO AQUI: TOOLTIP CUSTOMIZADO ---
+    tooltip: {
+      theme: 'dark',
+      custom: function({ series, seriesIndex, dataPointIndex, w }) {
+        const val = series[seriesIndex][dataPointIndex];
+        const label = w.globals.labels[dataPointIndex];
+        const isPositive = val >= 0;
+        
+        // Cores para o indicador (Bolinha e Valor)
+        const statusColor = isPositive ? '#10b981' : '#f87171';
+        
+        return `
+          <div style="
+            background: #1a1c24; 
+            border: 1px solid #334155; 
+            padding: 10px; 
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          ">
+            <div style="color: #94a3b8; font-size: 10px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">
+              ${label}
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="
+                width: 8px; 
+                height: 8px; 
+                border-radius: 50%; 
+                background-color: ${statusColor}; 
+                display: inline-block;
+              "></span>
+              <span style="color: #f1f5f9; font-size: 12px;">Resultado:</span>
+              <span style="color: ${statusColor}; font-size: 12px; font-weight: 700;">
+                ${formatCurrency(val)}
+              </span>
+            </div>
+          </div>
+        `;
+      }
+    }
   }
 };
   
