@@ -81,7 +81,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useApi } from '../composables/useApi'; // Usando o seu composable
-import html2pdf from 'html2pdf.js';
+// import html2pdf from 'html2pdf.js';
 
 // Chamada única usando o seu padrão
 const { data: assets, loading, error } = useApi('/assets/patrimonio');
