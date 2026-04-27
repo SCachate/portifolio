@@ -6,8 +6,8 @@
         
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print mt-4">
           <div>
-            <h1 class="text-2xl font-bold text-white tracking-tight">Patrimônio Consolidado</h1>
-            <p class="text-slate-500 text-sm italic">Visão estratégica por classe de ativos</p>
+            <h1 class="text-2xl font-bold text-white tracking-tight">Patrimônio vs Meta</h1>
+            <p class="text-slate-500 text-sm italic">Análise de rebalanceamento estratégico</p>
           </div>
           
           <button 
@@ -35,15 +35,43 @@
         <div class="space-y-12 pb-10">
           <section v-for="(grupo, classe) in patrimonioAgrupado" :key="classe" class="bg-[#1a1d2b] rounded-xl border border-slate-800/50 overflow-hidden shadow-sm">
             
-            <div class="px-8 py-5 border-b border-slate-800/50 flex justify-between items-center bg-[#1c2030]">
-              <div class="flex items-center gap-3">
-                <div class="w-1.5 h-7 bg-emerald-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.4)]"></div>
-                <h3 class="font-bold text-white text-xl uppercase tracking-tight">{{ classe }}</h3>
-                <span class="text-[10px] font-black px-2 py-0.5 bg-slate-900 text-emerald-500 rounded border border-emerald-900/30 ml-2">
-                  {{ ((grupo.totalClasse / totalGeral) * 100).toFixed(1) }}%
-                </span>
+            <div class="px-8 py-6 border-b border-slate-800/50 bg-[#1c2030]">
+              <div class="flex justify-between items-start mb-5">
+                <div class="flex items-center gap-4">
+                  <div class="w-1.5 h-10 bg-emerald-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.4)]"></div>
+                  <div>
+                    <h3 class="font-bold text-white text-xl uppercase tracking-tight">{{ classe }}</h3>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">
+                      Meta: {{ grupo.target }}% | 
+                      <span :class="getStatusColor(grupo.percentualAtual, grupo.target)">
+                        Diferença: {{ (grupo.percentualAtual - grupo.target).toFixed(1) }}%
+                      </span>
+                    </p>
+                  </div>
+                </div>
+                
+                <div class="text-right">
+                  <span class="text-xl font-bold text-white font-mono block leading-none">
+                    {{ formatCurrency(grupo.totalClasse) }}
+                  </span>
+                  <span class="inline-block mt-2 text-[10px] font-black text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 uppercase tracking-tighter">
+                    Atual: {{ grupo.percentualAtual }}%
+                  </span>
+                </div>
               </div>
-              <span class="text-xl font-bold text-white font-mono">{{ formatCurrency(grupo.totalClasse) }}</span>
+
+              <div class="relative w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800/50">
+                <div 
+                  class="h-full transition-all duration-1000 ease-out"
+                  :class="parseFloat(grupo.percentualAtual) > parseFloat(grupo.target) ? 'bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.3)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]'"
+                  :style="{ width: `${Math.min(grupo.percentualAtual, 100)}%` }"
+                ></div>
+                
+                <div 
+                  class="absolute top-0 h-full w-0.5 bg-white z-20 shadow-[0_0_8px_white]"
+                  :style="{ left: `${grupo.target}%` }"
+                ></div>
+              </div>
             </div>
 
             <div class="overflow-x-auto">
@@ -63,16 +91,10 @@
                       <div class="font-bold text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight">
                         {{ item.ativo || '---' }}
                       </div>
-                      <div class="text-[10px] text-slate-500 font-medium uppercase mt-0.5">
-                        {{ item.description }}
-                      </div>
+                      <div class="text-[10px] text-slate-500 font-medium uppercase mt-0.5">{{ item.description }}</div>
                     </td>
-                    <td class="px-8 py-5 text-[11px] text-slate-400 font-medium uppercase tracking-tighter">
-                      {{ item.corretora }}
-                    </td>
-                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400">
-                      {{ item.quantidade }}
-                    </td>
+                    <td class="px-8 py-5 text-[11px] text-slate-400 uppercase tracking-tighter">{{ item.corretora }}</td>
+                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400">{{ item.quantidade }}</td>
                     <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400">
                       {{ formatCurrency(item.cotacao_atual_brl) }}
                     </td>
@@ -106,33 +128,43 @@ import { useApi } from '../composables/useApi';
 import AsyncLoader from './AsyncLoader.vue';
 import html2pdf from 'html2pdf.js';
 
-// Chamada da API usando o padrão consolidado do sistema
 const { data: assets, loading, error } = useApi('/assets/patrimonio');
 
-// Lógica de agrupamento por classe (Ações, FIIs, Internacional, etc)
-const patrimonioAgrupado = computed(() => {
-  if (!assets.value) return {};
-  return assets.value.reduce((acc, item) => {
-    const cls = item.classe || 'Diversos';
-    if (!acc[cls]) acc[cls] = { itens: [], totalClasse: 0 };
-    acc[cls].itens.push(item);
-    acc[cls].totalClasse += parseFloat(item.valor_mercado_brl || 0);
-    return acc;
-  }, {});
-});
-
-// Cálculo do montante total para o card principal
 const totalGeral = computed(() => {
   if (!assets.value) return 0;
   return assets.value.reduce((sum, item) => sum + parseFloat(item.valor_mercado_brl || 0), 0);
 });
 
-// Formatador de moeda padrão BRL
+const patrimonioAgrupado = computed(() => {
+  if (!assets.value) return {};
+  const total = totalGeral.value;
+  
+  return assets.value.reduce((acc, item) => {
+    const cls = item.classe || 'Diversos';
+    if (!acc[cls]) {
+      acc[cls] = { 
+        itens: [], 
+        totalClasse: 0, 
+        target: item.target || 0 
+      };
+    }
+    acc[cls].itens.push(item);
+    acc[cls].totalClasse += parseFloat(item.valor_mercado_brl || 0);
+    acc[cls].percentualAtual = total > 0 ? ((acc[cls].totalClasse / total) * 100).toFixed(1) : 0;
+    return acc;
+  }, {});
+});
+
+const getStatusColor = (atual, alvo) => {
+  const diff = atual - alvo;
+  if (Math.abs(diff) <= 1.5) return 'text-emerald-500'; 
+  return diff > 0 ? 'text-orange-500' : 'text-rose-500';
+};
+
 const formatCurrency = (v) => {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 };
 
-// Função para exportar PDF mantendo o estilo Dark Mode
 const generatePDF = () => {
   const element = document.getElementById('report-container');
   const opt = {
@@ -147,11 +179,9 @@ const generatePDF = () => {
 </script>
 
 <style scoped>
-/* Ajuste fino para tabelas e fontes mono */
 .font-mono {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
-
 @media print {
   .no-print { display: none !important; }
 }
