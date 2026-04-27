@@ -1,69 +1,73 @@
 <template>
-  <div class="min-h-screen bg-slate-50 p-4 md:p-8" id="report-container">
+  <div class="min-h-screen bg-[#0f111a] text-slate-300 p-4 md:p-8" id="report-container">
     
-    <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 no-print">
-      <div>
-        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Patrimônio Consolidado</h1>
-        <p class="text-slate-500 font-medium">Visão estratégica por classe de ativos</p>
-      </div>
-      
-      <button 
-        @click="generatePDF" 
-        class="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 transition-all shadow-sm font-semibold text-sm"
-      >
-        <span class="text-blue-500 text-lg">📄</span> Exportar PDF
-      </button>
-    </div>
-
     <AsyncLoader :loading="loading" :error="!!error">
-      <div class="max-w-6xl mx-auto">
+      <div class="max-w-[1400px] mx-auto">
         
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-8 flex items-center justify-between">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 no-print">
           <div>
-            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Valor Total de Mercado</p>
-            <h2 class="text-3xl font-black text-slate-900">{{ formatCurrency(totalGeral) }}</h2>
+            <h1 class="text-2xl font-bold text-white tracking-tight">Patrimônio Consolidado</h1>
+            <p class="text-slate-500 text-sm">Visão estratégica por classe de ativos</p>
           </div>
-          <div class="hidden md:block bg-blue-50 p-4 rounded-full">
-            <span class="text-2xl">📊</span>
+          
+          <button 
+            @click="generatePDF" 
+            class="flex items-center gap-2 bg-[#1a1d2b] border border-slate-800 text-slate-300 px-4 py-2 rounded-md hover:bg-[#252a3d] transition-all shadow-lg text-sm font-medium"
+          >
+            <span class="text-emerald-500">📄</span> Exportar PDF
+          </button>
+        </div>
+
+        <div class="bg-[#1a1d2b] rounded-xl p-8 border border-slate-800/50 mb-10 relative overflow-hidden">
+          <div class="relative z-10">
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Valor Total de Mercado</p>
+            <h2 class="text-4xl font-bold text-white">
+              {{ formatCurrency(totalGeral) }}
+            </h2>
+          </div>
+          <div class="absolute right-8 top-1/2 -translate-y-1/2 opacity-20 md:opacity-100">
+             <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+               <span class="text-3xl">📊</span>
+             </div>
           </div>
         </div>
 
-        <div class="space-y-8">
-          <section v-for="(grupo, classe) in patrimonioAgrupado" :key="classe" class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="space-y-12">
+          <section v-for="(grupo, classe) in patrimonioAgrupado" :key="classe" class="bg-[#1a1d2b] rounded-xl border border-slate-800/50 overflow-hidden shadow-2xl">
             
-            <div class="px-6 py-4 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center">
-              <div class="flex items-center gap-2">
-                <div class="w-2 h-6 bg-blue-500 rounded-full"></div>
-                <h3 class="font-bold text-slate-800 text-lg">{{ classe }}</h3>
-                <span class="text-xs font-bold px-2 py-1 bg-slate-200 text-slate-600 rounded-md ml-2">
+            <div class="px-8 py-5 border-b border-slate-800/50 flex justify-between items-center bg-[#1c2030]">
+              <div class="flex items-center gap-3">
+                <div class="w-1.5 h-7 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                <h3 class="font-bold text-white text-xl">{{ classe }}</h3>
+                <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-800 text-slate-400 rounded border border-slate-700 ml-2">
                   {{ ((grupo.totalClasse / totalGeral) * 100).toFixed(1) }}%
                 </span>
               </div>
-              <span class="text-lg font-bold text-slate-900">{{ formatCurrency(grupo.totalClasse) }}</span>
+              <span class="text-xl font-bold text-white">{{ formatCurrency(grupo.totalClasse) }}</span>
             </div>
 
             <div class="overflow-x-auto">
               <table class="w-full">
                 <thead>
-                  <tr class="text-left text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-50">
-                    <th class="px-6 py-4 font-black">Ativo</th>
-                    <th class="px-6 py-4 font-black">Corretora</th>
-                    <th class="px-6 py-4 font-black text-right">Qtd</th>
-                    <th class="px-6 py-4 font-black text-right">Cotação</th>
-                    <th class="px-6 py-4 font-black text-right">Total</th>
+                  <tr class="text-left text-[10px] uppercase tracking-[0.15em] text-slate-500 border-b border-slate-800/30">
+                    <th class="px-8 py-5 font-bold">Ativo</th>
+                    <th class="px-8 py-5 font-bold">Corretora</th>
+                    <th class="px-8 py-5 font-bold text-right">Qtd</th>
+                    <th class="px-8 py-5 font-bold text-right">Cotação</th>
+                    <th class="px-8 py-5 font-bold text-right">Total</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-50">
-                  <tr v-for="item in grupo.itens" :key="item.ativo" class="hover:bg-blue-50/30 transition-colors group">
-                    <td class="px-6 py-4">
-                      <div class="font-bold text-slate-800">{{ item.ativo || '---' }}</div>
-                      <div class="text-[10px] text-slate-400 truncate max-w-[150px] uppercase">{{ item.description }}</div>
+                <tbody class="divide-y divide-slate-800/30">
+                  <tr v-for="item in grupo.itens" :key="item.ativo" class="hover:bg-slate-800/20 transition-colors group">
+                    <td class="px-8 py-5">
+                      <div class="font-bold text-white group-hover:text-emerald-400 transition-colors">{{ item.ativo || '---' }}</div>
+                      <div class="text-[10px] text-slate-500 font-medium uppercase tracking-wider mt-0.5">{{ item.description }}</div>
                     </td>
-                    <td class="px-6 py-4 text-xs text-slate-600">{{ item.corretora }}</td>
-                    <td class="px-6 py-4 text-right font-mono text-xs text-slate-600">{{ item.quantidade }}</td>
-                    <td class="px-6 py-4 text-right font-mono text-xs text-slate-600">{{ formatCurrency(item.cotacao_atual_brl) }}</td>
-                    <td class="px-6 py-4 text-right">
-                      <span class="font-bold text-slate-900" :class="{'text-red-500': item.valor_mercado_brl < 0}">
+                    <td class="px-8 py-5 text-[11px] text-slate-400 font-medium uppercase">{{ item.corretora }}</td>
+                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400">{{ item.quantidade }}</td>
+                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400">{{ formatCurrency(item.cotacao_atual_brl) }}</td>
+                    <td class="px-8 py-5 text-right">
+                      <span class="font-bold text-white" :class="{'text-rose-500': item.valor_mercado_brl < 0}">
                         {{ formatCurrency(item.valor_mercado_brl) }}
                       </span>
                     </td>
@@ -80,17 +84,15 @@
 
 <script setup>
 import { computed } from 'vue';
-import { useApi } from '../composables/useApi'; // Usando o seu composable
+import { useApi } from '../composables/useApi';
 // import html2pdf from 'html2pdf.js';
 
-// Chamada única usando o seu padrão
 const { data: assets, loading, error } = useApi('/assets/patrimonio');
 
-// Agrupamento Reativo
 const patrimonioAgrupado = computed(() => {
   if (!assets.value) return {};
   return assets.value.reduce((acc, item) => {
-    const cls = item.classe || 'Outros';
+    const cls = item.classe || 'Diversos';
     if (!acc[cls]) acc[cls] = { itens: [], totalClasse: 0 };
     acc[cls].itens.push(item);
     acc[cls].totalClasse += parseFloat(item.valor_mercado_brl || 0);
@@ -110,10 +112,10 @@ const formatCurrency = (v) => {
 const generatePDF = () => {
   const element = document.getElementById('report-container');
   const opt = {
-    margin: 8,
-    filename: 'K-Portfolio-Report.pdf',
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
+    margin: 0,
+    filename: 'K-Portfolio-Patrimonio.pdf',
+    image: { type: 'jpeg', quality: 1 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#0f111a' },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
   html2pdf().set(opt).from(element).save();
@@ -121,6 +123,11 @@ const generatePDF = () => {
 </script>
 
 <style scoped>
+/* Ajuste para garantir que fontes mono fiquem legíveis no escuro */
+font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
 @media print {
   .no-print { display: none !important; }
 }
