@@ -73,6 +73,7 @@ exports.getPatrimoio = asyncHandler(async (req, res) => {
 	const [rows] = await db.execute(`
 SELECT 
 	vpc.classe
+	, ic.targetPercent target
 	, vpc.ativo
 	, vpc.description
 	, vpc.corretora
@@ -81,8 +82,10 @@ SELECT
 	, vpc.preco_medio_brl
 	, vpc.quantidade
 	, vpc.valor_mercado_brl
+	, vpc.*
 FROM
 	v_patrimonio_consolidado vpc
+	left join investment_classes ic  on ic.id = vpc.classId
 where
 	vpc.userId = ?
 order BY
