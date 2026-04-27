@@ -81,8 +81,11 @@
       </div>
 
       <div v-else class="flex flex-col items-center justify-center py-20 opacity-50">
-         </AsyncLoader>
-      </div>   
+          <span class="text-5xl mb-4">🔎</span>
+          <p class="text-white font-bold">Nenhum ativo encontrado na carteira.</p>
+      </div>
+
+    </AsyncLoader>
   </div>
 </template>
 
