@@ -8,28 +8,13 @@
         :disabled="loading"
         class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-md active:scale-95"
       >
-        <svg 
-          v-if="!loading"
-          xmlns="http://www.w3.org/2000/svg" 
-          class="h-4 w-4" 
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke="currentColor"
-        >
+        <svg v-if="!loading" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
-        
-        <svg 
-          v-else 
-          class="animate-spin h-4 w-4 text-white" 
-          xmlns="http://www.w3.org/2000/svg" 
-          fill="none" 
-          viewBox="0 0 24 24"
-        >
+        <svg v-else class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
-
         <span>{{ loading ? 'Atualizando...' : 'Atualizar' }}</span>
       </button>
     </div>
@@ -39,13 +24,7 @@
         <h3 class="chart-title text-center w-full">Distribuição</h3>
         <AsyncLoader :loading="loading" :error="error" class="flex-grow-loader">
           <div class="donut-chart-box flex items-center justify-center w-full h-full overflow-hidden">
-            <apexchart 
-              type="donut" 
-              width="100%" 
-              height="250" 
-              :options="chartOptions" 
-              :series="series" 
-            />
+            <apexchart type="donut" width="100%" height="250" :options="chartOptions" :series="series" />
           </div>
         </AsyncLoader>
       </div>
@@ -54,47 +33,23 @@
         <div class="header-top-row">
           <h3 class="chart-title m-0">Evolução Patrimonial</h3>
           <div class="year-navigator">
-            <button 
-              @click="mudarAno(-1)" 
-              class="nav-btn" 
-              :disabled="loadingEvolucao"
-              title="Ano Anterior"
-            >&lt;</button>
+            <button @click="mudarAno(-1)" class="nav-btn" :disabled="loadingEvolucao" title="Ano Anterior">&lt;</button>
             <span class="year-display">{{ anoVisualizado }}</span>
-            <button 
-              @click="mudarAno(1)" 
-              class="nav-btn" 
-              :disabled="loadingEvolucao"
-              title="Próximo Ano"
-            >&gt;</button>
+            <button @click="mudarAno(1)" class="nav-btn" :disabled="loadingEvolucao" title="Próximo Ano">&gt;</button>
           </div>
         </div>
         
         <div class="card-body-v2">
-          <AsyncLoader 
-            :loading="loadingEvolucao" 
-            :error="errorEvolucao" 
-            class="flex-grow-loader"
-          >
+          <AsyncLoader :loading="loadingEvolucao" :error="errorEvolucao" class="flex-grow-loader">
             <div class="chart-wrapper-dynamic">
-              <apexchart 
-                type="line" 
-                height="100%" 
-                width="100%"
-                :options="evolucaoOptions" 
-                :series="evolucaoSeries" 
-              />
+              <apexchart type="line" height="100%" width="100%" :options="evolucaoOptions" :series="evolucaoSeries" />
             </div>
           </AsyncLoader>
         </div>
       </div>
 
       <div class="chart-card">
-        <AsyncLoader 
-          :loading="loadingResultado" 
-          :error="errorResultado" 
-          class="flex-grow-loader"
-        >
+        <AsyncLoader :loading="loadingResultado" :error="errorResultado" class="flex-grow-loader">
           <h3 class="chart-title">Resultado do Dia</h3>
           <span :class="['result-value', totaisResultado.dia >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.dia) }}
@@ -104,11 +59,7 @@
       </div>
 
       <div class="chart-card">
-        <AsyncLoader 
-          :loading="loadingResultado" 
-          :error="errorResultado" 
-          class="flex-grow-loader"
-        >
+        <AsyncLoader :loading="loadingResultado" :error="errorResultado" class="flex-grow-loader">
           <h3 class="chart-title">Resultado do Mês</h3>
           <span :class="['result-value', totaisResultado.mes >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.mes) }}
@@ -118,11 +69,7 @@
       </div>
 
       <div class="chart-card">
-        <AsyncLoader 
-          :loading="loadingResultado" 
-          :error="errorResultado" 
-          class="flex-grow-loader"
-        >
+        <AsyncLoader :loading="loadingResultado" :error="errorResultado" class="flex-grow-loader">
           <h3 class="chart-title">Resultado do Ano</h3>
           <span :class="['result-value', totaisResultado.ano >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.ano) }}
@@ -192,38 +139,31 @@ const formatCurrency = (val) => {
 
 const atualizarTudo = async () => {
   try {
-    await Promise.all([
-      fetchResumo(),
-      fetchEvolucao(),
-      fetchResultado()
-    ]);
+    await Promise.all([fetchResumo(), fetchEvolucao(), fetchResultado()]);
   } catch (error) {
     console.error("Erro na atualização global:", error);
   }
 };
 
-// AJUSTE: Filtra os dados para remover meses futuros que não possuem valor
+// CORREÇÃO: Filtra fisicamente os arrays para conter apenas meses com dados
 const evolucaoSeries = computed(() => {
   if (!dadosEvolucao.value || !Array.isArray(dadosEvolucao.value)) return [];
 
-  // Localiza o índice do último mês com valor real
-  let ultimoMesComDados = 0;
+  // Localiza o último índice que possui valor maior que zero em qualquer série
+  let ultimoIndiceValido = -1;
   dadosEvolucao.value.forEach(serie => {
     if (Array.isArray(serie.data)) {
-      serie.data.forEach((valor, index) => {
-        if (valor !== 0 && valor !== null && valor !== undefined) {
-          if (index + 1 > ultimoMesComDados) ultimoMesComDados = index + 1;
-        }
-      });
+      const lastIdx = serie.data.findLastIndex(v => v !== 0 && v !== null && v !== undefined);
+      if (lastIdx > ultimoIndiceValido) ultimoIndiceValido = lastIdx;
     }
   });
 
-  if (ultimoMesComDados === 0) return [];
+  if (ultimoIndiceValido === -1) return [];
 
-  // Retorna apenas a fatia dos dados que importa
+  // Corta os dados para que o ApexCharts não veja os meses futuros
   return dadosEvolucao.value.map(serie => ({
     ...serie,
-    data: serie.data.slice(0, ultimoMesComDados)
+    data: serie.data.slice(0, ultimoIndiceValido + 1)
   }));
 });
 
@@ -231,10 +171,10 @@ const mudarAno = (delta) => {
   anoVisualizado.value += delta; 
 };
 
-// AJUSTE: Sincroniza as categorias do eixo X com o tamanho dos dados filtrados
+// CORREÇÃO: Ajusta as categorias do eixo X para bater com o tamanho dos dados
 const evolucaoOptions = computed(() => {
-  const todasCategorias = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-  const numMesesVisiveis = evolucaoSeries.value[0]?.data?.length || 12;
+  const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const mesesVisiveis = meses.slice(0, evolucaoSeries.value[0]?.data?.length || 0);
 
   return {
     chart: { stacked: true, toolbar: { show: false }, fontFamily: 'inherit' },
@@ -242,7 +182,7 @@ const evolucaoOptions = computed(() => {
     colors: ['#A78BFA', '#F472B6', '#FBBF24', '#60A5FA', '#34D399', '#F87171'],
     grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 10 } },
     xaxis: { 
-      categories: todasCategorias.slice(0, numMesesVisiveis), // Ajusta o eixo X
+      categories: mesesVisiveis,
       labels: { style: { colors: '#94a3b8', fontSize: '10px' } }
     },
     yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
@@ -277,7 +217,6 @@ const evolucaoOptions = computed(() => {
 
 const getBarOptions = (tipo) => {
   const coresBackend = dadosResultado.value?.map(item => item.cor) || ['#10b981'];
-
   return {
     chart: { 
       toolbar: { show: false },
@@ -285,35 +224,17 @@ const getBarOptions = (tipo) => {
       events: {
         dataPointSelection: (event, chartContext, config) => {
           const item = dadosResultado.value[config.dataPointIndex];
-          if (item) {
-            abrirPeloGrafico({
-              classe: item.classe,
-              tipo: tipo,
-            });
-          }
+          if (item) abrirPeloGrafico({ classe: item.classe, tipo: tipo });
         }
       },
     },  
     grid: { padding: { top: 0, right: 10, bottom: 10, left: 10 } },
     colors: coresBackend,
-    plotOptions: { 
-      bar: { 
-        borderRadius: 4, 
-        distributed: true,
-        columnWidth: '70%',
-        colors: { ranges: [] } 
-      } 
-    },
+    plotOptions: { bar: { borderRadius: 4, distributed: true, columnWidth: '70%' } },
     fill: { type: 'solid', colors: coresBackend },
     xaxis: {
       categories: dadosResultado.value?.map(item => item.classe) || [], 
-      labels: { 
-        show: true,
-        rotate: -45, 
-        rotateAlways: true,
-        hideOverlappingLabels: false,
-        style: { colors: '#94a3b8', fontSize: '9px' } 
-      },
+      labels: { show: true, rotate: -45, rotateAlways: true, style: { colors: '#94a3b8', fontSize: '9px' } },
       axisBorder: { show: false },
       axisTicks: { show: false }
     },
@@ -325,18 +246,14 @@ const getBarOptions = (tipo) => {
       custom: function({ series, seriesIndex, dataPointIndex, w }) {
         const val = series[seriesIndex][dataPointIndex];
         const label = w.globals.labels[dataPointIndex];
-        const isPositive = val >= 0;
-        const statusColor = isPositive ? '#10b981' : '#f87171';
-        
-        return `
-          <div style="background: #1a1c24; border: 1px solid #334155; padding: 10px; border-radius: 8px;">
+        const statusColor = val >= 0 ? '#10b981' : '#f87171';
+        return `<div style="background: #1a1c24; border: 1px solid #334155; padding: 10px; border-radius: 8px;">
             <div style="color: #94a3b8; font-size: 10px; font-weight: 600; text-transform: uppercase;">${label}</div>
             <div style="display: flex; align-items: center; gap: 6px;">
               <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor};"></span>
               <span style="color: #f1f5f9; font-size: 12px;">Resultado: ${formatCurrency(val)}</span>
             </div>
-          </div>
-        `;
+          </div>`;
       }
     }
   }
@@ -365,19 +282,11 @@ const chartOptions = ref({
               const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
               return `R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             }
-          },
-          value: {
-            show: true,
-            color: '#fff',
-            formatter: function (val) {
-              return `R$ ${parseFloat(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            }
           }
         }
       }
     }
-  },
-  tooltip: { y: { formatter: (val) => `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` } }
+  }
 });
 
 watch(data, (newData) => {
@@ -416,7 +325,6 @@ watch(dadosResultado, (newData) => {
 .header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .card-body-v2 { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .flex-grow-loader { flex: 1; display: flex; flex-direction: column; width: 100%; }
-:deep(.flex-grow-loader > div) { flex: 1; display: flex; flex-direction: column; height: 100%; }
 .chart-wrapper-dynamic { flex: 1; height: 100%; width: 100%; }
 .year-navigator { display: flex; align-items: center; background: #0f172a; border-radius: 6px; padding: 2px; border: 1px solid #334155; }
 .nav-btn { background: transparent; border: none; color: #10b981; padding: 0 10px; cursor: pointer; font-size: 14px; font-weight: bold; }
