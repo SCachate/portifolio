@@ -145,44 +145,39 @@ const atualizarTudo = async () => {
   }
 };
 
-// CORREÇÃO: Filtra fisicamente os arrays para conter apenas meses com dados
+// Mantemos as series completas para evitar erros de renderização
 const evolucaoSeries = computed(() => {
-  if (!dadosEvolucao.value || !Array.isArray(dadosEvolucao.value)) return [];
-
-  // Localiza o último índice que possui valor maior que zero em qualquer série
-  let ultimoIndiceValido = -1;
-  dadosEvolucao.value.forEach(serie => {
-    if (Array.isArray(serie.data)) {
-      const lastIdx = serie.data.findLastIndex(v => v !== 0 && v !== null && v !== undefined);
-      if (lastIdx > ultimoIndiceValido) ultimoIndiceValido = lastIdx;
-    }
-  });
-
-  if (ultimoIndiceValido === -1) return [];
-
-  // Corta os dados para que o ApexCharts não veja os meses futuros
-  return dadosEvolucao.value.map(serie => ({
-    ...serie,
-    data: serie.data.slice(0, ultimoIndiceValido + 1)
-  }));
+  return dadosEvolucao.value || [];
 });
 
 const mudarAno = (delta) => { 
   anoVisualizado.value += delta; 
 };
 
-// CORREÇÃO: Ajusta as categorias do eixo X para bater com o tamanho dos dados
 const evolucaoOptions = computed(() => {
-  const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-  const mesesVisiveis = meses.slice(0, evolucaoSeries.value[0]?.data?.length || 0);
+  // Identifica dinamicamente até onde o gráfico deve ir
+  let ultimoMesComDados = 0;
+  if (dadosEvolucao.value) {
+    dadosEvolucao.value.forEach(serie => {
+      const lastIdx = serie.data?.findLastIndex(v => v !== 0 && v !== null && v !== undefined) ?? -1;
+      if (lastIdx > ultimoMesComDados) ultimoMesComDados = lastIdx;
+    });
+  }
 
   return {
-    chart: { stacked: true, toolbar: { show: false }, fontFamily: 'inherit' },
+    chart: { 
+      stacked: true, 
+      toolbar: { show: false }, 
+      fontFamily: 'inherit',
+      animations: { enabled: false } 
+    },
     stroke: { width: [0, 0, 0, 0, 0, 3], curve: 'smooth' },
     colors: ['#A78BFA', '#F472B6', '#FBBF24', '#60A5FA', '#34D399', '#F87171'],
     grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 10 } },
     xaxis: { 
-      categories: mesesVisiveis,
+      categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+      min: 1,
+      max: ultimoMesComDados + 1, // Corta visualmente o gráfico no último mês válido
       labels: { style: { colors: '#94a3b8', fontSize: '10px' } }
     },
     yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
@@ -197,7 +192,7 @@ const evolucaoOptions = computed(() => {
                       <div class="tooltip-header">${w.globals.categoryLabels[dataPointIndex]} ${anoVisualizado.value}</div>
                       <div class="tooltip-body">`;
         w.config.series.forEach((s, idx) => {
-          const val = series[idx][dataPointIndex];
+          const val = series[idx][dataPointIndex] || 0;
           if (s.type === 'column') total += val;
           html += `<div class="tooltip-row">
                     <span class="dot" style="background:${w.globals.colors[idx]}"></span>
