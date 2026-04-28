@@ -147,41 +147,33 @@ const buscaAsset = ref('');
 const assetSelecionado = ref(null);
 const idClasseAtiva = ref(null);
 
-// 1. Busca de Classes (Fixa)
 const { data: classesResponse } = useApi('/classes/', { method: 'get' });
 
-// 2. Componíveis de API (URLs começam nulas)
 const urlAtivos = ref(null);
 const { data: assetsResponse, loading: carregandoAssets, fetchData: carregarAssets } = useApi(urlAtivos);
 
 const urlRendimento = ref(null);
 const { data: rendimentoResponse, loading: carregandoRendimento, fetchData: carregarRendimento } = useApi(urlRendimento);
 
-// Auxiliares de validação e formato
 const dataEhValida = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d);
 const formatarMoeda = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const formatarDataRelatorio = (d) => d ? d.split('T')[0].split('-').reverse().join('/') : '-';
 
-// MÉTODO MESTRE: Sincroniza o ID e dispara a busca
 const sincronizarEBuscar = async () => {
   const lista = Array.isArray(classesResponse.value) ? classesResponse.value : (classesResponse.value?.rows || []);
-  
   if (lista.length > 0 && props.classeSelecionada) {
     const found = lista.find(c => c.nome.toLowerCase().trim() === props.classeSelecionada.toLowerCase().trim());
     if (found) {
       idClasseAtiva.value = found.id;
-      
-      // Se datas são válidas, monta a URL e força o fetchData
       if (dataEhValida(dataInicio.value) && dataEhValida(dataFim.value)) {
         urlAtivos.value = `/assets/ByClass/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
         await nextTick();
-        carregarAssets(); // Força a chamada da API
+        carregarAssets();
       }
     }
   }
 };
 
-// Monitora mudança de datas ou ID para atualizar ativos
 watch([idClasseAtiva, dataInicio, dataFim], () => {
   if (props.modelValue && idClasseAtiva.value && dataEhValida(dataInicio.value) && dataEhValida(dataFim.value)) {
     urlAtivos.value = `/assets/ByClass/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
@@ -189,7 +181,6 @@ watch([idClasseAtiva, dataInicio, dataFim], () => {
   }
 });
 
-// Monitora seleção de ativo para buscar rendimentos
 watch(assetSelecionado, (novoAsset) => {
   if (novoAsset?.Id && idClasseAtiva.value && dataEhValida(dataInicio.value)) {
     urlRendimento.value = `/assets/Rendimentos/${novoAsset.Id}/${idClasseAtiva.value}/${dataInicio.value}/${dataFim.value}`;
@@ -199,13 +190,10 @@ watch(assetSelecionado, (novoAsset) => {
   }
 });
 
-// Ao abrir o modal
 watch(() => props.modelValue, async (val) => {
   if (val) {
     assetSelecionado.value = null;
     buscaAsset.value = '';
-    
-    // 1. Define datas primeiro
     const agora = new Date();
     const f = (d) => {
       const y = d.getFullYear();
@@ -215,68 +203,4 @@ watch(() => props.modelValue, async (val) => {
     };
     dataFim.value = f(agora);
     if (props.tipo === 'mes') dataInicio.value = f(new Date(agora.getFullYear(), agora.getMonth(), 1));
-    else if (props.tipo === 'ano') dataInicio.value = f(new Date(agora.getFullYear(), 0, 1));
-    else dataInicio.value = f(agora);
-
-    // 2. Espera as datas serem processadas e busca o ID/Dados
-    await nextTick();
-    sincronizarEBuscar();
-  }
-});
-
-// Auto-seleciona primeiro ativo da lista
-watch(assetsResponse, (newVal) => {
-  const lista = Array.isArray(newVal) ? newVal : (newVal?.rows || []);
-  assetSelecionado.value = lista.length > 0 ? lista[0] : null;
-});
-
-// Computeds de interface
-const assetsFiltrados = computed(() => {
-  const lista = Array.isArray(unref(assetsResponse)) ? unref(assetsResponse) : (unref(assetsResponse)?.rows || []);
-  if (!buscaAsset.value) return lista;
-  const t = buscaAsset.value.toLowerCase();
-  return lista.filter(a => a.nome_completo?.toLowerCase().includes(t) || a.ticker?.toLowerCase().includes(t));
-});
-
-const totalGeralClasse = computed(() => assetsFiltrados.value.reduce((acc, a) => acc + (Number(a.resultado) || 0), 0));
-const listaRendimento = computed(() => Array.isArray(unref(rendimentoResponse)) ? unref(rendimentoResponse) : (unref(rendimentoResponse)?.rows || []));
-
-const cardsIndicadores = computed(() => {
-  if (!listaRendimento.value.length) return [];
-  const rec = listaRendimento.value[0];
-  const ant = listaRendimento.value[listaRendimento.value.length - 1];
-  return [
-    { label: 'Início Período', valor: formatarMoeda(ant.inicial) },
-    { label: 'Total Proventos', valor: formatarMoeda(listaRendimento.value.reduce((acc, r) => acc + (Number(r.proventos) || 0), 0)), color: 'text-orange-400' },
-    { label: 'Patrimônio Final', valor: formatarMoeda(rec.final) },
-    { label: 'Ganho no Período', valor: formatarMoeda(listaRendimento.value.reduce((acc, r) => acc + (Number(r.resultado) || 0), 0)), color: 'text-emerald-400' }
-  ];
-});
-
-const aoMudarClasseManual = (e) => {
-  idClasseAtiva.value = parseInt(e.target.value);
-  assetSelecionado.value = null;
-};
-</script>
-
-<style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-@keyframes modal-in { from { transform: scale(0.98) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
-.animate-modal { animation: modal-in 0.2s ease-out; }
-
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
-
-.row-item:hover { background-color: rgba(16, 185, 129, 0.05); }
-select option { background-color: #1a1c24; color: white; }
-
-input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-  cursor: pointer;
-  opacity: 0.5;
-}
-input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
-</style>
+    else if (props.tipo === 'ano') dataInicio.value = f(new Date
