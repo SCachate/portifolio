@@ -202,62 +202,78 @@ const atualizarTudo = async () => {
   }
 };
 
-// CORREÇÃO: Normalização dos dados para 12 meses
+// AJUSTE: Filtra os dados para remover meses futuros que não possuem valor
 const evolucaoSeries = computed(() => {
   if (!dadosEvolucao.value || !Array.isArray(dadosEvolucao.value)) return [];
 
-  return dadosEvolucao.value.map(serie => {
-    const dataPreenchida = Array(12).fill(0);
+  // Localiza o índice do último mês com valor real
+  let ultimoMesComDados = 0;
+  dadosEvolucao.value.forEach(serie => {
     if (Array.isArray(serie.data)) {
       serie.data.forEach((valor, index) => {
-        if (index < 12) dataPreenchida[index] = valor;
+        if (valor !== 0 && valor !== null && valor !== undefined) {
+          if (index + 1 > ultimoMesComDados) ultimoMesComDados = index + 1;
+        }
       });
     }
-    return { ...serie, data: dataPreenchida };
   });
+
+  if (ultimoMesComDados === 0) return [];
+
+  // Retorna apenas a fatia dos dados que importa
+  return dadosEvolucao.value.map(serie => ({
+    ...serie,
+    data: serie.data.slice(0, ultimoMesComDados)
+  }));
 });
 
 const mudarAno = (delta) => { 
   anoVisualizado.value += delta; 
 };
 
-const evolucaoOptions = computed(() => ({
-  chart: { stacked: true, toolbar: { show: false }, fontFamily: 'inherit' },
-  stroke: { width: [0, 0, 0, 0, 0, 3], curve: 'smooth' },
-  colors: ['#A78BFA', '#F472B6', '#FBBF24', '#60A5FA', '#34D399', '#F87171'],
-  grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 10 } },
-  xaxis: { 
-    categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-    labels: { style: { colors: '#94a3b8', fontSize: '10px' } }
-  },
-  yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
-  legend: { position: 'top', horizontalAlign: 'center', labels: { colors: '#f1f5f9' }, fontSize: '11px', offsetY: 0 },
-  dataLabels: { enabled: false },
-  tooltip: {
-    theme: 'dark',
-    shared: true,
-    custom: function({ series, dataPointIndex, w }) {
-      let total = 0;
-      let html = `<div class="custom-tooltip-box">
-                    <div class="tooltip-header">${w.globals.categoryLabels[dataPointIndex]} ${anoVisualizado.value}</div>
-                    <div class="tooltip-body">`;
-      w.config.series.forEach((s, idx) => {
-        const val = series[idx][dataPointIndex];
-        if (s.type === 'column') total += val;
-        html += `<div class="tooltip-row">
-                  <span class="dot" style="background:${w.globals.colors[idx]}"></span>
-                  <span>${s.name}:</span>
-                  <span class="value">${formatCurrency(val)}</span>
-                </div>`;
-      });
-      html += `<div class="tooltip-total">
-                  <span>TOTAL:</span>
-                  <span class="text-emerald-400">${formatCurrency(total)}</span>
-               </div></div></div>`;
-      return html;
+// AJUSTE: Sincroniza as categorias do eixo X com o tamanho dos dados filtrados
+const evolucaoOptions = computed(() => {
+  const todasCategorias = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const numMesesVisiveis = evolucaoSeries.value[0]?.data?.length || 12;
+
+  return {
+    chart: { stacked: true, toolbar: { show: false }, fontFamily: 'inherit' },
+    stroke: { width: [0, 0, 0, 0, 0, 3], curve: 'smooth' },
+    colors: ['#A78BFA', '#F472B6', '#FBBF24', '#60A5FA', '#34D399', '#F87171'],
+    grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 10 } },
+    xaxis: { 
+      categories: todasCategorias.slice(0, numMesesVisiveis), // Ajusta o eixo X
+      labels: { style: { colors: '#94a3b8', fontSize: '10px' } }
+    },
+    yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
+    legend: { position: 'top', horizontalAlign: 'center', labels: { colors: '#f1f5f9' }, fontSize: '11px', offsetY: 0 },
+    dataLabels: { enabled: false },
+    tooltip: {
+      theme: 'dark',
+      shared: true,
+      custom: function({ series, dataPointIndex, w }) {
+        let total = 0;
+        let html = `<div class="custom-tooltip-box">
+                      <div class="tooltip-header">${w.globals.categoryLabels[dataPointIndex]} ${anoVisualizado.value}</div>
+                      <div class="tooltip-body">`;
+        w.config.series.forEach((s, idx) => {
+          const val = series[idx][dataPointIndex];
+          if (s.type === 'column') total += val;
+          html += `<div class="tooltip-row">
+                    <span class="dot" style="background:${w.globals.colors[idx]}"></span>
+                    <span>${s.name}:</span>
+                    <span class="value">${formatCurrency(val)}</span>
+                  </div>`;
+        });
+        html += `<div class="tooltip-total">
+                    <span>TOTAL:</span>
+                    <span class="text-emerald-400">${formatCurrency(total)}</span>
+                 </div></div></div>`;
+        return html;
+      }
     }
-  }
-}));
+  };
+});
 
 const getBarOptions = (tipo) => {
   const coresBackend = dadosResultado.value?.map(item => item.cor) || ['#10b981'];
