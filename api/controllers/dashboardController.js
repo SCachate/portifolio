@@ -67,11 +67,11 @@ exports.getEvolucao = async (req, res) => {
                     name: row.name,
                     type: row.type,
                     color: row.color, 
-                    data: new Array(12).fill(0)
+                    data: new Array(12).fill(null)
                 };
             }
-            
-            acc[row.name].data[row.mes - 1] = parseFloat(row.valor);
+            const valorNumerico = parseFloat(row.valor);
+            acc[row.name].data[row.mes - 1] = isNaN(valorNumerico) ? null : valorNumerico;            
             return acc;
         }, {});
 
