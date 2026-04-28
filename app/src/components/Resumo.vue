@@ -156,15 +156,13 @@ const modalAberto = ref(false);
 const filtrosAtivos = ref({ classe: '', tipo: '' });
 
 const abrirPeloGrafico = (dados) => {
-  filtrosAtivos.value = { ...dados }; // Spread para garantir nova referência
+  filtrosAtivos.value = { ...dados };
   modalAberto.value = true;
 };
 
-// 1. Lógica da Distribuição (Donut)
 const { data, loading, error, fetchData: fetchResumo } = useApi(`/dashboard/resumo`);
 const series = ref([]);
 
-// 2. Lógica da Evolução (API Reativa por Ano)
 const anoVisualizado = ref(new Date().getFullYear());
 const urlEvolucao = computed(() => `/dashboard/evolucao?ano=${anoVisualizado.value}`);
 
@@ -204,8 +202,19 @@ const atualizarTudo = async () => {
   }
 };
 
+// CORREÇÃO: Normalização dos dados para 12 meses
 const evolucaoSeries = computed(() => {
-  return (dadosEvolucao.value && Array.isArray(dadosEvolucao.value)) ? dadosEvolucao.value : [];
+  if (!dadosEvolucao.value || !Array.isArray(dadosEvolucao.value)) return [];
+
+  return dadosEvolucao.value.map(serie => {
+    const dataPreenchida = Array(12).fill(0);
+    if (Array.isArray(serie.data)) {
+      serie.data.forEach((valor, index) => {
+        if (index < 12) dataPreenchida[index] = valor;
+      });
+    }
+    return { ...serie, data: dataPreenchida };
+  });
 });
 
 const mudarAno = (delta) => { 
@@ -270,25 +279,16 @@ const getBarOptions = (tipo) => {
       },
     },  
     grid: { padding: { top: 0, right: 10, bottom: 10, left: 10 } },
-    
     colors: coresBackend,
-
     plotOptions: { 
       bar: { 
         borderRadius: 4, 
         distributed: true,
         columnWidth: '70%',
-        colors: {
-          ranges: [] 
-        } 
+        colors: { ranges: [] } 
       } 
     },
-
-    fill: {
-      type: 'solid',
-      colors: coresBackend
-    },
-
+    fill: { type: 'solid', colors: coresBackend },
     xaxis: {
       categories: dadosResultado.value?.map(item => item.classe) || [], 
       labels: { 
@@ -304,39 +304,20 @@ const getBarOptions = (tipo) => {
     legend: { show: false },
     yaxis: { show: false },
     dataLabels: { enabled: false },
-    
     tooltip: {
       theme: 'dark',
       custom: function({ series, seriesIndex, dataPointIndex, w }) {
         const val = series[seriesIndex][dataPointIndex];
         const label = w.globals.labels[dataPointIndex];
         const isPositive = val >= 0;
-        
         const statusColor = isPositive ? '#10b981' : '#f87171';
         
         return `
-          <div style="
-            background: #1a1c24; 
-            border: 1px solid #334155; 
-            padding: 10px; 
-            border-radius: 8px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          ">
-            <div style="color: #94a3b8; font-size: 10px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">
-              ${label}
-            </div>
+          <div style="background: #1a1c24; border: 1px solid #334155; padding: 10px; border-radius: 8px;">
+            <div style="color: #94a3b8; font-size: 10px; font-weight: 600; text-transform: uppercase;">${label}</div>
             <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="
-                width: 8px; 
-                height: 8px; 
-                border-radius: 50%; 
-                background-color: ${statusColor}; 
-                display: inline-block;
-              "></span>
-              <span style="color: #f1f5f9; font-size: 12px;">Resultado:</span>
-              <span style="color: ${statusColor}; font-size: 12px; font-weight: 700;">
-                ${formatCurrency(val)}
-              </span>
+              <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor};"></span>
+              <span style="color: #f1f5f9; font-size: 12px;">Resultado: ${formatCurrency(val)}</span>
             </div>
           </div>
         `;
