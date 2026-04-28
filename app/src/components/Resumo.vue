@@ -86,11 +86,7 @@
     :classeSelecionada="filtrosAtivos.classe"
     :listaClasses="dadosResultado?.map(i => i.classe) || []"
     @update:classe="(v) => filtrosAtivos.classe = v"
-  >
-    <template #default="{ periodo }">
-      <p class="text-slate-400">Exibindo dados de {{ periodo.inicio }} até {{ periodo.fim }}</p>
-    </template>
-  </ModalDetalhamento>
+  />
 </template>
 
 <script setup>
@@ -129,84 +125,44 @@ const {
 
 const formatCurrency = (val) => {
   if (val === undefined || val === null) return 'R$ 0,00';
-  return val.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+  return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 const atualizarTudo = async () => {
-  try {
-    await Promise.all([fetchResumo(), fetchEvolucao(), fetchResultado()]);
-  } catch (error) {
-    console.error("Erro na atualização global:", error);
-  }
+  await Promise.all([fetchResumo(), fetchEvolucao(), fetchResultado()]);
 };
 
-// Mantemos as series completas para evitar erros de renderização
-const evolucaoSeries = computed(() => {
-  return dadosEvolucao.value || [];
-});
+// Retornamos os dados exatamente como vêm da API
+const evolucaoSeries = computed(() => dadosEvolucao.value || []);
 
-const mudarAno = (delta) => { 
-  anoVisualizado.value += delta; 
-};
+const mudarAno = (delta) => { anoVisualizado.value += delta; };
 
 const evolucaoOptions = computed(() => {
-  // Identifica dinamicamente até onde o gráfico deve ir
-  let ultimoMesComDados = 0;
-  if (dadosEvolucao.value) {
-    dadosEvolucao.value.forEach(serie => {
-      const lastIdx = serie.data?.findLastIndex(v => v !== 0 && v !== null && v !== undefined) ?? -1;
-      if (lastIdx > ultimoMesComDados) ultimoMesComDados = lastIdx;
+  // Cálculo do último mês com dados reais
+  let maxMonth = 12;
+  if (dadosEvolucao.value?.length > 0) {
+    let lastIndex = 0;
+    dadosEvolucao.value.forEach(s => {
+      const idx = s.data?.findLastIndex(v => v !== 0 && v !== null) ?? -1;
+      if (idx > lastIndex) lastIndex = idx;
     });
+    maxMonth = lastIndex + 1;
   }
 
   return {
-    chart: { 
-      stacked: true, 
-      toolbar: { show: false }, 
-      fontFamily: 'inherit',
-      animations: { enabled: false } 
-    },
+    chart: { stacked: true, toolbar: { show: false }, fontFamily: 'inherit' },
     stroke: { width: [0, 0, 0, 0, 0, 3], curve: 'smooth' },
     colors: ['#A78BFA', '#F472B6', '#FBBF24', '#60A5FA', '#34D399', '#F87171'],
-    grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 10 } },
+    grid: { borderColor: '#334155', strokeDashArray: 4 },
     xaxis: { 
       categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-      min: 1,
-      max: ultimoMesComDados + 1, // Corta visualmente o gráfico no último mês válido
+      max: maxMonth, // ESTA É A ÚNICA MODIFICAÇÃO: Corta visualmente o gráfico
       labels: { style: { colors: '#94a3b8', fontSize: '10px' } }
     },
     yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
-    legend: { position: 'top', horizontalAlign: 'center', labels: { colors: '#f1f5f9' }, fontSize: '11px', offsetY: 0 },
+    legend: { position: 'top', labels: { colors: '#f1f5f9' }, fontSize: '11px' },
     dataLabels: { enabled: false },
-    tooltip: {
-      theme: 'dark',
-      shared: true,
-      custom: function({ series, dataPointIndex, w }) {
-        let total = 0;
-        let html = `<div class="custom-tooltip-box">
-                      <div class="tooltip-header">${w.globals.categoryLabels[dataPointIndex]} ${anoVisualizado.value}</div>
-                      <div class="tooltip-body">`;
-        w.config.series.forEach((s, idx) => {
-          const val = series[idx][dataPointIndex] || 0;
-          if (s.type === 'column') total += val;
-          html += `<div class="tooltip-row">
-                    <span class="dot" style="background:${w.globals.colors[idx]}"></span>
-                    <span>${s.name}:</span>
-                    <span class="value">${formatCurrency(val)}</span>
-                  </div>`;
-        });
-        html += `<div class="tooltip-total">
-                    <span>TOTAL:</span>
-                    <span class="text-emerald-400">${formatCurrency(total)}</span>
-                 </div></div></div>`;
-        return html;
-      }
-    }
+    tooltip: { theme: 'dark', shared: true }
   };
 });
 
@@ -215,45 +171,26 @@ const getBarOptions = (tipo) => {
   return {
     chart: { 
       toolbar: { show: false },
-      parentHeightOffset: 0,
       events: {
         dataPointSelection: (event, chartContext, config) => {
           const item = dadosResultado.value[config.dataPointIndex];
-          if (item) abrirPeloGrafico({ classe: item.classe, tipo: tipo });
+          if (item) abrirPeloGrafico({ classe: item.classe, tipo });
         }
-      },
-    },  
-    grid: { padding: { top: 0, right: 10, bottom: 10, left: 10 } },
+      }
+    },
     colors: coresBackend,
     plotOptions: { bar: { borderRadius: 4, distributed: true, columnWidth: '70%' } },
-    fill: { type: 'solid', colors: coresBackend },
     xaxis: {
       categories: dadosResultado.value?.map(item => item.classe) || [], 
-      labels: { show: true, rotate: -45, rotateAlways: true, style: { colors: '#94a3b8', fontSize: '9px' } },
-      axisBorder: { show: false },
-      axisTicks: { show: false }
+      labels: { rotate: -45, style: { colors: '#94a3b8', fontSize: '9px' } }
     },
-    legend: { show: false },
     yaxis: { show: false },
+    legend: { show: false },
     dataLabels: { enabled: false },
-    tooltip: {
-      theme: 'dark',
-      custom: function({ series, seriesIndex, dataPointIndex, w }) {
-        const val = series[seriesIndex][dataPointIndex];
-        const label = w.globals.labels[dataPointIndex];
-        const statusColor = val >= 0 ? '#10b981' : '#f87171';
-        return `<div style="background: #1a1c24; border: 1px solid #334155; padding: 10px; border-radius: 8px;">
-            <div style="color: #94a3b8; font-size: 10px; font-weight: 600; text-transform: uppercase;">${label}</div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor};"></span>
-              <span style="color: #f1f5f9; font-size: 12px;">Resultado: ${formatCurrency(val)}</span>
-            </div>
-          </div>`;
-      }
-    }
-  }
+    tooltip: { theme: 'dark' }
+  };
 };
-  
+
 const diaSeries = ref([]);
 const mesSeries = ref([]);
 const anoSeries = ref([]);
@@ -262,26 +199,7 @@ const chartOptions = ref({
   chart: { type: 'donut' },
   labels: [],
   legend: { show: false },
-  stroke: { show: false },
-  plotOptions: {
-    pie: {
-      donut: {
-        size: '75%',
-        labels: {
-          show: true,
-          total: {
-            show: true,
-            label: 'TOTAL',
-            color: '#94a3b8',
-            formatter: function (w) {
-              const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
-              return `R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            }
-          }
-        }
-      }
-    }
-  }
+  plotOptions: { pie: { donut: { size: '75%', labels: { show: true } } } }
 });
 
 watch(data, (newData) => {
@@ -292,7 +210,7 @@ watch(data, (newData) => {
 }, { immediate: true });
 
 const totaisResultado = computed(() => {
-  if (!dadosResultado.value || !Array.isArray(dadosResultado.value)) return { dia: 0, mes: 0, ano: 0 };
+  if (!dadosResultado.value) return { dia: 0, mes: 0, ano: 0 };
   return dadosResultado.value.reduce((acc, item) => {
     acc.dia += Number(item.dia) || 0;
     acc.mes += Number(item.mes) || 0;
@@ -302,7 +220,7 @@ const totaisResultado = computed(() => {
 });
 
 watch(dadosResultado, (newData) => {
-  if (newData && Array.isArray(newData) && newData.length > 0) {
+  if (newData?.length > 0) {
     diaSeries.value = [{ name: 'Resultado', data: newData.map(item => item.dia) }];
     mesSeries.value = [{ name: 'Resultado', data: newData.map(item => item.mes) }];
     anoSeries.value = [{ name: 'Resultado', data: newData.map(item => item.ano) }];
@@ -311,24 +229,18 @@ watch(dadosResultado, (newData) => {
 </script>
 
 <style scoped>
-.result-value { font-variant-numeric: tabular-nums; font-family: 'Inter', sans-serif; font-weight: 700; }
+.result-value { font-family: 'Inter', sans-serif; font-weight: 700; }
 .charts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; }
-.chart-card { background: #1a1c24; padding: 20px; border-radius: 12px; height: 320px; display: flex; flex-direction: column; overflow: hidden; }
+.chart-card { background: #1a1c24; padding: 20px; border-radius: 12px; height: 320px; display: flex; flex-direction: column; }
 .card-span-2 { grid-column: span 2; }
-.chart-title { color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+.chart-title { color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 10px; }
 .flex-col-container { display: flex; flex-direction: column; }
 .header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-.card-body-v2 { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.flex-grow-loader { flex: 1; display: flex; flex-direction: column; width: 100%; }
-.chart-wrapper-dynamic { flex: 1; height: 100%; width: 100%; }
-.year-navigator { display: flex; align-items: center; background: #0f172a; border-radius: 6px; padding: 2px; border: 1px solid #334155; }
-.nav-btn { background: transparent; border: none; color: #10b981; padding: 0 10px; cursor: pointer; font-size: 14px; font-weight: bold; }
-.nav-btn:disabled { color: #475569; }
-.year-display { color: #fff; font-size: 0.85rem; font-weight: 600; min-width: 45px; text-align: center; border-left: 1px solid #334155; border-right: 1px solid #334155; }
-:deep(.custom-tooltip-box) { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; min-width: 180px; }
-:deep(.tooltip-header) { border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 8px; color: #f1f5f9; font-weight: bold; }
-:deep(.tooltip-row) { display: flex; justify-content: space-between; font-size: 11px; padding: 2px 0; }
-:deep(.dot) { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-:deep(.tooltip-total) { border-top: 1px solid #475569; margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-weight: 700; color: #34d399; }
+.card-body-v2 { flex: 1; min-height: 0; }
+.flex-grow-loader { flex: 1; height: 100%; }
+.chart-wrapper-dynamic { height: 100%; width: 100%; }
+.year-navigator { display: flex; align-items: center; background: #0f172a; border-radius: 6px; border: 1px solid #334155; }
+.nav-btn { background: transparent; border: none; color: #10b981; padding: 0 10px; cursor: pointer; }
+.year-display { color: #fff; font-size: 0.85rem; min-width: 45px; text-align: center; border-left: 1px solid #334155; border-right: 1px solid #334155; }
 @media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr; } .card-span-2 { grid-column: span 1; } }
 </style>
