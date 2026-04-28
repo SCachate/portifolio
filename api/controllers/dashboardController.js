@@ -32,41 +32,34 @@ exports.getResumo = async (req, res) => {
 exports.getEvolucao = async (req, res) => {
     try {
         const { ano } = req.query;
-       
+        const userId = req.userId;
+
+        // SQL simplificado: apenas traz o que existe de fato
         const query = `
-SELECT 
-    t.name,
-    t.type,
-    m.mes,
-    COALESCE(d.valor, 0) AS valor,
-    t.color
-FROM (
-    SELECT 1 AS mes UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 
-    UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 
-    UNION SELECT 9 UNION SELECT 10 UNION SELECT 11 UNION SELECT 12
-) m
-CROSS JOIN (
-    SELECT DISTINCT nome_classe AS name, 'column' AS type, cor_classe AS color 
-    FROM v_fechamento_mensal_por_classe 
-    WHERE userId = ?
-    UNION ALL
-    SELECT 'Ano Passado', 'line', '#b4b4b4'
-) t
-LEFT JOIN (
-    -- Dados atuais
-    SELECT nome_classe AS name, mes, patrimonio_classe AS valor 
-    FROM v_fechamento_mensal_por_classe 
-    WHERE userId = ? AND ano = ?
-    UNION ALL
-    SELECT 'Ano Passado' AS name, CONVERT(RIGHT(yearMonth, 2), SIGNED) AS mes, SUM(closingBalance) AS valor
-    FROM monthly_reports
-    WHERE userId = ? AND LEFT(yearMonth, 4) = ?
-    GROUP BY yearMonth
-) d ON d.name = t.name AND d.mes = m.mes
-ORDER BY t.type DESC, t.name, m.mes;
+            SELECT 
+                nome_classe AS name,
+                'column' AS type,
+                mes,
+                patrimonio_classe AS valor,
+                cor_classe AS color
+            FROM v_fechamento_mensal_por_classe
+            WHERE userId = ? AND ano = ?
+            
+            UNION ALL
+            
+            SELECT 
+                'Ano Passado' AS name,
+                'line' AS type,
+                CONVERT(RIGHT(yearMonth, 2), SIGNED) AS mes,
+                SUM(closingBalance) AS valor,
+                '#b4b4b4' AS color
+            FROM monthly_reports
+            WHERE userId = ? AND LEFT(yearMonth, 4) = ?
+            GROUP BY yearMonth
+            ORDER BY type, name, mes
         `;
 
-        const [rows] = await db.execute(query,[req.userId, req.userId, ano, req.userId, ano-1]);
+        const [rows] = await db.execute(query, [userId, ano, userId, ano - 1]);
 
         const processado = rows.reduce((acc, row) => {
             if (!acc[row.name]) {
@@ -77,15 +70,15 @@ ORDER BY t.type DESC, t.name, m.mes;
                     data: new Array(12).fill(0)
                 };
             }
+            
             acc[row.name].data[row.mes - 1] = parseFloat(row.valor);
             return acc;
         }, {});
 
-        const resultadoFinal = Object.values(processado);
-
-        res.json(resultadoFinal);
+        res.json(Object.values(processado));
 
     } catch (error) {
+        console.error("Erro na evolução:", error);
         res.status(500).json({ error: error.message });
     }
 };
