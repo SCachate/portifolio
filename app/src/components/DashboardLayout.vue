@@ -43,7 +43,7 @@
 
     <main class="w-[80%] h-full flex flex-col overflow-hidden min-w-0">
       <header class="w-full h-16 border-b border-white/5 flex items-center justify-between px-8 bg-[#0a0f18]/80 backdrop-blur-xl sticky top-0 z-40 flex-shrink-0">
-        <div class="text-white font-bold capitalize">K-{{ activePage }}</div>
+        <div class="text-white font-bold capitalize">{{ activePage }}</div>
         <div class="flex items-center gap-4">
           <div class="text-right">
             <div class="text-xs text-white font-bold">{{ user?.name || 'Sidnei Cachate' }}</div>
