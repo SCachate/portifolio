@@ -20,10 +20,7 @@
         </div>
       </div>
     </div>
-
-    <!-- TÍTULOS (Seguindo fielmente a image_8eda9c.png) -->
     <header class="mb-8 space-y-2">
-      <h3 class="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Transações</h3>
       <h1 class="text-3xl font-bold text-white tracking-tight">Histórico de Movimentações</h1>
     </header>
 
