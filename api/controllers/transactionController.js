@@ -8,6 +8,75 @@ const { GoogleAIFileManager } = require("@google/generative-ai/server");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 
+/**
+ * Lista as transações com filtros dinâmicos
+ * Endpoint: GET /api/transactions
+ */
+exports.getTransactions = asyncHandler(async (req, res) => {
+    // 1. Pegamos o userId (do middleware de auth) e os filtros da query string
+    const userId = req.userId || 1; // Fallback para teste
+    const { startDate, endDate, brokerId, assetId } = req.query;
+
+    // 2. Base da Query SQL (Usando os nomes de colunas da sua definição de tabela)
+    // Fizemos o JOIN para trazer nomes e tickets para o front facilitar
+    let sql = `
+        SELECT 
+            t.id,
+            t.date,
+            t.quantity,
+            t.priceUnit,
+            t.fees,
+            t.pm,
+            (t.quantity * t.priceUnit) AS total,
+            t.assetId,
+            a.ticket,
+            a.description AS assetDescription,
+            t.brokerId,
+            b.name AS brokerName
+        FROM transactions t
+        LEFT JOIN assets a ON t.assetId = a.id
+        LEFT JOIN brokers b ON t.brokerId = b.id
+        WHERE t.userId = ?
+    `;
+
+    // 3. Array de parâmetros para evitar SQL Injection
+    const queryParams = [userId];
+
+    // 4. Construção Dinâmica dos Filtros
+    if (startDate) {
+        sql += ` AND t.date >= ?`;
+        queryParams.push(startDate);
+    }
+
+    if (endDate) {
+        sql += ` AND t.date <= ?`;
+        queryParams.push(endDate);
+    }
+
+    if (brokerId) {
+        sql += ` AND t.brokerId = ?`;
+        queryParams.push(brokerId);
+    }
+
+    if (assetId) {
+        sql += ` AND t.assetId = ?`;
+        queryParams.push(assetId);
+    }
+
+    // 5. Ordenação (Mais recentes primeiro)
+    sql += ` ORDER BY t.date DESC, t.id DESC`;
+
+    // 6. Execução
+    const [rows] = await db.execute(sql, queryParams);
+
+    // 7. Resposta formatada
+    res.status(200).json({
+        success: true,
+        count: rows.length,
+        data: rows
+    });
+});
+
 async function listModels() {
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
