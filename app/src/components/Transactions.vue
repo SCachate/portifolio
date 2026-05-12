@@ -1,3 +1,109 @@
+<script setup>
+import { ref, computed, watch, onMounted } from 'vue';
+import { useApi } from '../composables/useApi'; // Ajuste o caminho conforme sua estrutura
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
+
+// --- LÓGICA DE DATAS ---
+const dataAtual = new Date();
+// Define o primeiro dia do mês corrente (YYYY-MM-01)
+const primeiroDiaMes = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), 1).toISOString().split('T')[0];
+// Define o dia de hoje (YYYY-MM-DD)
+const hoje = dataAtual.toISOString().split('T')[0];
+
+// --- ESTADOS ---
+const showNovoAtivoModal = ref(false);
+const fileName = ref('');
+
+const form = ref({ 
+  assetId: '', 
+  brokerId: '', 
+  quantity: null, 
+  priceUnit: null, 
+  date: hoje 
+});
+
+const novoAtivoForm = ref({ nome: '', tipo: 'Ações' });
+
+// Filtros iniciando com o primeiro dia do mês atual
+const filtros = ref({ 
+  dataInicio: primeiroDiaMes, 
+  dataFim: hoje, 
+  brokerId: '' 
+});
+
+// --- API REATIVA COM COMPOSABLE ---
+
+// A URL é uma computed: mudou o filtro, a URL muda automaticamente
+const apiUrl = computed(() => {
+  const params = new URLSearchParams({
+    startDate: filtros.value.dataInicio,
+    endDate: filtros.value.dataFim,
+    brokerId: filtros.value.brokerId
+  });
+  return `/transactions?${params.toString()}`;
+});
+
+// Consumindo seu composable useApi
+const { 
+  data: apiResponse, 
+  loading, 
+  fetchData 
+} = useApi(apiUrl);
+
+// Monitora a URL para disparar nova busca quando o usuário mudar os filtros
+watch(apiUrl, () => {
+  fetchData();
+});
+
+// --- PROCESSAMENTO DE DADOS ---
+
+// Extrai a lista de transações da resposta do seu Controller Node
+const transacoesFiltradas = computed(() => apiResponse.value?.data || []);
+
+// Helpers para os selects de cadastro baseados nos dados existentes
+const ativosParaSelect = computed(() => {
+  const únicos = [...new Map(transacoesFiltradas.value.map(item => [
+    item.assetId, 
+    { assetId: item.assetId, ticket: item.ticket, description: item.assetDescription }
+  ])).values()];
+  return únicos;
+});
+
+const brokersParaSelect = computed(() => {
+  const únicos = [...new Map(transacoesFiltradas.value.map(item => [
+    item.brokerId, 
+    { brokerId: item.brokerId, name: item.brokerName }
+  ])).values()];
+  return únicos;
+});
+
+// --- AÇÕES ---
+
+const isFormValid = computed(() => form.value.assetId && form.value.quantity > 0 && form.value.priceUnit > 0);
+
+const registrarTransacao = () => {
+  console.log("Payload para o Back-end:", form.value);
+  toast.info("Lógica de salvamento manual pendente.");
+};
+
+const salvarNovoAtivo = () => {
+  showNovoAtivoModal.value = false;
+  toast.success(`Ativo ${novoAtivoForm.value.nome} preparado.`);
+};
+
+const handleFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    fileName.value = file.name;
+    toast.info(`Arquivo ${file.name} selecionado.`);
+  }
+};
+
+const formatDate = (s) => s ? s.split('-').reverse().join('/') : '---';
+</script>
+
 <template>
   <div class="min-h-screen bg-[#0b0f17] text-slate-300 font-sans p-8 pt-6 max-w-[1600px] mx-auto">
     
@@ -21,7 +127,7 @@
       </div>
     </div>
 
-    <!-- CABEÇALHO (Conforme image_8eda9c.png) -->
+    <!-- CABEÇALHO -->
     <header class="mb-8 space-y-2">
       <h3 class="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Transações</h3>
       <h1 class="text-3xl font-bold text-white tracking-tight">Histórico de Movimentações</h1>
@@ -81,7 +187,6 @@
       <!-- COLUNA DIREITA: FILTROS E TABELA -->
       <section class="lg:col-span-8 space-y-4">
         
-        <!-- Filtros Reativos -->
         <div class="bg-[#161b26] rounded-xl border border-white/5 p-5 flex flex-wrap gap-4 items-end">
           <div class="flex-1 min-w-[200px] space-y-2">
             <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Período</label>
@@ -99,14 +204,13 @@
           </div>
         </div>
 
-        <!-- Tabela com dados reais -->
         <div class="bg-[#161b26] rounded-xl border border-white/5 overflow-hidden shadow-2xl">
           <div v-if="loading" class="p-20 text-center text-slate-500 animate-pulse uppercase text-xs font-black tracking-widest">
-            Carregando transações...
+            Sincronizando dados reais...
           </div>
           <table v-else class="w-full text-left border-collapse">
             <thead>
-              <tr class="text-[10px] font-black text-slate-600 uppercase tracking-widest border-b border-white/5">
+              <tr class="text-[10px] font-black text-slate-600 uppercase tracking-widest border-b border-white/5 bg-white/[0.02]">
                 <th class="p-4">Data</th>
                 <th class="p-4">Ativo / Descrição</th>
                 <th class="p-4">Instituição</th>
@@ -114,15 +218,15 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5">
-              <tr v-for="(t, index) in transacoesFiltradas" :key="index" class="hover:bg-white/[0.01]">
+              <tr v-for="(t, index) in transacoesFiltradas" :key="index" class="hover:bg-white/[0.01] transition-colors">
                 <td class="p-4 text-xs font-mono text-slate-500">{{ formatDate(t.date) }}</td>
                 <td class="p-4">
                   <div class="flex flex-col">
                     <span class="text-sm font-bold text-white">{{ t.ticket || 'Renda Fixa' }}</span>
-                    <span class="text-[9px] text-slate-600 font-black uppercase truncate max-w-[200px]">{{ t.description }}</span>
+                    <span class="text-[9px] text-slate-600 font-black uppercase truncate max-w-[200px]">{{ t.assetDescription }}</span>
                   </div>
                 </td>
-                <td class="p-4 text-xs text-slate-500">{{ t.name }}</td>
+                <td class="p-4 text-xs text-slate-500">{{ t.brokerName }}</td>
                 <td class="p-4 text-right font-mono text-white text-sm">
                   R$ {{ Number(t.total).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}
                 </td>
@@ -134,78 +238,3 @@
     </div>
   </div>
 </template>
-
-<script setup>
-import { ref, computed, onMounted } from 'vue';
-
-// --- ESTADOS ---
-const transacoesBrutas = ref([]);
-const loading = ref(true);
-const showNovoAtivoModal = ref(false);
-const fileName = ref('');
-const getHoje = () => new Date().toISOString().split('T')[0];
-
-const form = ref({ assetId: '', brokerId: '', quantity: null, priceUnit: null, date: getHoje() });
-const novoAtivoForm = ref({ nome: '', tipo: 'Ações' });
-const filtros = ref({ dataInicio: '2024-01-01', dataFim: getHoje(), brokerId: '' });
-
-// --- MOCK DA API (Substitua pela chamada real) ---
-const fetchTransacoes = async () => {
-  loading.value = true;
-  try {
-    // Simulação do seu JSON real
-    const data = {
-      "query_gerada_pelo_banco": [
-        { "assetId": 1, "description": "Vitreo urânio", "ticket": null, "brokerId": 3, "name": "BTG", "quantity": 100.0, "priceUnit": 1.0, "fees": 0.0, "total": 100.0, "pm": 1.0, "date": "2025-12-31" },
-        { "assetId": 2, "description": "Debenture Litoral Sul", "ticket": "LSUL", "brokerId": 1, "name": "XP INVESTIMENTOS", "quantity": 17489.41, "priceUnit": 1.0, "fees": 0.0, "total": 17489.41, "pm": 1.0, "date": "2026-02-18" },
-        { "assetId": 7, "description": "CDB BMG IPCA+7.57", "ticket": "IPCA757", "brokerId": 1, "name": "XP INVESTIMENTOS", "quantity": 8258.35, "priceUnit": 1.0, "fees": 0.0, "total": 8258.35, "pm": 1.0, "date": "2026-02-18" }
-      ]
-    };
-    
-    const key = Object.keys(data)[0];
-    transacoesBrutas.value = data[key];
-  } catch (e) {
-    console.error("Erro ao buscar dados", e);
-  } finally {
-    loading.value = false;
-  }
-};
-
-// --- COMPUTED PROPERTIES ---
-const isFormValid = computed(() => form.value.assetId && form.value.quantity > 0 && form.value.priceUnit > 0);
-
-const transacoesFiltradas = computed(() => {
-  return transacoesBrutas.value.filter(t => {
-    const matchData = t.date >= filtros.value.dataInicio && t.date <= filtros.value.dataFim;
-    const matchBroker = filtros.value.brokerId ? t.brokerId === filtros.value.brokerId : true;
-    return matchData && matchBroker;
-  });
-});
-
-// Helpers para os selects de cadastro (pegando do que já existe no histórico para exemplo)
-const ativosParaSelect = computed(() => {
-  const únicos = [...new Map(transacoesBrutas.value.map(item => [item.assetId, item])).values()];
-  return únicos;
-});
-
-const brokersParaSelect = computed(() => {
-  const únicos = [...new Map(transacoesBrutas.value.map(item => [item.brokerId, item])).values()];
-  return únicos;
-});
-
-// --- AÇÕES ---
-const registrarTransacao = () => {
-  console.log("Enviando para o Back-end:", form.value);
-  // Aqui entraria o axios.post('/transactions', form.value)
-  alert("Pronto para enviar ao back-end!");
-};
-
-const salvarNovoAtivo = () => {
-  showNovoAtivoModal.value = false;
-  alert(`Ativo ${novoAtivoForm.value.nome} cadastrado com sucesso!`);
-};
-
-const formatDate = (s) => s ? s.split('-').reverse().join('/') : '---';
-
-onMounted(fetchTransacoes);
-</script>
