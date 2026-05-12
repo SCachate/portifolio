@@ -1,15 +1,13 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
-import { useApi } from '../composables/useApi'; // Ajuste o caminho conforme sua estrutura
+import { ref, computed, watch } from 'vue';
+import { useApi } from '../composables/useApi'; //
 import { useToast } from 'vue-toastification';
 
 const toast = useToast();
 
 // --- LÓGICA DE DATAS ---
 const dataAtual = new Date();
-// Define o primeiro dia do mês corrente (YYYY-MM-01)
 const primeiroDiaMes = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), 1).toISOString().split('T')[0];
-// Define o dia de hoje (YYYY-MM-DD)
 const hoje = dataAtual.toISOString().split('T')[0];
 
 // --- ESTADOS ---
@@ -26,49 +24,47 @@ const form = ref({
 
 const novoAtivoForm = ref({ nome: '', tipo: 'Ações' });
 
-// Filtros iniciando com o primeiro dia do mês atual
+// Filtros atualizados com assetId
 const filtros = ref({ 
   dataInicio: primeiroDiaMes, 
   dataFim: hoje, 
-  brokerId: '' 
+  brokerId: '',
+  assetId: ''
 });
 
-// --- API REATIVA COM COMPOSABLE ---
+// --- API REATIVA ---
 
-// A URL é uma computed: mudou o filtro, a URL muda automaticamente
 const apiUrl = computed(() => {
   const params = new URLSearchParams({
     startDate: filtros.value.dataInicio,
     endDate: filtros.value.dataFim,
-    brokerId: filtros.value.brokerId
+    brokerId: filtros.value.brokerId,
+    assetId: filtros.value.assetId // Novo filtro adicionado
   });
   return `/transactions?${params.toString()}`;
 });
 
-// Consumindo seu composable useApi
 const { 
   data: apiResponse, 
   loading, 
   fetchData 
 } = useApi(apiUrl);
 
-// Monitora a URL para disparar nova busca quando o usuário mudar os filtros
 watch(apiUrl, () => {
   fetchData();
 });
 
 // --- PROCESSAMENTO DE DADOS ---
 
-// Extrai a lista de transações da resposta do seu Controller Node
 const transacoesFiltradas = computed(() => apiResponse.value?.data || []);
 
-// Helpers para os selects de cadastro baseados nos dados existentes
+// Listas para os Selects (Filtros e Cadastro)
 const ativosParaSelect = computed(() => {
   const únicos = [...new Map(transacoesFiltradas.value.map(item => [
     item.assetId, 
     { assetId: item.assetId, ticket: item.ticket, description: item.assetDescription }
   ])).values()];
-  return únicos;
+  return únicos.sort((a, b) => (a.ticket || a.description).localeCompare(b.ticket || b.description));
 });
 
 const brokersParaSelect = computed(() => {
@@ -76,32 +72,36 @@ const brokersParaSelect = computed(() => {
     item.brokerId, 
     { brokerId: item.brokerId, name: item.brokerName }
   ])).values()];
-  return únicos;
+  return únicos.sort((a, b) => a.name.localeCompare(b.name));
 });
 
-// --- AÇÕES ---
+// --- AUXILIARES ---
 
 const isFormValid = computed(() => form.value.assetId && form.value.quantity > 0 && form.value.priceUnit > 0);
 
-const registrarTransacao = () => {
-  console.log("Payload para o Back-end:", form.value);
-  toast.info("Lógica de salvamento manual pendente.");
+// Correção do formato da data para dd/MM/yyyy (limpando o lixo do timestamp da imagem)
+const formatDate = (dateString) => {
+  if (!dateString) return '---';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 };
 
-const salvarNovoAtivo = () => {
-  showNovoAtivoModal.value = false;
-  toast.success(`Ativo ${novoAtivoForm.value.nome} preparado.`);
+const formatCurrency = (val) => {
+  return Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 const handleFileUpload = (event) => {
   const file = event.target.files[0];
-  if (file) {
-    fileName.value = file.name;
-    toast.info(`Arquivo ${file.name} selecionado.`);
-  }
+  if (file) fileName.value = file.name;
 };
 
-const formatDate = (s) => s ? s.split('-').reverse().join('/') : '---';
+const registrarTransacao = () => {
+  toast.info("Enviando transação...");
+};
+
+const salvarNovoAtivo = () => {
+  showNovoAtivoModal.value = false;
+};
 </script>
 
 <template>
@@ -129,16 +129,15 @@ const formatDate = (s) => s ? s.split('-').reverse().join('/') : '---';
 
     <!-- CABEÇALHO -->
     <header class="mb-8 space-y-2">
-      <h3 class="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Transações</h3>
+      <h3 class="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Kaxatapi Finance</h3>
       <h1 class="text-3xl font-bold text-white tracking-tight">Histórico de Movimentações</h1>
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       
-      <!-- COLUNA ESQUERDA: CADASTRO -->
+      <!-- CADASTRO -->
       <section class="lg:col-span-4 space-y-4">
         <div class="bg-[#161b26] rounded-xl border border-white/5 p-6 space-y-6">
-          
           <label class="flex flex-col items-center justify-center w-full h-28 border border-dashed border-white/10 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all bg-[#0b0f17]/50 group">
             <input type="file" class="hidden" @change="handleFileUpload" accept="application/pdf" />
             <span class="text-[10px] font-black text-slate-500 group-hover:text-emerald-500 uppercase tracking-widest text-center px-4">
@@ -150,9 +149,9 @@ const formatDate = (s) => s ? s.split('-').reverse().join('/') : '---';
             <div class="space-y-1">
               <div class="flex justify-between text-[10px] font-black uppercase text-slate-500 tracking-wider px-1">
                 <label>Ativo</label>
-                <button @click="showNovoAtivoModal = true" class="text-emerald-500 hover:brightness-125">+ Adicionar</button>
+                <button @click="showNovoAtivoModal = true" class="text-emerald-500 hover:brightness-125">+ Novo</button>
               </div>
-              <select v-model="form.assetId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-sm text-white outline-none appearance-none">
+              <select v-model="form.assetId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-sm text-white outline-none">
                 <option value="" disabled>Selecione...</option>
                 <option v-for="a in ativosParaSelect" :key="a.assetId" :value="a.assetId">{{ a.ticket || a.description }}</option>
               </select>
@@ -160,7 +159,7 @@ const formatDate = (s) => s ? s.split('-').reverse().join('/') : '---';
 
             <div class="space-y-1">
               <label class="text-[10px] font-black uppercase text-slate-500 tracking-wider px-1 block">Corretora</label>
-              <select v-model="form.brokerId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-sm text-white outline-none appearance-none">
+              <select v-model="form.brokerId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-sm text-white outline-none">
                 <option value="" disabled>Selecione...</option>
                 <option v-for="b in brokersParaSelect" :key="b.brokerId" :value="b.brokerId">{{ b.name }}</option>
               </select>
@@ -172,21 +171,22 @@ const formatDate = (s) => s ? s.split('-').reverse().join('/') : '---';
                 <input v-model.number="form.quantity" type="number" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-sm text-white outline-none" />
               </div>
               <div class="space-y-1">
-                <label class="text-[10px] font-black uppercase text-slate-500 tracking-wider px-1">Preço Unit.</label>
+                <label class="text-[10px] font-black uppercase text-slate-500 tracking-wider px-1">Custo Unit.</label>
                 <input v-model.number="form.priceUnit" type="number" step="0.01" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-sm text-white outline-none" />
               </div>
             </div>
 
-            <button @click="registrarTransacao" :disabled="!isFormValid" class="w-full py-4 bg-[#1e293b] hover:bg-[#2d3a4f] disabled:opacity-30 text-white font-bold rounded-lg transition-all text-sm mt-2">
+            <button @click="registrarTransacao" :disabled="!isFormValid" class="w-full py-4 bg-[#1e293b] hover:bg-emerald-600 disabled:opacity-30 text-white font-bold rounded-lg transition-all text-sm mt-2">
               Registrar Transação
             </button>
           </div>
         </div>
       </section>
 
-      <!-- COLUNA DIREITA: FILTROS E TABELA -->
+      <!-- FILTROS E TABELA -->
       <section class="lg:col-span-8 space-y-4">
         
+        <!-- Barra de Filtros Reais -->
         <div class="bg-[#161b26] rounded-xl border border-white/5 p-5 flex flex-wrap gap-4 items-end">
           <div class="flex-1 min-w-[200px] space-y-2">
             <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Período</label>
@@ -194,6 +194,13 @@ const formatDate = (s) => s ? s.split('-').reverse().join('/') : '---';
               <input v-model="filtros.dataInicio" type="date" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full outline-none" />
               <input v-model="filtros.dataFim" type="date" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full outline-none" />
             </div>
+          </div>
+          <div class="flex-1 min-w-[150px] space-y-2">
+            <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Ativo</label>
+            <select v-model="filtros.assetId" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full outline-none">
+              <option value="">Todos os Ativos</option>
+              <option v-for="a in ativosParaSelect" :key="a.assetId" :value="a.assetId">{{ a.ticket || a.description }}</option>
+            </select>
           </div>
           <div class="flex-1 min-w-[150px] space-y-2">
             <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Instituição</label>
@@ -204,31 +211,35 @@ const formatDate = (s) => s ? s.split('-').reverse().join('/') : '---';
           </div>
         </div>
 
+        <!-- Tabela Refatorada -->
         <div class="bg-[#161b26] rounded-xl border border-white/5 overflow-hidden shadow-2xl">
           <div v-if="loading" class="p-20 text-center text-slate-500 animate-pulse uppercase text-xs font-black tracking-widest">
-            Sincronizando dados reais...
+            Carregando movimentações...
           </div>
           <table v-else class="w-full text-left border-collapse">
             <thead>
               <tr class="text-[10px] font-black text-slate-600 uppercase tracking-widest border-b border-white/5 bg-white/[0.02]">
                 <th class="p-4">Data</th>
-                <th class="p-4">Ativo / Descrição</th>
-                <th class="p-4">Instituição</th>
-                <th class="p-4 text-right">Valor Total</th>
+                <th class="p-4">Ativo</th>
+                <th class="p-4">Qtd.</th>
+                <th class="p-4">Custo Unit.</th>
+                <th class="p-4 text-right">Total</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5">
               <tr v-for="(t, index) in transacoesFiltradas" :key="index" class="hover:bg-white/[0.01] transition-colors">
-                <td class="p-4 text-xs font-mono text-slate-500">{{ formatDate(t.date) }}</td>
+                <td class="p-4 text-[11px] font-mono text-slate-500">{{ formatDate(t.date) }}</td>
                 <td class="p-4">
                   <div class="flex flex-col">
                     <span class="text-sm font-bold text-white">{{ t.ticket || 'Renda Fixa' }}</span>
-                    <span class="text-[9px] text-slate-600 font-black uppercase truncate max-w-[200px]">{{ t.assetDescription }}</span>
+                    <span class="text-[9px] text-slate-600 font-black uppercase truncate max-w-[180px]">{{ t.assetDescription }}</span>
+                    <span class="text-[9px] text-emerald-500/70 font-bold">{{ t.brokerName }}</span>
                   </div>
                 </td>
-                <td class="p-4 text-xs text-slate-500">{{ t.brokerName }}</td>
-                <td class="p-4 text-right font-mono text-white text-sm">
-                  R$ {{ Number(t.total).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}
+                <td class="p-4 text-xs font-mono text-slate-400">{{ t.quantity }}</td>
+                <td class="p-4 text-xs font-mono text-slate-400">R$ {{ formatCurrency(t.priceUnit) }}</td>
+                <td class="p-4 text-right font-mono text-white text-sm font-bold">
+                  R$ {{ formatCurrency(t.total) }}
                 </td>
               </tr>
             </tbody>
