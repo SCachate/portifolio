@@ -13,7 +13,6 @@ const hoje = dataAtual.toISOString().split('T')[0];
 // --- ESTADOS ---
 const showNovoAtivoModal = ref(false);
 const fileName = ref('');
-
 const form = ref({ assetId: '', brokerId: '', quantity: null, priceUnit: null, date: hoje });
 const novoAtivoForm = ref({ nome: '', tipo: 'Ações' });
 
@@ -73,24 +72,25 @@ const handleFileUpload = (event) => {
 </script>
 
 <template>
-  <!-- h-screen + overflow-hidden mata o scroll do browser de vez -->
-  <div class="h-screen bg-[#0b0f17] text-slate-300 font-sans p-6 overflow-hidden flex flex-col max-w-[1600px] mx-auto">
+  <!-- h-full em vez de h-screen para respeitar o container pai + flex col -->
+  <div class="h-full flex flex-col bg-[#0b0f17] text-slate-300 font-sans p-6 overflow-hidden max-w-[1600px] mx-auto">
     
-    <!-- CABEÇALHO (Altura Fixa) -->
-    <header class="mb-6 shrink-0">
-      <h3 class="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Kaxatapi Finance</h3>
-      <h1 class="text-3xl font-bold text-white tracking-tight">Histórico de Movimentações</h1>
+    <!-- CABEÇALHO (Altura fixa) -->
+    <header class="mb-4 shrink-0">
+      <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Kaxatapi Finance</h3>
+      <h1 class="text-2xl font-bold text-white tracking-tight leading-none">Histórico de Movimentações</h1>
     </header>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
+    <!-- GRID PRINCIPAL (flex-1 para ocupar o que sobra) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden mb-2">
       
-      <!-- LADO ESQUERDO: CADASTRO -->
-      <section class="lg:col-span-4 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
-        <div class="bg-[#161b26] rounded-xl border border-white/5 p-6 space-y-6">
-          <label class="flex flex-col items-center justify-center w-full h-28 border border-dashed border-white/10 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all bg-[#0b0f17]/50 group">
+      <!-- LADO ESQUERDO: CADASTRO (Scroll interno se necessário) -->
+      <section class="lg:col-span-4 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
+        <div class="bg-[#161b26] rounded-xl border border-white/5 p-5 space-y-5">
+          <label class="flex flex-col items-center justify-center w-full h-24 border border-dashed border-white/10 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all bg-[#0b0f17]/50 group">
             <input type="file" class="hidden" @change="handleFileUpload" accept="application/pdf" />
-            <span class="text-[10px] font-black text-slate-500 group-hover:text-emerald-500 uppercase tracking-widest text-center px-4">
-              {{ fileName || 'Importar Nota de Corretagem' }}
+            <span class="text-[9px] font-black text-slate-500 group-hover:text-emerald-500 uppercase tracking-widest text-center px-4">
+              {{ fileName || 'IMPORTAR NOTA DE CORRETAGEM' }}
             </span>
           </label>
 
@@ -100,7 +100,7 @@ const handleFileUpload = (event) => {
                 <label>Ativo</label>
                 <button @click="showNovoAtivoModal = true" class="text-emerald-500 hover:brightness-125">+ Novo</button>
               </div>
-              <select v-model="form.assetId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-sm text-white outline-none">
+              <select v-model="form.assetId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-2.5 text-sm text-white outline-none">
                 <option value="" disabled>Selecione...</option>
                 <option v-for="a in ativosParaSelect" :key="a.assetId" :value="a.assetId">{{ a.ticket || a.description }}</option>
               </select>
@@ -108,7 +108,7 @@ const handleFileUpload = (event) => {
 
             <div class="space-y-1 text-left">
               <label class="text-[10px] font-black uppercase text-slate-500 tracking-wider px-1 block">Corretora</label>
-              <select v-model="form.brokerId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-sm text-white outline-none">
+              <select v-model="form.brokerId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-2.5 text-sm text-white outline-none">
                 <option value="" disabled>Selecione...</option>
                 <option v-for="b in brokersParaSelect" :key="b.brokerId" :value="b.brokerId">{{ b.name }}</option>
               </select>
@@ -116,16 +116,16 @@ const handleFileUpload = (event) => {
 
             <div class="grid grid-cols-2 gap-4">
               <div class="space-y-1 text-left">
-                <label class="text-[10px] font-black uppercase text-slate-500 tracking-wider px-1">Quantidade</label>
-                <input v-model.number="form.quantity" type="number" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-sm text-white outline-none" />
+                <label class="text-[10px] font-black uppercase text-slate-500 tracking-wider px-1">Qtd.</label>
+                <input v-model.number="form.quantity" type="number" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-2.5 text-sm text-white outline-none" />
               </div>
               <div class="space-y-1 text-left">
                 <label class="text-[10px] font-black uppercase text-slate-500 tracking-wider px-1">Custo Unit.</label>
-                <input v-model.number="form.priceUnit" type="number" step="0.01" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-sm text-white outline-none" />
+                <input v-model.number="form.priceUnit" type="number" step="0.01" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-2.5 text-sm text-white outline-none" />
               </div>
             </div>
 
-            <button class="w-full py-4 bg-[#1e293b] hover:bg-emerald-600 text-white font-bold rounded-lg transition-all text-sm">
+            <button class="w-full py-3.5 bg-[#1e293b] hover:bg-emerald-600 text-white font-bold rounded-lg transition-all text-sm">
               Registrar Transação
             </button>
           </div>
@@ -135,66 +135,66 @@ const handleFileUpload = (event) => {
       <!-- LADO DIREITO: FILTROS E TABELA -->
       <section class="lg:col-span-8 flex flex-col min-h-0 overflow-hidden">
         
-        <!-- Filtros (Altura Fixa) -->
+        <!-- Filtros (Altura reduzida) -->
         <div class="bg-[#161b26] rounded-xl border border-white/5 p-4 flex flex-wrap gap-4 items-end shrink-0 mb-4">
-          <div class="flex-1 min-w-[150px] space-y-2 text-left">
-            <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Período</label>
+          <div class="flex-1 min-w-[140px] space-y-1 text-left">
+            <label class="text-[9px] font-black text-slate-600 uppercase tracking-widest">Período</label>
             <div class="flex gap-2">
-              <input v-model="filtros.dataInicio" type="date" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full" />
-              <input v-model="filtros.dataFim" type="date" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full" />
+              <input v-model="filtros.dataInicio" type="date" class="bg-[#0b0f17] border border-white/5 rounded p-1.5 text-[11px] text-white w-full" />
+              <input v-model="filtros.dataFim" type="date" class="bg-[#0b0f17] border border-white/5 rounded p-1.5 text-[11px] text-white w-full" />
             </div>
           </div>
-          <div class="flex-1 min-w-[120px] space-y-2 text-left">
-            <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Ativo</label>
-            <select v-model="filtros.assetId" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full">
+          <div class="flex-1 min-w-[120px] space-y-1 text-left">
+            <label class="text-[9px] font-black text-slate-600 uppercase tracking-widest">Ativo</label>
+            <select v-model="filtros.assetId" class="bg-[#0b0f17] border border-white/5 rounded p-1.5 text-[11px] text-white w-full">
               <option value="">Todos</option>
               <option v-for="a in ativosParaSelect" :key="a.assetId" :value="a.assetId">{{ a.ticket || a.description }}</option>
             </select>
           </div>
-          <div class="flex-1 min-w-[120px] space-y-2 text-left">
-            <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Instituição</label>
-            <select v-model="filtros.brokerId" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full">
+          <div class="flex-1 min-w-[120px] space-y-1 text-left">
+            <label class="text-[9px] font-black text-slate-600 uppercase tracking-widest">Instituição</label>
+            <select v-model="filtros.brokerId" class="bg-[#0b0f17] border border-white/5 rounded p-1.5 text-[11px] text-white w-full">
               <option value="">Todas</option>
               <option v-for="b in brokersParaSelect" :key="b.brokerId" :value="b.brokerId">{{ b.name }}</option>
             </select>
           </div>
         </div>
 
-        <!-- TABELA (Ocupa o resto do espaço disponível) -->
+        <!-- TABELA COM SCROLL INTERNO -->
         <div class="bg-[#161b26] rounded-xl border border-white/5 flex flex-col flex-1 min-h-0 overflow-hidden shadow-2xl">
           <div class="overflow-x-auto overflow-y-auto custom-scrollbar flex-1">
-            <table class="w-full text-left border-collapse min-w-[600px]">
+            <table class="w-full text-left border-collapse min-w-[650px]">
               <thead class="sticky top-0 bg-[#161b26] z-10 shadow-sm">
-                <tr class="text-[10px] font-black text-slate-600 uppercase tracking-widest border-b border-white/5">
-                  <th class="p-4">Data</th>
-                  <th class="p-4">Ativo</th>
-                  <th class="p-4">Qtd.</th>
-                  <th class="p-4">Custo Unit.</th>
-                  <th class="p-4 text-right">Total</th>
+                <tr class="text-[9px] font-black text-slate-600 uppercase tracking-widest border-b border-white/5">
+                  <th class="p-3">Data</th>
+                  <th class="p-3">Ativo</th>
+                  <th class="p-3">Qtd.</th>
+                  <th class="p-3">Custo Unit.</th>
+                  <th class="p-3 text-right">Total</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-white/5">
                 <tr v-for="(t, index) in transacoesFiltradas" :key="index" class="hover:bg-white/[0.01] transition-colors">
-                  <td class="p-4 text-[11px] font-mono text-slate-500">{{ formatDate(t.date) }}</td>
-                  <td class="p-4">
+                  <td class="p-3 text-[10px] font-mono text-slate-500 whitespace-nowrap">{{ formatDate(t.date) }}</td>
+                  <td class="p-3">
                     <div class="flex flex-col">
-                      <span class="text-sm font-bold text-white">{{ t.ticket || 'Ativo' }}</span>
-                      <span class="text-[9px] text-slate-600 font-black uppercase truncate max-w-[200px]">{{ t.assetDescription }}</span>
+                      <span class="text-[13px] font-bold text-white">{{ t.ticket || 'Ativo' }}</span>
+                      <span class="text-[9px] text-slate-600 font-black uppercase truncate max-w-[220px]">{{ t.assetDescription }}</span>
                       <span class="text-[9px] text-emerald-500/70 font-bold uppercase">{{ t.brokerName }}</span>
                     </div>
                   </td>
-                  <td class="p-4 text-xs font-mono text-slate-400">{{ Number(t.quantity).toFixed(2) }}</td>
-                  <td class="p-4 text-xs font-mono text-slate-400">R$ {{ formatCurrency(t.priceUnit) }}</td>
-                  <td class="p-4 text-right font-mono text-white text-sm font-bold">R$ {{ formatCurrency(t.total) }}</td>
+                  <td class="p-3 text-[11px] font-mono text-slate-400">{{ Number(t.quantity).toLocaleString('pt-BR') }}</td>
+                  <td class="p-3 text-[11px] font-mono text-slate-400">R$ {{ formatCurrency(t.priceUnit) }}</td>
+                  <td class="p-3 text-right font-mono text-white text-sm font-bold">R$ {{ formatCurrency(t.total) }}</td>
                 </tr>
               </tbody>
             </table>
             
-            <div v-if="loading" class="p-10 text-center text-slate-500 uppercase text-[10px] font-black tracking-widest animate-pulse">
+            <div v-if="loading" class="p-10 text-center text-slate-500 uppercase text-[9px] font-black tracking-widest animate-pulse">
               Carregando dados...
             </div>
-            <div v-else-if="transacoesFiltradas.length === 0" class="p-10 text-center text-slate-600 text-xs italic">
-              Nenhuma movimentação encontrada para o período.
+            <div v-else-if="transacoesFiltradas.length === 0" class="p-10 text-center text-slate-600 text-[10px] italic">
+              Nenhuma movimentação encontrada.
             </div>
           </div>
         </div>
@@ -204,13 +204,14 @@ const handleFileUpload = (event) => {
 </template>
 
 <style scoped>
+/* Remove o scroll do browser forçadamente */
+:global(html, body, #app) {
+  height: 100%;
+  overflow: hidden !important;
+}
+
 .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.1); }
-
-/* Ajuste fino para garantir que o scroll do browser suma */
-:deep(body) {
-  overflow: hidden !important;
-}
 </style>
