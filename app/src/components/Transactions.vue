@@ -74,7 +74,7 @@ const handleFileUpload = (event) => {
     </header>
 
     <!-- Grid principal com altura fixa de 85% da viewport para garantir o aumento de 40% e scroll interno -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full h-[85vh] min-h-0 overflow-hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full h-[70vh] min-h-0 overflow-hidden">
       
       <!-- LADO ESQUERDO: CADASTRO -->
       <section class="lg:col-span-4 flex flex-col min-h-0 h-full">
