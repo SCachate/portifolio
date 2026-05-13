@@ -77,19 +77,20 @@ const handleFileUpload = (event) => {
 </script>
 
 <template>
-  <!-- h-full em vez de h-screen evita o estouro causado pelo padding -->
-  <div class="flex flex-col bg-[#0b0f17] text-slate-300 font-sans p-6 overflow-hidden h-full">
+  <!-- h-screen + p-6 causa o estouro. Vamos usar calc para garantir que o total seja exatamente 100vh -->
+  <div class="flex flex-col bg-[#0b0f17] text-slate-300 font-sans p-6 overflow-hidden w-full" style="height: 100vh; max-height: 100vh;">
     
     <header class="shrink-0 max-w-[1600px] mx-auto w-full mb-4">
       <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Kaxatapi Finance</h3>
       <h1 class="text-3xl font-bold text-white tracking-tight leading-none">Histórico de Movimentações</h1>
     </header>
 
-    <!-- O segredo: h-full + min-h-0 no grid força os filhos a respeitarem o limite do container -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full h-full min-h-0 overflow-hidden">
+    <!-- O segredo: Altura calculada. 100vh menos os paddings e o header. Isso TRAVA o grid. -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full overflow-hidden" 
+         style="height: calc(100vh - 160px); min-height: 0;">
       
       <!-- LADO ESQUERDO: CADASTRO -->
-      <section class="lg:col-span-4 flex flex-col min-h-0 h-full">
+      <section class="lg:col-span-4 flex flex-col min-h-0 h-full overflow-hidden">
         <div class="bg-[#161b26] rounded-xl border border-white/5 p-6 space-y-6 flex flex-col h-full overflow-y-auto custom-scrollbar shadow-xl">
           <label class="flex flex-col items-center justify-center w-full h-32 border border-dashed border-white/10 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all bg-[#0b0f17]/50 group shrink-0">
             <input type="file" class="hidden" @change="handleFileUpload" accept="application/pdf" />
@@ -137,25 +138,25 @@ const handleFileUpload = (event) => {
       </section>
 
       <!-- LADO DIREITO: FILTROS E TABELA -->
-      <section class="lg:col-span-8 flex flex-col min-h-0 h-full">
+      <section class="lg:col-span-8 flex flex-col min-h-0 h-full overflow-hidden">
         
-        <!-- Filtros (shrink-0 impede que eles amassem) -->
+        <!-- Filtros fixos -->
         <div class="bg-[#161b26] rounded-xl border border-white/5 p-5 flex flex-wrap gap-4 items-end shrink-0 mb-4 shadow-lg">
-          <div class="flex-1 min-w-[200px] space-y-2 text-left">
+          <div class="flex-1 min-w-[180px] space-y-2 text-left">
             <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Período</label>
             <div class="flex gap-2">
               <input v-model="filtros.dataInicio" type="date" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full outline-none" />
               <input v-model="filtros.dataFim" type="date" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full outline-none" />
             </div>
           </div>
-          <div class="flex-1 min-w-[140px] space-y-2 text-left">
+          <div class="flex-1 min-w-[120px] space-y-2 text-left">
             <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Ativo</label>
             <select v-model="filtros.assetId" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full outline-none">
               <option value="">Todos</option>
               <option v-for="a in ativosParaSelect" :key="a.assetId" :value="a.assetId">{{ a.ticket || a.description }}</option>
             </select>
           </div>
-          <div class="flex-1 min-w-[140px] space-y-2 text-left">
+          <div class="flex-1 min-w-[120px] space-y-2 text-left">
             <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Instituição</label>
             <select v-model="filtros.brokerId" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full outline-none">
               <option value="">Todas</option>
@@ -164,9 +165,9 @@ const handleFileUpload = (event) => {
           </div>
         </div>
 
-        <!-- Container da Tabela (flex-grow garante que use todo o espaço restante) -->
-        <div class="bg-[#161b26] rounded-xl border border-white/5 shadow-2xl flex flex-col flex-grow min-h-0 overflow-hidden">
-          <div class="overflow-y-auto custom-scrollbar h-full">
+        <!-- Área da Tabela - Usando flex-1 e min-h-0 para forçar scroll interno -->
+        <div class="bg-[#161b26] rounded-xl border border-white/5 shadow-2xl flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div class="overflow-y-auto custom-scrollbar flex-grow">
             <table class="w-full text-left border-collapse min-w-[800px]">
               <thead class="sticky top-0 bg-[#1b2230] z-20 shadow-md">
                 <tr class="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] border-b border-white/5">
@@ -183,7 +184,7 @@ const handleFileUpload = (event) => {
                   <td class="p-4">
                     <div class="flex flex-col">
                       <span class="text-sm font-bold text-white tracking-tight">{{ t?.ticket || '---' }}</span>
-                      <span class="text-[9px] text-slate-500 font-bold uppercase truncate max-w-[250px]">{{ t?.assetDescription }}</span>
+                      <span class="text-[9px] text-slate-500 font-bold uppercase truncate max-w-[200px]">{{ t?.assetDescription }}</span>
                       <span class="text-[9px] text-emerald-500/80 font-black uppercase tracking-wider">{{ t?.brokerName }}</span>
                     </div>
                   </td>
