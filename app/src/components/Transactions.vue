@@ -5,13 +5,10 @@ import { useToast } from 'vue-toastification';
 
 const toast = useToast();
 
-// --- LÓGICA DE DATAS ---
 const dataAtual = new Date();
 const primeiroDiaMes = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), 1).toISOString().split('T')[0];
 const hoje = dataAtual.toISOString().split('T')[0];
 
-// --- ESTADOS ---
-const showNovoAtivoModal = ref(false);
 const fileName = ref('');
 const form = ref({ assetId: '', brokerId: '', quantity: null, priceUnit: null, date: hoje });
 
@@ -22,7 +19,6 @@ const filtros = ref({
   assetId: ''
 });
 
-// --- API REATIVA (DADOS REAIS) ---
 const apiUrl = computed(() => {
   if (filtros.value.dataInicio.length < 10 || filtros.value.dataFim.length < 10) return null;
   const params = new URLSearchParams({
@@ -43,7 +39,6 @@ watch(apiUrl, (newUrl) => {
   debounceTimer = setTimeout(() => fetchData(), 500);
 });
 
-// --- PROCESSAMENTO ---
 const transacoesFiltradas = computed(() => apiResponse.value?.data || []);
 
 const ativosParaSelect = computed(() => {
@@ -71,21 +66,20 @@ const handleFileUpload = (event) => {
 </script>
 
 <template>
-  <!-- h-full para respeitar o container pai e evitar o overflow do browser visto na image_74d6b9.png -->
+  <!-- h-full e min-h-0 são essenciais para o flex-1 funcionar no container de dentro -->
   <div class="h-full flex flex-col bg-[#0b0f17] text-slate-300 font-sans p-6 overflow-hidden">
     
-    <!-- Cabeçalho com altura fixa para o cálculo do grid -->
-    <header class="h-[60px] shrink-0 max-w-[1600px] mx-auto w-full mb-4">
+    <header class="shrink-0 max-w-[1600px] mx-auto w-full mb-6">
       <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Kaxatapi Finance</h3>
       <h1 class="text-3xl font-bold text-white tracking-tight leading-none">Histórico de Movimentações</h1>
     </header>
 
-    <!-- O grid agora ocupa exatamente o que sobra da tela (100vh menos o header e paddings) -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full h-[calc(100vh-160px)] min-h-0">
+    <!-- flex-1 + min-h-0 faz este container ocupar 100% do que SOBRA, sem estourar -->
+    <div class="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full min-h-0">
       
       <!-- LADO ESQUERDO: CADASTRO -->
-      <section class="lg:col-span-4 h-full">
-        <div class="bg-[#161b26] rounded-xl border border-white/5 p-6 space-y-6 h-full overflow-y-auto custom-scrollbar shadow-xl">
+      <section class="lg:col-span-4 flex flex-col min-h-0">
+        <div class="bg-[#161b26] rounded-xl border border-white/5 p-6 space-y-6 flex-1 overflow-y-auto custom-scrollbar shadow-xl">
           <label class="flex flex-col items-center justify-center w-full h-32 border border-dashed border-white/10 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all bg-[#0b0f17]/50 group shrink-0">
             <input type="file" class="hidden" @change="handleFileUpload" accept="application/pdf" />
             <span class="text-[10px] font-black text-slate-500 group-hover:text-emerald-500 uppercase tracking-widest text-center px-4">
@@ -95,21 +89,10 @@ const handleFileUpload = (event) => {
 
           <div class="space-y-4">
             <div class="space-y-1 text-left">
-              <div class="flex justify-between text-[10px] font-black uppercase text-slate-500 tracking-wider px-1">
-                <label>Ativo</label>
-                <button @click="showNovoAtivoModal = true" class="text-emerald-500 hover:brightness-125">+ Novo</button>
-              </div>
+              <label class="text-[10px] font-black uppercase text-slate-500 tracking-wider px-1">Ativo</label>
               <select v-model="form.assetId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none focus:border-emerald-500/30">
                 <option value="" disabled>Selecione...</option>
                 <option v-for="a in ativosParaSelect" :key="a.assetId" :value="a.assetId">{{ a.ticket || a.description }}</option>
-              </select>
-            </div>
-
-            <div class="space-y-1 text-left">
-              <label class="text-[10px] font-black uppercase text-slate-500 tracking-wider px-1 block">Corretora</label>
-              <select v-model="form.brokerId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none focus:border-emerald-500/30">
-                <option value="" disabled>Selecione...</option>
-                <option v-for="b in brokersParaSelect" :key="b.brokerId" :value="b.brokerId">{{ b.name }}</option>
               </select>
             </div>
 
@@ -131,10 +114,10 @@ const handleFileUpload = (event) => {
         </div>
       </section>
 
-      <!-- LADO DIREITO: FILTROS E GRID DE DADOS -->
-      <section class="lg:col-span-8 flex flex-col h-full overflow-hidden">
+      <!-- LADO DIREITO: FILTROS E TABELA -->
+      <section class="lg:col-span-8 flex flex-col min-h-0 overflow-hidden">
         
-        <!-- Filtros (shrink-0 para não serem esmagados) -->
+        <!-- Filtros -->
         <div class="bg-[#161b26] rounded-xl border border-white/5 p-5 flex flex-wrap gap-4 items-end shrink-0 mb-4 shadow-lg">
           <div class="flex-1 min-w-[150px] space-y-2 text-left">
             <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Período</label>
@@ -152,7 +135,7 @@ const handleFileUpload = (event) => {
           </div>
         </div>
 
-        <!-- CONTAINER DA TABELA (Aqui o scroll interno acontece) -->
+        <!-- O GRID DE DADOS AQUI (Aumentado e com Scroll Interno) -->
         <div class="bg-[#161b26] rounded-xl border border-white/5 shadow-2xl flex flex-col flex-1 min-h-0 overflow-hidden">
           <div class="overflow-y-auto custom-scrollbar flex-1">
             <table class="w-full text-left border-collapse min-w-[600px]">
@@ -190,30 +173,26 @@ const handleFileUpload = (event) => {
 </template>
 
 <style scoped>
-/* ESTILIZAÇÃO DO SCROLLBAR INTERNO */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-
 .custom-scrollbar::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.1);
   border-radius: 10px;
 }
-
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
 }
-
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(16, 185, 129, 0.5);
 }
 
-/* Trava o scroll global para evitar a barra lateral branca do browser */
-:global(body) {
+/* Garante que o layout não vaze para fora da viewport */
+:global(body, html, #app) {
+  height: 100% !important;
   overflow: hidden !important;
   margin: 0;
-  padding: 0;
 }
 </style>
