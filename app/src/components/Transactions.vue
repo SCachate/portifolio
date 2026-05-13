@@ -1,82 +1,16 @@
-<script setup>
-import { ref, computed, watch } from 'vue';
-import { useApi } from '../composables/useApi'; 
-import { useToast } from 'vue-toastification';
-
-const toast = useToast();
-
-const dataAtual = new Date();
-const primeiroDiaMes = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), 1).toISOString().split('T')[0];
-const hoje = dataAtual.toISOString().split('T')[0];
-
-const fileName = ref('');
-const form = ref({ assetId: '', brokerId: '', quantity: null, priceUnit: null, date: hoje });
-
-const filtros = ref({ 
-  dataInicio: primeiroDiaMes, 
-  dataFim: hoje, 
-  brokerId: '',
-  assetId: ''
-});
-
-const apiUrl = computed(() => {
-  if (filtros.value.dataInicio.length < 10 || filtros.value.dataFim.length < 10) return null;
-  const params = new URLSearchParams({
-    startDate: filtros.value.dataInicio,
-    endDate: filtros.value.dataFim,
-    brokerId: filtros.value.brokerId,
-    assetId: filtros.value.assetId
-  });
-  return `/transactions?${params.toString()}`;
-});
-
-const { data: apiResponse, loading, fetchData } = useApi(apiUrl, { immediate: true });
-
-let debounceTimer = null;
-watch(apiUrl, (newUrl) => {
-  if (!newUrl) return;
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => fetchData(), 500);
-});
-
-const transacoesFiltradas = computed(() => apiResponse.value?.data || []);
-
-const ativosParaSelect = computed(() => {
-  const únicos = [...new Map(transacoesFiltradas.value.map(item => [item.assetId, { assetId: item.assetId, ticket: item.ticket, description: item.assetDescription }])).values()];
-  return únicos.sort((a, b) => (a.ticket || a.description).localeCompare(b.ticket || b.description));
-});
-
-const brokersParaSelect = computed(() => {
-  const únicos = [...new Map(transacoesFiltradas.value.map(item => [item.brokerId, { brokerId: item.brokerId, name: item.brokerName }])).values()];
-  return únicos.sort((a, b) => a.name.localeCompare(b.name));
-});
-
-const formatDate = (dateString) => {
-  if (!dateString) return '---';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-};
-
-const formatCurrency = (val) => Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-const handleFileUpload = (event) => {
-  const file = event.target.files[0];
-  if (file) fileName.value = file.name;
-};
-</script>
-
 <template>
-  <div class="flex flex-col bg-[#0b0f17] text-slate-300 font-sans p-6 overflow-hidden h-screen">
+  <!-- Mudança: h-screen removido e trocado por flex-1 + overflow-hidden -->
+  <div class="flex flex-col bg-[#0b0f17] text-slate-300 font-sans p-6 overflow-hidden flex-1 min-h-0">
     
     <header class="shrink-0 max-w-[1600px] mx-auto w-full mb-4">
       <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Kaxatapi Finance</h3>
       <h1 class="text-3xl font-bold text-white tracking-tight leading-none">Histórico de Movimentações</h1>
     </header>
 
-    <!-- Grid principal com altura fixa de 85% da viewport para garantir o aumento de 40% e scroll interno -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full h-[70vh] min-h-0 overflow-hidden">
+    <!-- Mudança: h-[70vh] removido para flex-1 para preencher o espaço restante perfeitamente -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full flex-1 min-h-0 overflow-hidden">
       
-      <!-- LADO ESQUERDO: CADASTRO -->
+      <!-- LADO ESQUERDO: CADASTRO (Comportamento de Card fixo) -->
       <section class="lg:col-span-4 flex flex-col min-h-0 h-full">
         <div class="bg-[#161b26] rounded-xl border border-white/5 p-6 space-y-6 flex-1 overflow-y-auto custom-scrollbar shadow-xl">
           <label class="flex flex-col items-center justify-center w-full h-32 border border-dashed border-white/10 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all bg-[#0b0f17]/50 group shrink-0">
@@ -127,7 +61,7 @@ const handleFileUpload = (event) => {
       <!-- LADO DIREITO: FILTROS E TABELA -->
       <section class="lg:col-span-8 flex flex-col min-h-0 h-full overflow-hidden">
         
-        <!-- RESTAURADO: FILTROS COMPLETOS -->
+        <!-- FILTROS (Shrink-0 para nunca sumir) -->
         <div class="bg-[#161b26] rounded-xl border border-white/5 p-5 flex flex-wrap gap-4 items-end shrink-0 mb-4 shadow-lg">
           <div class="flex-1 min-w-[200px] space-y-2 text-left">
             <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Período</label>
@@ -152,7 +86,7 @@ const handleFileUpload = (event) => {
           </div>
         </div>
 
-        <!-- GRID DE DADOS COM SCROLL INTERNO E COLUNAS RESTAURADAS -->
+        <!-- TABELA (Com flex-1 e overflow-y-auto igual aos cards de patrimônio) -->
         <div class="bg-[#161b26] rounded-xl border border-white/5 shadow-2xl flex flex-col flex-1 min-h-0 overflow-hidden">
           <div class="overflow-y-auto custom-scrollbar flex-1">
             <table class="w-full text-left border-collapse min-w-[800px]">
@@ -193,22 +127,13 @@ const handleFileUpload = (event) => {
 </template>
 
 <style scoped>
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(16, 185, 129, 0.5);
-}
+/* Estilos mantidos para consistência visual */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.5); }
 
+/* Garante que o app não gere scroll externo indesejado */
 :global(body, html, #app) {
   height: 100vh !important;
   overflow: hidden !important;
