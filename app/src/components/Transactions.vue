@@ -5,7 +5,7 @@ import { useToast } from 'vue-toastification';
 
 const toast = useToast();
 
-// Datas iniciais para manter o padrão de dados reais
+// Configurações de Datas Iniciais
 const dataAtual = new Date();
 const primeiroDiaMes = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), 1).toISOString().split('T')[0];
 const hoje = dataAtual.toISOString().split('T')[0];
@@ -13,7 +13,7 @@ const hoje = dataAtual.toISOString().split('T')[0];
 const fileName = ref('');
 const form = ref({ assetId: '', brokerId: '', quantity: null, priceUnit: null, date: hoje });
 
-// Filtros reativos
+// Filtros Reativos
 const filtros = ref({ 
   dataInicio: primeiroDiaMes, 
   dataFim: hoje, 
@@ -21,32 +21,38 @@ const filtros = ref({
   assetId: ''
 });
 
-// --- LÓGICA DE PAGINAÇÃO ---
+// Controle de Paginação
 const paginaAtual = ref(1);
-const itensPorPagina = 12; // Define uma altura fixa confortável para a grid
+const itensPorPagina = 12;
 
-// URL da API com base nos filtros
+// Definição da URL da API - Monitora mudanças nos filtros
 const apiUrl = computed(() => {
-  if (filtros.value.dataInicio.length < 10 || filtros.value.dataFim.length < 10) return null;
+  if (!filtros.value.dataInicio || !filtros.value.dataFim) return null;
+  
   const params = new URLSearchParams({
     startDate: filtros.value.dataInicio,
     endDate: filtros.value.dataFim,
-    brokerId: filtros.value.brokerId,
-    assetId: filtros.value.assetId
+    brokerId: filtros.value.brokerId || '',
+    assetId: filtros.value.assetId || ''
   });
   return `/transactions?${params.toString()}`;
 });
 
+// Hook de API - O 'fetchData' é a função que dispara a requisição real
 const { data: apiResponse, loading, fetchData } = useApi(apiUrl, { immediate: true });
 
-// Resetar página ao mudar filtros
-watch(apiUrl, () => {
-  paginaAtual.value = 1;
-});
+// MONITOR DE DISPARO: Se a URL mudar pelos filtros, chama o backend e reseta a página
+watch(apiUrl, (newUrl) => {
+  if (newUrl) {
+    paginaAtual.value = 1;
+    fetchData(); 
+  }
+}, { deep: true });
 
+// Dados processados do Backend
 const transacoesTotal = computed(() => apiResponse.value?.data || []);
 
-// Lógica de fatiamento da grid (Paginação)
+// Lógica de Fatiamento para a Grid (Paginação Client-side)
 const transacoesPaginadas = computed(() => {
   const inicio = (paginaAtual.value - 1) * itensPorPagina;
   const fim = inicio + itensPorPagina;
@@ -57,7 +63,7 @@ const totalPaginas = computed(() =>
   Math.max(1, Math.ceil(transacoesTotal.value.length / itensPorPagina))
 );
 
-// --- AUXILIARES DE SELECT ---
+// Auxiliares para preencher os Selects com base nos dados reais retornados
 const ativosParaSelect = computed(() => {
   const unicos = [...new Map(
     transacoesTotal.value
@@ -76,7 +82,7 @@ const brokersParaSelect = computed(() => {
   return unicos.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
-// Formatações
+// Formatações Utilitárias
 const formatDate = (dateString) => {
   if (!dateString) return '---';
   return new Date(dateString).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
@@ -101,7 +107,7 @@ const handleFileUpload = (event) => {
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden">
       
-      <!-- LADO ESQUERDO: CADASTRO -->
+      <!-- COLUNA ESQUERDA: CADASTRO -->
       <section class="lg:col-span-4 flex flex-col min-h-0">
         <div class="bg-[#161b26] rounded-xl border border-white/5 p-6 space-y-6 flex flex-col h-full overflow-y-auto custom-scrollbar shadow-xl">
           <label class="flex flex-col items-center justify-center w-full h-32 border border-dashed border-white/10 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all bg-[#0b0f17]/50 group shrink-0">
@@ -113,19 +119,19 @@ const handleFileUpload = (event) => {
 
           <div class="space-y-4 flex-grow">
             <div class="space-y-1">
-              <div class="flex justify-between text-[10px] font-black uppercase text-slate-500 tracking-wider">
+              <div class="flex justify-between text-[10px] font-black uppercase text-slate-500">
                 <label>Ativo</label>
                 <button class="text-emerald-500 hover:brightness-125">+ Novo</button>
               </div>
-              <select v-model="form.assetId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none focus:border-emerald-500/50 transition-colors">
+              <select v-model="form.assetId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none">
                 <option value="" disabled>Selecione...</option>
                 <option v-for="a in ativosParaSelect" :key="a.assetId" :value="a.assetId">{{ a.ticket || a.description }}</option>
               </select>
             </div>
 
             <div class="space-y-1">
-              <label class="text-[10px] font-black uppercase text-slate-500 tracking-wider block">Corretora</label>
-              <select v-model="form.brokerId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none focus:border-emerald-500/50">
+              <label class="text-[10px] font-black uppercase text-slate-500 block">Corretora</label>
+              <select v-model="form.brokerId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none">
                 <option value="" disabled>Selecione...</option>
                 <option v-for="b in brokersParaSelect" :key="b.brokerId" :value="b.brokerId">{{ b.name }}</option>
               </select>
@@ -133,12 +139,12 @@ const handleFileUpload = (event) => {
 
             <div class="grid grid-cols-2 gap-4">
               <div class="space-y-1">
-                <label class="text-[10px] font-black uppercase text-slate-500 tracking-wider">Qtd.</label>
-                <input v-model.number="form.quantity" type="number" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none focus:border-emerald-500/50" />
+                <label class="text-[10px] font-black uppercase text-slate-500">Qtd.</label>
+                <input v-model.number="form.quantity" type="number" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none" />
               </div>
               <div class="space-y-1">
-                <label class="text-[10px] font-black uppercase text-slate-500 tracking-wider">Custo Unit.</label>
-                <input v-model.number="form.priceUnit" type="number" step="0.01" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none focus:border-emerald-500/50" />
+                <label class="text-[10px] font-black uppercase text-slate-500">Custo Unit.</label>
+                <input v-model.number="form.priceUnit" type="number" step="0.01" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none" />
               </div>
             </div>
           </div>
@@ -149,11 +155,11 @@ const handleFileUpload = (event) => {
         </div>
       </section>
 
-      <!-- LADO DIREITO: FILTROS E TABELA -->
+      <!-- COLUNA DIREITA: FILTROS E GRID PAGINADA -->
       <section class="lg:col-span-8 flex flex-col min-h-0 h-full">
         
-        <div class="bg-[#161b26] rounded-xl border border-white/5 p-5 flex flex-wrap gap-4 items-end shrink-0 mb-4 shadow-lg">
-          <div class="flex-1 min-w-[180px] space-y-2">
+        <div class="bg-[#161b26] rounded-xl border border-white/5 p-5 flex flex-wrap gap-4 items-end shrink-0 mb-4">
+          <div class="flex-1 min-w-[180px] space-y-2 text-left">
             <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Período</label>
             <div class="flex gap-2">
               <input v-model="filtros.dataInicio" type="date" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full outline-none" />
@@ -169,12 +175,11 @@ const handleFileUpload = (event) => {
           </div>
         </div>
 
-        <!-- Container da Tabela e Paginação -->
         <div class="bg-[#161b26] rounded-xl border border-white/5 shadow-2xl flex flex-col flex-1 min-h-0 overflow-hidden">
-          <div class="flex-1 overflow-hidden flex flex-col">
+          <div class="flex-1 overflow-x-auto overflow-y-hidden flex flex-col">
             <table class="w-full text-left border-collapse">
-              <thead class="sticky top-0 bg-[#1b2230] z-20 shadow-md">
-                <tr class="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] border-b border-white/5">
+              <thead class="sticky top-0 bg-[#1b2230] z-20">
+                <tr class="text-[10px] font-black text-slate-500 uppercase border-b border-white/5">
                   <th class="p-4 bg-[#1b2230]">Data</th>
                   <th class="p-4 bg-[#1b2230]">Ativo / Descrição</th>
                   <th class="p-4 bg-[#1b2230]">Qtd.</th>
@@ -183,7 +188,7 @@ const handleFileUpload = (event) => {
                 </tr>
               </thead>
               <tbody class="divide-y divide-white/5">
-                <tr v-for="(t, index) in transacoesPaginadas" :key="index" class="hover:bg-white/[0.02] transition-colors">
+                <tr v-for="(t, index) in transacoesPaginadas" :key="index" class="hover:bg-white/[0.02]">
                   <td class="p-4 text-[11px] font-mono text-slate-500">{{ formatDate(t?.date) }}</td>
                   <td class="p-4">
                     <div class="flex flex-col">
@@ -198,32 +203,31 @@ const handleFileUpload = (event) => {
               </tbody>
             </table>
 
-            <!-- Empty State / Loading -->
             <div v-if="loading" class="p-10 text-center text-slate-500 uppercase text-[10px] font-black animate-pulse">
-              Consultando dados reais...
+              Chamando Backend...
             </div>
             <div v-if="!loading && transacoesTotal.length === 0" class="p-10 text-center text-slate-600 uppercase text-[10px] font-black">
               Nenhuma movimentação no período.
             </div>
           </div>
 
-          <!-- CONTROLES DE PAGINAÇÃO (Fixos no rodapé da grid) -->
+          <!-- PAGINAÇÃO FIXA NO RODAPÉ -->
           <div class="p-4 border-t border-white/5 flex justify-between items-center bg-[#1b2230]/30 shrink-0">
             <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-              Página {{ paginaAtual }} de {{ totalPaginas }} ({{ transacoesTotal.length }} registros)
+              Página {{ paginaAtual }} de {{ totalPaginas }} ({{ transacoesTotal.length }} registros reais)
             </span>
             <div class="flex gap-2">
               <button 
                 @click="paginaAtual--" 
                 :disabled="paginaAtual === 1"
-                class="px-4 py-2 bg-[#0b0f17] border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-emerald-500 hover:border-emerald-500/30 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                class="px-4 py-2 bg-[#0b0f17] border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-emerald-500 hover:border-emerald-500/30 disabled:opacity-20 transition-all"
               >
                 Anterior
               </button>
               <button 
                 @click="paginaAtual++" 
                 :disabled="paginaAtual >= totalPaginas"
-                class="px-4 py-2 bg-[#0b0f17] border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-emerald-500 hover:border-emerald-500/30 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                class="px-4 py-2 bg-[#0b0f17] border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-emerald-500 hover:border-emerald-500/30 disabled:opacity-20 transition-all"
               >
                 Próximo
               </button>
