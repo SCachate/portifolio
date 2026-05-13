@@ -164,7 +164,7 @@ const handleFileUpload = (event) => {
             <table class="w-full text-left border-collapse min-w-[700px]">
               <thead class="sticky top-0 bg-[#161b26] z-20 shadow-md">
                 <tr class="text-[10px] font-black text-slate-600 uppercase tracking-widest border-b border-white/5">
-                  <th class="p-4 bg-[#161b26]">Data</th>
+                  <th class="p-4 bg-[#161b26]">Data2</th>
                   <th class="p-4 bg-[#161b26]">Ativo</th>
                   <th class="p-4 bg-[#161b26]">Qtd.</th>
                   <th class="p-4 bg-[#161b26]">Custo Unit.</th>
