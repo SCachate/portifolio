@@ -23,7 +23,7 @@ const filtros = ref({
 
 // Controle de Paginação
 const paginaAtual = ref(1);
-const itensPorPagina = 8;
+const itensPorPagina = 7;
 
 // Definição da URL da API - Monitora mudanças nos filtros
 const apiUrl = computed(() => {
