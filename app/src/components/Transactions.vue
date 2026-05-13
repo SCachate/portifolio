@@ -20,7 +20,7 @@ const filtros = ref({
 });
 
 const paginaAtual = ref(1);
-const itensPorPagina = 7; // Atualizado conforme sua modificação
+const itensPorPagina = 6; // Atualizado conforme sua modificação
 
 const apiUrl = computed(() => {
   if (!filtros.value.dataInicio || !filtros.value.dataFim) return null;
