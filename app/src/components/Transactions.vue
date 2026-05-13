@@ -83,7 +83,7 @@ const handleFileUpload = (event) => {
       
       <!-- LADO ESQUERDO: CADASTRO (Ajustado para acompanhar a altura) -->
       <section class="lg:col-span-4 flex flex-col">
-        <div class="bg-[#161b26] rounded-xl border border-white/5 p-6 space-y-6 h-[70vh] overflow-y-auto custom-scrollbar shadow-xl">
+        <div class="bg-[#161b26] rounded-xl border border-white/5 p-6 space-y-6 h-[60vh] overflow-y-auto custom-scrollbar shadow-xl">
           <label class="flex flex-col items-center justify-center w-full h-32 border border-dashed border-white/10 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all bg-[#0b0f17]/50 group shrink-0">
             <input type="file" class="hidden" @change="handleFileUpload" accept="application/pdf" />
             <span class="text-[10px] font-black text-slate-500 group-hover:text-emerald-500 uppercase tracking-widest text-center px-4">
@@ -151,7 +151,7 @@ const handleFileUpload = (event) => {
         </div>
 
         <!-- GRID DE DADOS (Altura forçada em 70% da viewport) -->
-        <div class="bg-[#161b26] rounded-xl border border-white/5 shadow-2xl flex flex-col h-[70vh] max-h-[70vh] overflow-hidden">
+        <div class="bg-[#161b26] rounded-xl border border-white/5 shadow-2xl flex flex-col h-[60vh] max-h-[60vh] overflow-hidden">
           
           <!-- Cabeçalho da Tabela Fixo -->
           <div class="overflow-x-auto overflow-y-auto custom-scrollbar flex-1">
