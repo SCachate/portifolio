@@ -1,5 +1,83 @@
+<script setup>
+import { ref, computed, watch } from 'vue';
+import { useApi } from '../composables/useApi'; 
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
+
+const dataAtual = new Date();
+const primeiroDiaMes = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), 1).toISOString().split('T')[0];
+const hoje = dataAtual.toISOString().split('T')[0];
+
+const fileName = ref('');
+const form = ref({ assetId: '', brokerId: '', quantity: null, priceUnit: null, date: hoje });
+
+const filtros = ref({ 
+  dataInicio: primeiroDiaMes, 
+  dataFim: hoje, 
+  brokerId: '',
+  assetId: ''
+});
+
+const apiUrl = computed(() => {
+  if (filtros.value.dataInicio.length < 10 || filtros.value.dataFim.length < 10) return null;
+  const params = new URLSearchParams({
+    startDate: filtros.value.dataInicio,
+    endDate: filtros.value.dataFim,
+    brokerId: filtros.value.brokerId,
+    assetId: filtros.value.assetId
+  });
+  return `/transactions?${params.toString()}`;
+});
+
+const { data: apiResponse, loading, fetchData } = useApi(apiUrl, { immediate: true });
+
+let debounceTimer = null;
+watch(apiUrl, (newUrl) => {
+  if (!newUrl) return;
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => fetchData(), 500);
+});
+
+// Garante que sempre retorne um array para evitar erros de .map ou .filter
+const transacoesFiltradas = computed(() => apiResponse.value?.data || []);
+
+const ativosParaSelect = computed(() => {
+  // Blindagem: Filtra itens que por ventura venham nulos da API antes de mapear
+  const únicos = [...new Map(
+    transacoesFiltradas.value
+      .filter(item => item && item.assetId)
+      .map(item => [item.assetId, { assetId: item.assetId, ticket: item.ticket, description: item.assetDescription }])
+  ).values()];
+  return únicos.sort((a, b) => (a.ticket || a.description || '').localeCompare(b.ticket || b.description || ''));
+});
+
+const brokersParaSelect = computed(() => {
+  // Blindagem: Filtra itens que por ventura venham nulos da API antes de mapear
+  const únicos = [...new Map(
+    transacoesFiltradas.value
+      .filter(item => item && item.brokerId)
+      .map(item => [item.brokerId, { brokerId: item.brokerId, name: item.brokerName }])
+  ).values()];
+  return únicos.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+});
+
+const formatDate = (dateString) => {
+  if (!dateString) return '---';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+};
+
+const formatCurrency = (val) => Number(val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const handleFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) fileName.value = file.name;
+};
+</script>
+
 <template>
-  <!-- Mudança: h-screen removido e trocado por flex-1 + overflow-hidden -->
+  <!-- Layout Flex-1 para preencher o espaço sem transbordar (Scroll Global removido) -->
   <div class="flex flex-col bg-[#0b0f17] text-slate-300 font-sans p-6 overflow-hidden flex-1 min-h-0">
     
     <header class="shrink-0 max-w-[1600px] mx-auto w-full mb-4">
@@ -7,10 +85,10 @@
       <h1 class="text-3xl font-bold text-white tracking-tight leading-none">Histórico de Movimentações</h1>
     </header>
 
-    <!-- Mudança: h-[70vh] removido para flex-1 para preencher o espaço restante perfeitamente -->
+    <!-- Grid principal usando flex-1 para ocupar o espaço exato entre header e rodapé da tela -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full flex-1 min-h-0 overflow-hidden">
       
-      <!-- LADO ESQUERDO: CADASTRO (Comportamento de Card fixo) -->
+      <!-- LADO ESQUERDO: CADASTRO -->
       <section class="lg:col-span-4 flex flex-col min-h-0 h-full">
         <div class="bg-[#161b26] rounded-xl border border-white/5 p-6 space-y-6 flex-1 overflow-y-auto custom-scrollbar shadow-xl">
           <label class="flex flex-col items-center justify-center w-full h-32 border border-dashed border-white/10 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all bg-[#0b0f17]/50 group shrink-0">
@@ -61,7 +139,7 @@
       <!-- LADO DIREITO: FILTROS E TABELA -->
       <section class="lg:col-span-8 flex flex-col min-h-0 h-full overflow-hidden">
         
-        <!-- FILTROS (Shrink-0 para nunca sumir) -->
+        <!-- FILTROS (shrink-0 garante que eles não sumam) -->
         <div class="bg-[#161b26] rounded-xl border border-white/5 p-5 flex flex-wrap gap-4 items-end shrink-0 mb-4 shadow-lg">
           <div class="flex-1 min-w-[200px] space-y-2 text-left">
             <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Período</label>
@@ -86,7 +164,7 @@
           </div>
         </div>
 
-        <!-- TABELA (Com flex-1 e overflow-y-auto igual aos cards de patrimônio) -->
+        <!-- AREA DA TABELA (flex-1 + overflow-hidden para scroll interno) -->
         <div class="bg-[#161b26] rounded-xl border border-white/5 shadow-2xl flex flex-col flex-1 min-h-0 overflow-hidden">
           <div class="overflow-y-auto custom-scrollbar flex-1">
             <table class="w-full text-left border-collapse min-w-[800px]">
@@ -101,23 +179,29 @@
               </thead>
               <tbody class="divide-y divide-white/5">
                 <tr v-for="(t, index) in transacoesFiltradas" :key="index" class="hover:bg-white/[0.02] transition-colors">
-                  <td class="p-4 text-[11px] font-mono text-slate-500 whitespace-nowrap">{{ formatDate(t.date) }}</td>
+                  <td class="p-4 text-[11px] font-mono text-slate-500 whitespace-nowrap">{{ formatDate(t?.date) }}</td>
                   <td class="p-4">
                     <div class="flex flex-col">
-                      <span class="text-sm font-bold text-white tracking-tight">{{ t.ticket || '---' }}</span>
-                      <span class="text-[9px] text-slate-500 font-bold uppercase truncate max-w-[250px]">{{ t.assetDescription }}</span>
-                      <span class="text-[9px] text-emerald-500/80 font-black uppercase tracking-wider">{{ t.brokerName }}</span>
+                      <span class="text-sm font-bold text-white tracking-tight">{{ t?.ticket || '---' }}</span>
+                      <span class="text-[9px] text-slate-500 font-bold uppercase truncate max-w-[250px]">{{ t?.assetDescription }}</span>
+                      <span class="text-[9px] text-emerald-500/80 font-black uppercase tracking-wider">{{ t?.brokerName }}</span>
                     </div>
                   </td>
-                  <td class="p-4 text-xs font-mono text-slate-400 font-bold">{{ Number(t.quantity).toLocaleString('pt-BR') }}</td>
-                  <td class="p-4 text-xs font-mono text-slate-400">R$ {{ formatCurrency(t.priceUnit) }}</td>
-                  <td class="p-4 text-right font-mono text-white text-sm font-bold">R$ {{ formatCurrency(t.total) }}</td>
+                  <td class="p-4 text-xs font-mono text-slate-400 font-bold">{{ Number(t?.quantity || 0).toLocaleString('pt-BR') }}</td>
+                  <td class="p-4 text-xs font-mono text-slate-400">R$ {{ formatCurrency(t?.priceUnit) }}</td>
+                  <td class="p-4 text-right font-mono text-white text-sm font-bold">R$ {{ formatCurrency(t?.total) }}</td>
                 </tr>
               </tbody>
             </table>
             
+            <!-- Estado de Loading -->
             <div v-if="loading" class="p-20 text-center text-slate-500 uppercase text-[10px] font-black tracking-widest animate-pulse">
               Consultando dados reais...
+            </div>
+
+            <!-- Empty State (Opcional, evita confusão se não houver dados) -->
+            <div v-if="!loading && transacoesFiltradas.length === 0" class="p-20 text-center text-slate-600 uppercase text-[10px] font-black tracking-widest">
+              Nenhuma movimentação encontrada para o período.
             </div>
           </div>
         </div>
@@ -127,13 +211,23 @@
 </template>
 
 <style scoped>
-/* Estilos mantidos para consistência visual */
-.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.5); }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.5);
+}
 
-/* Garante que o app não gere scroll externo indesejado */
+/* Força o reset de altura para garantir o comportamento de Single Page App sem scroll na borda da janela */
 :global(body, html, #app) {
   height: 100vh !important;
   overflow: hidden !important;
