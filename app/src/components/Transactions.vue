@@ -85,7 +85,7 @@ const formatCurrency = (val) =>
   Number(val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 
-// --- FUNÇÃO DE UPLOAD CORRIGIDA PARA ACESSAR A INSTÂNCIA DO USEAPI DIRETAMENTE ---
+// --- FUNÇÃO DE UPLOAD AJUSTADA EXCLUSIVAMENTE NA VALIDAÇÃO DO IF ---
 const handleFileUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
@@ -111,16 +111,18 @@ const handleFileUpload = async (event) => {
     // Executamos a requisição do upload
     await apiInstancia.fetchData();
 
-    // Lemos o dado atualizado diretamente da instância criada
+    // Lemos o dado retornado pelo backend
     const resposta = apiInstancia.data.value;
 
-    // Captura o retorno do backend contendo o array gerado pelo Gemini
-    if (resposta && resposta.success) {
-      transacoesParaRevisar.value = resposta.data || [];
+    console.log("Objeto de teste no Vue:", resposta);
+
+    // Validação corrigida para checar a chave "transacoes" gerada pelo seu backend
+    if (resposta && (resposta.transacoes || Array.isArray(resposta))) {
+      transacoesParaRevisar.value = resposta.transacoes || resposta;
       modoRevisao.value = true; // Força a tela a mudar para o Modo Revisão
       toast.success('Nota lida com sucesso! Revise os dados abaixo antes de salvar.');
     } else {
-      toast.error('O backend processou, mas não retornou dados válidos.');
+      toast.error('O backend respondeu, mas a chave "transacoes" não foi encontrada.');
     }
 
   } catch (err) {
@@ -154,7 +156,6 @@ const salvarDadosRevisados = () => {
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden">
       
-      <!-- CADASTRO -->
       <section class="lg:col-span-4 flex flex-col min-h-0">
         <div class="bg-[#161b26] rounded-xl border border-white/5 p-6 space-y-6 flex flex-col h-full overflow-y-auto custom-scrollbar shadow-xl">
           <label class="flex flex-col items-center justify-center w-full h-32 border border-dashed border-white/10 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all bg-[#0b0f17]/50 group shrink-0">
@@ -202,7 +203,6 @@ const salvarDadosRevisados = () => {
         </div>
       </section>
 
-      <!-- FILTROS E GRID -->
       <section class="lg:col-span-8 flex flex-col min-h-0 h-full">
         
         <div class="bg-[#161b26] rounded-xl border border-white/5 p-5 flex flex-wrap gap-4 items-end shrink-0 mb-4">
@@ -231,7 +231,6 @@ const salvarDadosRevisados = () => {
 
         <div class="bg-[#161b26] rounded-xl border border-white/5 shadow-2xl flex flex-col flex-1 min-h-0 overflow-hidden relative">
           
-          <!-- SEU SPINNER OFICIAL COM EMBLEMA "K" -->
           <div v-if="loading" class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm z-30 flex items-center justify-center">
             <div class="relative flex items-center justify-center w-20 h-20">
               <div class="w-20 h-20 border-[3px] border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
@@ -241,9 +240,6 @@ const salvarDadosRevisados = () => {
             </div>
           </div>
 
-          <!-- ================================================================= -->
-          <!-- NOVO BLOCO V-IF: MODO DE REVISÃO DOS DADOS DA IA (EDITÁVEL)      -->
-          <!-- ================================================================= -->
           <div v-if="modoRevisao" class="flex flex-col flex-1 min-h-0 bg-[#121722]">
             <div class="p-4 bg-emerald-950/20 border-b border-emerald-500/10 flex justify-between items-center shrink-0">
               <span class="text-xs font-black text-emerald-400 uppercase tracking-wider">
@@ -290,9 +286,6 @@ const salvarDadosRevisados = () => {
             </div>
           </div>
 
-          <!-- ================================================================= -->
-          <!-- BLOCO DO MODO NORMAL: SUA GRID HISTÓRICA DO BANCO DE DADOS       -->
-          <!-- ================================================================= -->
           <div v-else class="flex flex-col flex-1 min-h-0">
             <div class="flex-1 overflow-x-auto overflow-y-hidden flex flex-col">
               <table class="w-full text-left border-collapse">
@@ -328,7 +321,6 @@ const salvarDadosRevisados = () => {
               </div>
             </div>
 
-            <!-- RODAPÉ DA GRID HISTÓRICA -->
             <div class="p-4 border-t border-white/5 flex justify-between items-center bg-[#1b2230]/30 shrink-0">
               <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">
                 Página {{ paginaAtual }} de {{ totalPaginas }} ({{ transacoesTotal.length }} registros)
