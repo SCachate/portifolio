@@ -159,6 +159,8 @@ exports.addPDF = asyncHandler(async (req, res) => {
       fs.unlinkSync(filePath);
     }
 
+    console.info(dadosExtraidos);
+
     res.json(dadosExtraidos);
 
   } catch (error) {
