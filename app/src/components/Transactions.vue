@@ -173,7 +173,19 @@ const handleFileUpload = (event) => {
           </div>
         </div>
 
-        <div class="bg-[#161b26] rounded-xl border border-white/5 shadow-2xl flex flex-col flex-1 min-h-0 overflow-hidden">
+        <!-- Adicionada a classe "relative" para conter o overlay absoluto -->
+        <div class="bg-[#161b26] rounded-xl border border-white/5 shadow-2xl flex flex-col flex-1 min-h-0 overflow-hidden relative">
+          
+          <!-- SEU PADRÃO OFICIAL DE EMBLEMA CENTRALIZADO COM SPINNER -->
+          <div v-if="loading" class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm z-30 flex items-center justify-center">
+            <div class="relative flex items-center justify-center w-20 h-20">
+              <div class="w-20 h-20 border-[3px] border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
+              <div class="absolute flex items-center justify-center w-10 h-10 bg-emerald-500 rounded-xl shadow-lg">
+                <span class="text-black font-black text-xl select-none">K</span>
+              </div>
+            </div>
+          </div>
+
           <div class="flex-1 overflow-x-auto overflow-y-hidden flex flex-col">
             <table class="w-full text-left border-collapse">
               <thead class="sticky top-0 bg-[#1b2230] z-20">
@@ -205,9 +217,6 @@ const handleFileUpload = (event) => {
               </tbody>
             </table>
 
-            <div v-if="loading" class="p-10 text-center text-slate-500 uppercase text-[10px] font-black animate-pulse">
-              Consultando Backend...
-            </div>
             <div v-if="!loading && transacoesTotal.length === 0" class="p-10 text-center text-slate-600 uppercase text-[10px] font-black">
               Nenhuma movimentação no período.
             </div>
