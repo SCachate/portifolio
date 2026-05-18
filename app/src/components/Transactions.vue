@@ -85,7 +85,7 @@ const formatCurrency = (val) =>
   Number(val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 
-// --- FUNÇÃO DE UPLOAD ALTERADA PARA PEGAR O RETORNO DA IA SEM SALVAR ---
+// --- FUNÇÃO DE UPLOAD CORRIGIDA PARA ACESSAR A INSTÂNCIA DO USEAPI DIRETAMENTE ---
 const handleFileUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
@@ -96,9 +96,10 @@ const handleFileUpload = async (event) => {
   formData.append('nota', file); 
 
   try {
-    loading.value = true; // Ativa o "K" girando na tela
+    loading.value = true; // Ativa o "K" girando na tela principal
 
-    const { fetchData: executarImportacao, data: jsonRetornado } = useApi('/transactions/addPDF', {
+    // Instanciamos o useApi de forma isolada
+    const apiInstancia = useApi('/transactions/addPDF', {
       method: 'POST',
       data: formData,
       immediate: false, 
@@ -107,17 +108,23 @@ const handleFileUpload = async (event) => {
       }
     });
 
-    await executarImportacao();
+    // Executamos a requisição do upload
+    await apiInstancia.fetchData();
+
+    // Lemos o dado atualizado diretamente da instância criada
+    const resposta = apiInstancia.data.value;
 
     // Captura o retorno do backend contendo o array gerado pelo Gemini
-    if (jsonRetornado.value && jsonRetornado.value.success) {
-      transacoesParaRevisar.value = jsonRetornado.value.data || [];
-      modoRevisao.value = true; // Troca o quadrante da tabela para o modo revisão
+    if (resposta && resposta.success) {
+      transacoesParaRevisar.value = resposta.data || [];
+      modoRevisao.value = true; // Força a tela a mudar para o Modo Revisão
       toast.success('Nota lida com sucesso! Revise os dados abaixo antes de salvar.');
+    } else {
+      toast.error('O backend processou, mas não retornou dados válidos.');
     }
 
   } catch (err) {
-    console.error('Falha ao importar arquivo:', err);
+    console.error('Falha crítica ao importar arquivo no front:', err);
   } finally {
     loading.value = false; // Desliga o "K" girando
     event.target.value = ''; // Limpa o input de arquivo
@@ -132,7 +139,6 @@ const cancelarRevisao = () => {
 };
 
 const salvarDadosRevisados = () => {
-  // Próxima etapa: Enviar o array 'transacoesParaRevisar.value' (já editado pelo usuário) para salvar no banco
   toast.info('Pronto para enviar ao banco os dados revisados!');
   console.log('Dados prontos para o banco:', transacoesParaRevisar.value);
 };
