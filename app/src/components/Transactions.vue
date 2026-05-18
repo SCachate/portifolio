@@ -20,7 +20,11 @@ const filtros = ref({
 });
 
 const paginaAtual = ref(1);
-const itensPorPagina = 6; // Atualizado conforme sua modificação
+const itensPorPagina = 6;
+
+// --- NOVOS ESTADOS REATIVOS PARA A ÁREA DE REVISÃO DA IA ---
+const modoRevisao = ref(false);
+const transacoesParaRevisar = ref([]);
 
 const apiUrl = computed(() => {
   if (!filtros.value.dataInicio || !filtros.value.dataFim) return null;
@@ -63,7 +67,6 @@ const ativosParaSelect = computed(() => {
   return unicos.sort((a, b) => (a.ticket || '').localeCompare(b.ticket || ''));
 });
 
-// Restaurado: Lista de Instituições/Corretoras para o Filtro
 const brokersParaSelect = computed(() => {
   const unicos = [...new Map(
     transacoesTotal.value
@@ -81,9 +84,57 @@ const formatDate = (dateString) => {
 const formatCurrency = (val) => 
   Number(val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const handleFileUpload = (event) => {
+
+// --- FUNÇÃO DE UPLOAD ALTERADA PARA PEGAR O RETORNO DA IA SEM SALVAR ---
+const handleFileUpload = async (event) => {
   const file = event.target.files[0];
-  if (file) fileName.value = file.name;
+  if (!file) return;
+
+  fileName.value = file.name;
+
+  const formData = new FormData();
+  formData.append('nota', file); 
+
+  try {
+    loading.value = true; // Ativa o "K" girando na tela
+
+    const { fetchData: executarImportacao, data: jsonRetornado } = useApi('/transactions/addPDF', {
+      method: 'POST',
+      data: formData,
+      immediate: false, 
+      headers: {
+        'Content-Type': undefined 
+      }
+    });
+
+    await executarImportacao();
+
+    // Captura o retorno do backend contendo o array gerado pelo Gemini
+    if (jsonRetornado.value && jsonRetornado.value.success) {
+      transacoesParaRevisar.value = jsonRetornado.value.data || [];
+      modoRevisao.value = true; // Troca o quadrante da tabela para o modo revisão
+      toast.success('Nota lida com sucesso! Revise os dados abaixo antes de salvar.');
+    }
+
+  } catch (err) {
+    console.error('Falha ao importar arquivo:', err);
+  } finally {
+    loading.value = false; // Desliga o "K" girando
+    event.target.value = ''; // Limpa o input de arquivo
+  }
+};
+
+// Funções de controle da área de revisão
+const cancelarRevisao = () => {
+  modoRevisao.value = false;
+  transacoesParaRevisar.value = [];
+  fileName.value = '';
+};
+
+const salvarDadosRevisados = () => {
+  // Próxima etapa: Enviar o array 'transacoesParaRevisar.value' (já editado pelo usuário) para salvar no banco
+  toast.info('Pronto para enviar ao banco os dados revisados!');
+  console.log('Dados prontos para o banco:', transacoesParaRevisar.value);
 };
 </script>
 
@@ -163,7 +214,6 @@ const handleFileUpload = (event) => {
               <option v-for="a in ativosParaSelect" :key="a.assetId" :value="a.assetId">{{ a.ticket || a.description }}</option>
             </select>
           </div>
-          <!-- Restaurado: Filtro de Instituição -->
           <div class="flex-1 min-w-[150px] space-y-2 text-left">
             <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Instituição</label>
             <select v-model="filtros.brokerId" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full outline-none">
@@ -173,10 +223,9 @@ const handleFileUpload = (event) => {
           </div>
         </div>
 
-        <!-- Adicionada a classe "relative" para conter o overlay absoluto -->
         <div class="bg-[#161b26] rounded-xl border border-white/5 shadow-2xl flex flex-col flex-1 min-h-0 overflow-hidden relative">
           
-          <!-- SEU PADRÃO OFICIAL DE EMBLEMA CENTRALIZADO COM SPINNER -->
+          <!-- SEU SPINNER OFICIAL COM EMBLEMA "K" -->
           <div v-if="loading" class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm z-30 flex items-center justify-center">
             <div class="relative flex items-center justify-center w-20 h-20">
               <div class="w-20 h-20 border-[3px] border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
@@ -186,56 +235,109 @@ const handleFileUpload = (event) => {
             </div>
           </div>
 
-          <div class="flex-1 overflow-x-auto overflow-y-hidden flex flex-col">
-            <table class="w-full text-left border-collapse">
-              <thead class="sticky top-0 bg-[#1b2230] z-20">
-                <tr class="text-[10px] font-black text-slate-500 uppercase border-b border-white/5">
-                  <th class="p-4 bg-[#1b2230]">Data</th>
-                  <th class="p-4 bg-[#1b2230]">Ativo / Descrição</th>
-                  <!-- Restaurado: Coluna Instituição na Grid -->
-                  <th class="p-4 bg-[#1b2230]">Instituição</th>
-                  <th class="p-4 bg-[#1b2230]">Qtd.</th>
-                  <th class="p-4 bg-[#1b2230]">Preço Unit.</th>
-                  <th class="p-4 bg-[#1b2230] text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-white/5">
-                <tr v-for="(t, index) in transacoesPaginadas" :key="index" class="hover:bg-white/[0.02]">
-                  <td class="p-4 text-[11px] font-mono text-slate-500">{{ formatDate(t?.date) }}</td>
-                  <td class="p-4">
-                    <div class="flex flex-col">
-                      <span class="text-sm font-bold text-white tracking-tight">{{ t?.ticket || '---' }}</span>
-                      <span class="text-[9px] text-slate-500 font-bold uppercase truncate max-w-[150px]">{{ t?.assetDescription }}</span>
-                    </div>
-                  </td>
-                  <!-- Restaurado: Exibição do Nome da Corretora -->
-                  <td class="p-4 text-[10px] text-slate-400 font-bold uppercase tracking-tight">{{ t?.brokerName || '---' }}</td>
-                  <td class="p-4 text-xs font-mono text-slate-400 font-bold">{{ Number(t?.quantity || 0).toLocaleString('pt-BR') }}</td>
-                  <td class="p-4 text-xs font-mono text-slate-400">R$ {{ formatCurrency(t?.priceUnit) }}</td>
-                  <td class="p-4 text-right font-mono text-white text-sm font-bold">R$ {{ formatCurrency(t?.total) }}</td>
-                </tr>
-              </tbody>
-            </table>
+          <!-- ================================================================= -->
+          <!-- NOVO BLOCO V-IF: MODO DE REVISÃO DOS DADOS DA IA (EDITÁVEL)      -->
+          <!-- ================================================================= -->
+          <div v-if="modoRevisao" class="flex flex-col flex-1 min-h-0 bg-[#121722]">
+            <div class="p-4 bg-emerald-950/20 border-b border-emerald-500/10 flex justify-between items-center shrink-0">
+              <span class="text-xs font-black text-emerald-400 uppercase tracking-wider">
+                🤖 REVISÃO DA INTELIGÊNCIA ARTIFICIAL (Ajuste se necessário)
+              </span>
+              <div class="flex gap-2">
+                <button @click="cancelarRevisao" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white text-[10px] font-black uppercase tracking-wider rounded-md transition-all">
+                  Cancelar
+                </button>
+                <button @click="salvarDadosRevisados" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider rounded-md shadow-lg transition-all">
+                  Confirmar e Salvar no Banco
+                </button>
+              </div>
+            </div>
 
-            <div v-if="!loading && transacoesTotal.length === 0" class="p-10 text-center text-slate-600 uppercase text-[10px] font-black">
-              Nenhuma movimentação no período.
+            <div class="flex-1 overflow-auto">
+              <table class="w-full text-left border-collapse">
+                <thead class="sticky top-0 bg-[#161b26] z-10 border-b border-white/5">
+                  <tr class="text-[9px] font-black text-slate-500 uppercase tracking-wider">
+                    <th class="p-3">Data</th>
+                    <th class="p-3">Ticker</th>
+                    <th class="p-3">Operação</th>
+                    <th class="p-3">Quantidade</th>
+                    <th class="p-3">Preço Unitário</th>
+                    <th class="p-3">Taxas / Custos</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                  <tr v-for="(t, idx) in transacoesParaRevisar" :key="idx" class="hover:bg-white/[0.01]">
+                    <td class="p-2"><input v-model="t.data" type="date" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-white font-mono outline-none w-full" /></td>
+                    <td class="p-2"><input v-model="t.ticker" type="text" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-white font-bold uppercase outline-none w-full" /></td>
+                    <td class="p-2">
+                      <select v-model="t.tipo" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-white outline-none w-full">
+                        <option value="C">C - Compra</option>
+                        <option value="V">V - Venda</option>
+                      </select>
+                    </td>
+                    <td class="p-2"><input v-model.number="t.quantidade" type="number" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-slate-300 font-mono outline-none w-full" /></td>
+                    <td class="p-2"><input v-model.number="t.preco_unitario" type="number" step="0.01" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-slate-300 font-mono outline-none w-full" /></td>
+                    <td class="p-2"><input v-model.number="t.custos_operacionais" type="number" step="0.01" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-slate-300 font-mono outline-none w-full" /></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <!-- RODAPÉ DA GRID -->
-          <div class="p-4 border-t border-white/5 flex justify-between items-center bg-[#1b2230]/30 shrink-0">
-            <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-              Página {{ paginaAtual }} de {{ totalPaginas }} ({{ transacoesTotal.length }} registros)
-            </span>
-            <div class="flex gap-2">
-              <button @click="paginaAtual--" :disabled="paginaAtual === 1" class="px-4 py-2 bg-[#0b0f17] border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-emerald-500 disabled:opacity-20 transition-all">
-                Anterior
-              </button>
-              <button @click="paginaAtual++" :disabled="paginaAtual >= totalPaginas" class="px-4 py-2 bg-[#0b0f17] border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-emerald-500 disabled:opacity-20 transition-all">
-                Próximo
-              </button>
+          <!-- ================================================================= -->
+          <!-- BLOCO DO MODO NORMAL: SUA GRID HISTÓRICA DO BANCO DE DADOS       -->
+          <!-- ================================================================= -->
+          <div v-else class="flex flex-col flex-1 min-h-0">
+            <div class="flex-1 overflow-x-auto overflow-y-hidden flex flex-col">
+              <table class="w-full text-left border-collapse">
+                <thead class="sticky top-0 bg-[#1b2230] z-20">
+                  <tr class="text-[10px] font-black text-slate-500 uppercase border-b border-white/5">
+                    <th class="p-4 bg-[#1b2230]">Data</th>
+                    <th class="p-4 bg-[#1b2230]">Ativo / Descrição</th>
+                    <th class="p-4 bg-[#1b2230]">Instituição</th>
+                    <th class="p-4 bg-[#1b2230]">Qtd.</th>
+                    <th class="p-4 bg-[#1b2230]">Preço Unit.</th>
+                    <th class="p-4 bg-[#1b2230] text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                  <tr v-for="(t, index) in transacoesPaginadas" :key="index" class="hover:bg-white/[0.02]">
+                    <td class="p-4 text-[11px] font-mono text-slate-500">{{ formatDate(t?.date) }}</td>
+                    <td class="p-4">
+                      <div class="flex flex-col">
+                        <span class="text-sm font-bold text-white tracking-tight">{{ t?.ticket || '---' }}</span>
+                        <span class="text-[9px] text-slate-500 font-bold uppercase truncate max-w-[150px]">{{ t?.assetDescription }}</span>
+                      </div>
+                    </td>
+                    <td class="p-4 text-[10px] text-slate-400 font-bold uppercase tracking-tight">{{ t?.brokerName || '---' }}</td>
+                    <td class="p-4 text-xs font-mono text-slate-400 font-bold">{{ Number(t?.quantity || 0).toLocaleString('pt-BR') }}</td>
+                    <td class="p-4 text-xs font-mono text-slate-400">R$ {{ formatCurrency(t?.priceUnit) }}</td>
+                    <td class="p-4 text-right font-mono text-white text-sm font-bold">R$ {{ formatCurrency(t?.total) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div v-if="!loading && transacoesTotal.length === 0" class="p-10 text-center text-slate-600 uppercase text-[10px] font-black">
+                Nenhuma movimentação no período.
+              </div>
+            </div>
+
+            <!-- RODAPÉ DA GRID HISTÓRICA -->
+            <div class="p-4 border-t border-white/5 flex justify-between items-center bg-[#1b2230]/30 shrink-0">
+              <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                Página {{ paginaAtual }} de {{ totalPaginas }} ({{ transacoesTotal.length }} registros)
+              </span>
+              <div class="flex gap-2">
+                <button @click="paginaAtual--" :disabled="paginaAtual === 1" class="px-4 py-2 bg-[#0b0f17] border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-emerald-500 disabled:opacity-20 transition-all">
+                  Anterior
+                </button>
+                <button @click="paginaAtual++" :disabled="paginaAtual >= totalPaginas" class="px-4 py-2 bg-[#0b0f17] border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-emerald-500 disabled:opacity-20 transition-all">
+                  Próximo
+                </button>
+              </div>
             </div>
           </div>
+
         </div>
       </section>
     </div>
