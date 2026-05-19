@@ -124,20 +124,28 @@ exports.addPDF = asyncHandler(async (req, res) => {
 
     // 3. Prompt (Melhorado para garantir JSON puro)
     const prompt = `
-      Analise esta nota de corretagem financeira. Extraia as operações de compra e venda.
-      Retorne um objeto JSON seguindo exatamente este esquema:
-      {
-        "transacoes": [
-          {
-            "data": "YYYY-MM-DD",
-            "ticker": "string",
-            "tipo": "C ou V",
-            "quantidade": number,
-            "preco_unitario": number,
-            "custos_operacionais": number
-          }
-        ]
-      }
+     Analise esta nota de corretagem financeira. Extraia as operações de compra e venda.
+
+Instruções para o cálculo de custos:
+1. Identifique o valor total de todos os custos, impostos, taxas (como taxa de liquidação, emolumentos) e outros encargos operacionais da nota.
+2. Realize o rateio proporcional desse custo total entre os itens transacionados, utilizando como base o volume financeiro de cada operação (Quantidade x Preço Unitário). 
+3. O valor resultante do rateio para cada item deve ser inserido no campo "custos_operacionais".
+
+Retorne um objeto JSON seguindo exatamente este esquema:
+{
+  "cnpj_corretora": "string (formato 00.000.000/0001-00)",
+  "cnpj_cpf_cliente": "string (formato CPF ou CNPJ limpo ou formatado)",
+  "transacoes": [
+    {
+      "data": "YYYY-MM-DD",
+      "ticker": "string",
+      "tipo": "C ou V",
+      "quantidade": number,
+      "preco_unitario": number,
+      "custos_operacionais": number
+    }
+  ]
+}
     `;
 
     // 4. Gerar resposta
