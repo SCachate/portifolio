@@ -127,12 +127,20 @@ exports.addPDF = asyncHandler(async (req, res) => {
      Analise esta nota de corretagem financeira. Extraia as operações de compra e venda.
 
 Instruções para identificação do Ticker (Código do Ativo):
-1. Identifique o ativo transacionado. Se a nota trouxer o código oficial de negociação (ex: VALE3, PETR4, HGLG11), use-o diretamente (removendo a letra "F" se for mercado fracionário).
-2. Se a nota descrever apenas o NOME COMERCIAL, SIGLA ou RAZÃO SOCIAL do ativo (especialmente comum em Fundos de Investimento, Fundos de Renda Fixa, FIAGROs, ETFs ou debêntures, ex: "SPARTA CDII CI", "ETF BV COIN CI"):
-   - Utilize o seu conhecimento de mercado para inferir qual é o código de negociação oficial (Ticker de 4 letras + número) correspondente a esse nome na B3 ou mercado de balcão (ex: associar "SPARTA CDII" ao ticker "CDII11").
-   - Ignore termos operacionais e sufixos como "CI" (Cotas), "FIC", "FIM", "FII", "CUSTODIA", "ON", "PN" para fazer essa associação.
-3. Caso o ativo seja um fundo de plataforma fechada ou um título que comprovadamente NÃO possua um ticker de bolsa de 4 letras e um número:
-   - Crie uma sigla padronizada, curta e constante em caixa alta baseada nas palavras-chave do nome (ex: "SPARTA_CDII"), garantindo que o mesmo ativo sempre gere o mesmo código.
+1. Ignore termos genéricos de tipo de ativo no final, como "CI", "CPA", "ON", "PN", "UNT", "ER", "ED", "EJ", "D", "F" (a menos que façam parte do nome da empresa).
+2. Identifique o nome principal do fundo, ETF ou empresa.
+3. Se o ativo for um ETF ou FII bem conhecido, retorne o ticker padrão de 4 letras seguido do número correspondente (geralmente 11).
+4. Caso a descrição seja ambígua, use seu conhecimento de mercado para associar ao ticker mais provável na B3.
+5. Retorne ESTREITAMENTE e APENAS o código do ativo em letras maiúsculas, sem pontos, sem espaços e sem texto adicional.
+
+Exemplos de entrada e saída esperada:
+- Entrada: ETF BV COIN CI -> Saída: CDII11
+- Entrada: SPART CDII CI -> Saída: CDII11
+- Entrada: ITAU UNIBANCO ON -> Saída: ITUB3
+- Entrada: WEG ON NM -> Saída: WEGE3
+- Entrada: PETROBRAS PN -> Saída: PETR4
+- Entrada: KINEA RI FII -> Saída: KNCR11
+- Entrada: ISHARES BOVA CI -> Saída: BOVA11
    
 Instruções para o cálculo de custos:
 1. Identifique o valor total de todos os custos, impostos, taxas (como taxa de liquidação, emolumentos) e outros encargos operacionais da nota.
