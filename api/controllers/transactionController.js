@@ -149,11 +149,11 @@ Instruções para o cálculo de custos:
 
 Retorne um objeto JSON seguindo exatamente este esquema:
 {
-  "cnpj_corretora": "string (formato 00.000.000/0001-00)",
-  "cnpj_cpf_cliente": "string (formato CPF ou CNPJ limpo ou formatado)",
+  "cnpj_corretora": "string (formato CNPJ limo, sem pontuação ou traço)",
+  "cnpj_cpf_cliente": "string (formato CPF ou CNPJ limpo, sem pontuação ou traço)",
+  "data": "YYYY-MM-DD",
   "transacoes": [
     {
-      "data": "YYYY-MM-DD",
       "ticker": "string (Código oficial da B3 ou Bolsa Internacional, ex: VALE3, ITUB4, IVVB11)",
       "tipo": "C ou V",
       "quantidade": number,
@@ -181,6 +181,25 @@ Retorne um objeto JSON seguindo exatamente este esquema:
     // 5. Limpeza
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
+    }
+
+    if (dadosExtraidos.cnpj_cpf_cliente && dadosExtraidos.cnpj_cpf_cliente.trim() !== '') {
+        let sql = `
+            SELECT CPF
+            FROM USERS
+            WHERE ID = ?
+        `;
+        const [ [user] ] = await db.execute(sql, [userId]);
+        if (!user) {
+            return res.status(404).json({ error: 'Usuário não encontrado no sistema.' });
+        }
+        if (user.CPF !== dadosExtraidos.cnpj_cpf_cliente) {
+            return res.status(400).json({ error: 'Esta nota de corretagem não pertence a este usuário!' });
+        }     
+    } 
+    else 
+    {
+        return res.status(400).json({ error: 'Não foi possível identificar o proprietário da nota de corretagem!' });
     }
 
     console.info(dadosExtraidos);
