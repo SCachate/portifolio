@@ -134,7 +134,7 @@ Instruções para identificação do Ticker (Código do Ativo):
 5. Retorne ESTREITAMENTE e APENAS o código do ativo em letras maiúsculas, sem pontos, sem espaços e sem texto adicional.
 
 Exemplos de entrada e saída esperada:
-- Entrada: ETF BV COIN CI -> Saída: CDII11
+- Entrada: ETF BV COIN CI -> Saída: COIN11
 - Entrada: SPART CDII CI -> Saída: CDII11
 - Entrada: ITAU UNIBANCO ON -> Saída: ITUB3
 - Entrada: WEG ON NM -> Saída: WEGE3
