@@ -126,6 +126,11 @@ exports.addPDF = asyncHandler(async (req, res) => {
     const prompt = `
      Analise esta nota de corretagem financeira. Extraia as operações de compra e venda.
 
+Instruções para identificação do Ticker (Código do Ativo):
+1. Identifique o ativo transacionado e converta-o para o seu código oficial de negociação em bolsa (Ticker padrão B3 com 4 letras + número, ou ticker internacional caso aplicável, ex: AAPL, TSLA).
+2. Se a nota indicar mercado fracionário (ex: final "F"), remova o "F" e mantenha o ticker padrão do lote padrão (ex: transforme "PETR4F" em "PETR4").
+3. Certifique-se de capturar o código correto caso trate-se de fundos imobiliários (final 11), ações ordinárias (final 3), preferenciais (final 4), units (final 11) ou opções de ações/índices (ex: PETRE300).
+
 Instruções para o cálculo de custos:
 1. Identifique o valor total de todos os custos, impostos, taxas (como taxa de liquidação, emolumentos) e outros encargos operacionais da nota.
 2. Realize o rateio proporcional desse custo total entre os itens transacionados, utilizando como base o volume financeiro de cada operação (Quantidade x Preço Unitário). 
@@ -138,7 +143,7 @@ Retorne um objeto JSON seguindo exatamente este esquema:
   "transacoes": [
     {
       "data": "YYYY-MM-DD",
-      "ticker": "string",
+      "ticker": "string (Código oficial da B3 ou Bolsa Internacional, ex: VALE3, ITUB4, IVVB11)",
       "tipo": "C ou V",
       "quantidade": number,
       "preco_unitario": number,
