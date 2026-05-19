@@ -127,10 +127,13 @@ exports.addPDF = asyncHandler(async (req, res) => {
      Analise esta nota de corretagem financeira. Extraia as operações de compra e venda.
 
 Instruções para identificação do Ticker (Código do Ativo):
-1. Identifique o ativo transacionado e converta-o para o seu código oficial de negociação em bolsa (Ticker padrão B3 com 4 letras + número, ou ticker internacional caso aplicável, ex: AAPL, TSLA).
-2. Se a nota indicar mercado fracionário (ex: final "F"), remova o "F" e mantenha o ticker padrão do lote padrão (ex: transforme "PETR4F" em "PETR4").
-3. Certifique-se de capturar o código correto caso trate-se de fundos imobiliários (final 11), ações ordinárias (final 3), preferenciais (final 4), units (final 11) ou opções de ações/índices (ex: PETRE300).
-
+1. Identifique o ativo transacionado. Se a nota trouxer o código oficial de negociação (ex: VALE3, PETR4, HGLG11), use-o diretamente (removendo a letra "F" se for mercado fracionário).
+2. Se a nota descrever apenas o NOME COMERCIAL, SIGLA ou RAZÃO SOCIAL do ativo (especialmente comum em Fundos de Investimento, Fundos de Renda Fixa, FIAGROs, ETFs ou debêntures, ex: "SPARTA CDII CI", "ETF BV COIN CI"):
+   - Utilize o seu conhecimento de mercado para inferir qual é o código de negociação oficial (Ticker de 4 letras + número) correspondente a esse nome na B3 ou mercado de balcão (ex: associar "SPARTA CDII" ao ticker "CDII11").
+   - Ignore termos operacionais e sufixos como "CI" (Cotas), "FIC", "FIM", "FII", "CUSTODIA", "ON", "PN" para fazer essa associação.
+3. Caso o ativo seja um fundo de plataforma fechada ou um título que comprovadamente NÃO possua um ticker de bolsa de 4 letras e um número:
+   - Crie uma sigla padronizada, curta e constante em caixa alta baseada nas palavras-chave do nome (ex: "SPARTA_CDII"), garantindo que o mesmo ativo sempre gere o mesmo código.
+   
 Instruções para o cálculo de custos:
 1. Identifique o valor total de todos os custos, impostos, taxas (como taxa de liquidação, emolumentos) e outros encargos operacionais da nota.
 2. Realize o rateio proporcional desse custo total entre os itens transacionados, utilizando como base o volume financeiro de cada operação (Quantidade x Preço Unitário). 
