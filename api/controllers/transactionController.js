@@ -98,7 +98,7 @@ async function listModels() {
 exports.addPDF = asyncHandler(async (req, res) => {
   const userId = req.userId;
 
-  await listModels();
+  // await listModels();
 
   if (!req.file) {
     return res.status(400).send("Nenhum arquivo enviado.");
@@ -184,6 +184,7 @@ Retorne um objeto JSON seguindo exatamente este esquema:
     }
 
     if (dadosExtraidos.cnpj_cpf_cliente && dadosExtraidos.cnpj_cpf_cliente.trim() !== '') {
+        console.info(['cpf:', dadosExtraidos.cnpj_cpf_cliente, 'userId:', userId]);
         let sql = `
             SELECT cpf
             FROM users
@@ -193,6 +194,7 @@ Retorne um objeto JSON seguindo exatamente este esquema:
         if (!user) {
             return res.status(404).json({ error: 'Usuário não encontrado no sistema.' });
         }
+        console.info(['user:', user]);
         if (user.CPF !== dadosExtraidos.cnpj_cpf_cliente) {
             return res.status(400).json({ error: 'Esta nota de corretagem não pertence a este usuário!' });
         }     
