@@ -98,7 +98,7 @@ async function listModels() {
 exports.addPDF = asyncHandler(async (req, res) => {
   const userId = req.userId;
 
-  // await listModels();
+  await listModels();
 
   if (!req.file) {
     return res.status(400).send("Nenhum arquivo enviado.");
