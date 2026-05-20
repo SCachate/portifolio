@@ -116,7 +116,7 @@ exports.addPDF = asyncHandler(async (req, res) => {
     // 2. Configurar o modelo (Usando 1.5-flash que é mais estável para v1beta)
     // E forçando a resposta em JSON
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-3-flash-preview", // Altere para "gemini-1.5-pro-latest" se realmente precisar do Pro
+      model: "models/gemini-3.5-flash", // Altere para "gemini-1.5-pro-latest" se realmente precisar do Pro
       generationConfig: {
         responseMimeType: "application/json",
       },
@@ -185,8 +185,8 @@ Retorne um objeto JSON seguindo exatamente este esquema:
 
     if (dadosExtraidos.cnpj_cpf_cliente && dadosExtraidos.cnpj_cpf_cliente.trim() !== '') {
         let sql = `
-            SELECT CPF
-            FROM USERS
+            SELECT cpf
+            FROM users
             WHERE ID = ?
         `;
         const [ [user] ] = await db.execute(sql, [userId]);
