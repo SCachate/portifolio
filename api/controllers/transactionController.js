@@ -196,6 +196,7 @@ Retorne um objeto JSON seguindo exatamente este esquema:
         }
         console.info(['user:', user]);
         if (user.CPF != dadosExtraidos.cnpj_cpf_cliente) {
+            console.info([user.CPF,dadosExtraidos.cnpj_cpf_cliente, user.CPF != dadosExtraidos.cnpj_cpf_cliente]);
             return res.status(400).json({ error: 'Esta nota de corretagem não pertence a este usuário!' });
         }     
     } 
