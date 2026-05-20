@@ -195,7 +195,7 @@ Retorne um objeto JSON seguindo exatamente este esquema:
             return res.status(404).json({ error: 'Usuário não encontrado no sistema.' });
         }
         console.info(['user:', user]);
-        if (user.CPF !== dadosExtraidos.cnpj_cpf_cliente) {
+        if (user.CPF != dadosExtraidos.cnpj_cpf_cliente) {
             return res.status(400).json({ error: 'Esta nota de corretagem não pertence a este usuário!' });
         }     
     } 
