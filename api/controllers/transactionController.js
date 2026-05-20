@@ -154,6 +154,7 @@ Retorne um objeto JSON seguindo exatamente este esquema:
   "data": "YYYY-MM-DD",
   "transacoes": [
     {
+      "ativo": "string (Identificação do ativo completa)",
       "ticker": "string (Código oficial da B3 ou Bolsa Internacional, ex: VALE3, ITUB4, IVVB11)",
       "tipo": "C ou V",
       "quantidade": number,
