@@ -8,40 +8,39 @@ exports.getAssetsByClassWithResult = asyncHandler(async (req, res) => {
 
     const query = `
         SELECT 
-            a.id AS Id,
-            COALESCE(a.ticket, SUBSTR(a.description, 1, 5)) AS ticker,
-            a.description AS nome_completo,
-            COALESCE(stats.total_lucro, 0) AS resultado
-        FROM (
-            SELECT assetId, toClassId AS classId
-            FROM (
-                SELECT assetId, toClassId, quantity FROM allocation_events WHERE toClassId IS NOT NULL AND userId = ?
-                UNION ALL
-                SELECT assetId, fromClassId, -quantity FROM allocation_events WHERE fromClassId IS NOT NULL AND userId = ?
-            ) t
-            WHERE toClassId = ?
-            GROUP BY assetId, toClassId
-            HAVING SUM(quantity) <> 0
-        ) resumo
-        JOIN assets a ON resumo.assetId = a.id
-        LEFT JOIN (
-            SELECT 
-                vrda.assetId, 
-                SUM(vrda.lucro_prejuizo_dia_brl) AS total_lucro
-            FROM v_rendimento_diario_asset vrda
-            WHERE vrda.classId = ? 
-              AND vrda.data BETWEEN ? AND ?
-            GROUP BY vrda.assetId
-        ) stats ON a.id = stats.assetId
-        ORDER BY COALESCE(stats.total_lucro, 0) DESC;
-    `;
-
-  
-    const [rows] = await db.execute(query, [
-        userId, userId, classId, // Parâmetros do bloco 'resumo'
-        classId, inicio, termino  // Parâmetros do bloco 'stats'
-    ]);
-
+		    a.id AS Id,
+		    COALESCE(a.ticket, SUBSTR(a.description, 1, 5)) AS ticker,
+		    a.description AS nome_completo,
+		    COALESCE(stats.total_lucro, 0) AS resultado
+		FROM (
+		    SELECT assetId
+		    FROM (
+		        SELECT assetId, quantity 
+		        FROM allocation_events 
+		        WHERE userId = ? AND toClassId = ?
+		        
+		        UNION ALL
+		        
+		        SELECT assetId, -quantity 
+		        FROM allocation_events 
+		        WHERE userId = ? AND fromClassId = ?
+		    ) t
+		    GROUP BY assetId
+		    HAVING SUM(quantity) <> 0
+		) resumo
+		JOIN assets a ON resumo.assetId = a.id
+		LEFT JOIN (
+		    SELECT 
+		        vrda.assetId, 
+		        SUM(vrda.lucro_prejuizo_dia_brl) AS total_lucro
+		    FROM v_rendimento_diario_asset vrda
+		    WHERE vrda.classId = ? 
+		      AND vrda.data BETWEEN ? AND ?
+		    GROUP BY vrda.assetId
+		) stats ON a.id = stats.assetId
+		ORDER BY resultado DESC;
+    `;  
+    const [rows] = await db.execute(query, [userId, classId, userId, classId, classId, dataInicio, dataFim ];);
     res.json(rows);
 });
 
