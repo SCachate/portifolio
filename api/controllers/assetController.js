@@ -40,7 +40,7 @@ exports.getAssetsByClassWithResult = asyncHandler(async (req, res) => {
 		) stats ON a.id = stats.assetId
 		ORDER BY resultado DESC;
     `;  
-    const [rows] = await db.execute(query, [userId, classId, userId, classId, classId, dataInicio, dataFim ];);
+    const [rows] = await db.execute(query, [userId, classId, userId, classId, classId, dataInicio, dataFim ]);
     res.json(rows);
 });
 
