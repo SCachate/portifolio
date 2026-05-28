@@ -7,6 +7,7 @@ const classRoutes = require('./routes/classRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const assetRoutes = require('./routes/assetRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
+const incomeRoutes = require('./routes/incomeRoutes');
 const errorHandler = require('./middlewares/errorMiddleware');
 
 const app = express();
@@ -45,6 +46,7 @@ app.use('/classes', classRoutes);
 app.use('/assets', assetRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/transactions', transactionRoutes);
+app.use('/incomes', incomeRoutes);
 
 app.use(errorHandler);
 
