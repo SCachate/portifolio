@@ -1,4 +1,3 @@
-// Alterado para usar o puppeteer-extra com o plugin Stealth
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
