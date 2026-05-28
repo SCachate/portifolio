@@ -15,6 +15,6 @@ db.getConnection()
         console.log('✅ Conexão com KingHost centralizada.');
         conn.release();
     })
-    .catch(err => console.error('❌ Erro no arquivo de config:', err));
+    .catch(err => {console.error('❌ Erro no arquivo de config:', err); console.info([process.env]);});
 
 module.exports = db;
