@@ -89,30 +89,21 @@
         </div>
       </div>
 
-      <div class="chart-card flex-col-container">
-        <div class="header-top-row">
-          <h3 class="chart-title m-0">Resultado por Classe (Histórico)</h3>
-        </div>
+      <div class="chart-card block clear-both">
+        <h3 class="chart-title mb-4">Resultado por Classe (Histórico)</h3>
         
-        <div class="card-body-v2">
-          <AsyncLoader 
-            :loading="false" 
-            :error="null" 
-            class="flex-grow-loader"
-          >
-            <div class="chart-wrapper-dynamic">
-              <apexchart 
-                v-if="historicoResultadoSeries.length > 0"
-                :key="historicoResultadoSeries.length + '-' + historicoResultadoOptions.xaxis.categories.length"
-                type="bar" 
-                height="220" 
-                width="100%"
-                :options="historicoResultadoOptions" 
-                :series="historicoResultadoSeries" 
-              />
-            </div>
-          </AsyncLoader>
-        </div>
+        <AsyncLoader :loading="false" :error="null">
+          <div style="display: block; width: 100%; height: 230px; position: relative;">
+            <apexchart 
+              v-if="historicoResultadoSeries && historicoResultadoSeries.length > 0"
+              type="bar" 
+              height="230" 
+              width="100%"
+              :options="historicoResultadoOptions" 
+              :series="historicoResultadoSeries" 
+            />
+          </div>
+        </AsyncLoader>
       </div>
 
       <div class="chart-card">
@@ -207,7 +198,7 @@ const {
   fetchData: fetchResultado
 } = useApi(`/dashboard/resultado`);
 
-// --- MOCK DO SEU JSON (Temporário para Desenvolvimento) ---
+// --- MOCK DO SEU JSON ---
 const dadosMockadosHistorico = ref([
   { "yearMonth": "2025-04", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
   { "yearMonth": "2025-05", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
@@ -420,11 +411,10 @@ const barOptionsDia = computed(() => generateBarOptionsForType('dia'));
 const barOptionsMes = computed(() => generateBarOptionsForType('mes'));
 const barOptionsAno = computed(() => generateBarOptionsForType('ano'));
 
-// --- PROCESSAMENTO DO HISTÓRICO COM HIGIENE DE DADOS ---
+// --- LOGICA DE ALINHAMENTO DO HISTÓRICO ---
 const historicoResultadoProcessado = computed(() => {
   const dadosFonte = dadosMockadosHistorico.value || [];
-  if (dadosFonte.length === 0) return { meses: [], series: [], cores: [] };
-
+  
   const mesesSet = new Set();
   dadosFonte.forEach(item => { if (item.yearMonth) mesesSet.add(item.yearMonth); });
   const mesesOrdenados = Array.from(mesesSet).sort();
@@ -455,17 +445,15 @@ const historicoResultadoProcessado = computed(() => {
 
 const historicoResultadoSeries = computed(() => historicoResultadoProcessado.value.series);
 
-// REESTRUTURAÇÃO DAS OPÇÕES PARA ANULAR ERROS DE ESCALA DO APEXCHARTS
 const historicoResultadoOptions = computed(() => ({
   chart: { 
     type: 'bar',
     stacked: true, 
     toolbar: { show: false }, 
-    fontFamily: 'inherit',
-    animations: { enabled: false } // Evita bugs visuais de entrada vazia
+    fontFamily: 'inherit'
   },
   colors: historicoResultadoProcessado.value.cores,
-  grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 15, right: 15, bottom: 5, top: 10 } },
+  grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 10 } },
   xaxis: { 
     type: 'category',
     categories: historicoResultadoProcessado.value.meses,
@@ -482,7 +470,7 @@ const historicoResultadoOptions = computed(() => ({
   plotOptions: {
     bar: {
       borderRadius: 4,
-      columnWidth: '60%'
+      columnWidth: '65%'
     }
   },
   tooltip: {
