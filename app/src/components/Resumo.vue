@@ -89,29 +89,29 @@
         </div>
       </div>
 
-      <div class="chart-card flex-col-container">
-        <div class="header-top-row">
-          <h3 class="chart-title m-0">Resultado por Classe (Histórico)</h3>
-        </div>
-        
-        <div class="card-body-v2">
-          <AsyncLoader 
-            :loading="loadingEvolucao" 
-            :error="errorEvolucao" 
-            class="flex-grow-loader"
-          >
-            <div class="chart-wrapper-dynamic">
-              <apexchart 
-                type="bar" 
-                height="100%" 
-                width="100%"
-                :options="historicoResultadoOptions" 
-                :series="historicoResultadoSeries" 
-              />
-            </div>
-          </AsyncLoader>
-        </div>
+     <div class="chart-card flex-col-container">
+  <div class="header-top-row">
+    <h3 class="chart-title m-0">Resultado por Classe (Histórico)</h3>
+  </div>
+  
+  <div class="card-body-v2">
+    <AsyncLoader 
+      :loading="false" 
+      :error="null" 
+      class="flex-grow-loader"
+    >
+      <div class="chart-wrapper-dynamic">
+        <apexchart 
+          type="bar" 
+          height="100%" 
+          width="100%"
+          :options="historicoResultadoOptions" 
+          :series="historicoResultadoSeries" 
+        />
       </div>
+    </AsyncLoader>
+  </div>
+</div>
 
       <div class="chart-card">
         <AsyncLoader 
