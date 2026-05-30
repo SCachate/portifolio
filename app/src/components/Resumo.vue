@@ -381,8 +381,36 @@ const historicoResultadoOptions = computed(() => ({
   },
   yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' }, formatter: (v) => Math.round(v).toLocaleString('pt-BR') } },
   legend: { show: false }, 
+  
+  // Mantém os dataLabels das fatias individuais ocultos para não poluir
   dataLabels: { enabled: false },
-  plotOptions: { bar: { borderRadius: 4, columnWidth: '65%' } },
+  
+  plotOptions: { 
+    bar: { 
+      borderRadius: 4, 
+      columnWidth: '65%',
+      // --- CONFIGURAÇÃO DO TOTALIZADOR NO TOPO DA BARRA ---
+      dataLabels: {
+        total: {
+          enabled: true, // Ativa a exibição do valor total
+          style: {
+            colors: ['#ffffff'], // Cor do texto (Branco para destacar no fundo escuro)
+            fontSize: '10px',
+            fontWeight: 600
+          },
+          // Formata o número para o padrão de moeda encurtado ou arredondado se preferir
+          formatter: function (val) {
+            return Number(val).toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+              minimumFractionDigits: 0, // Remove centavos no topo para não embolar visualmente
+              maximumFractionDigits: 0
+            });
+          }
+        }
+      }
+    } 
+  },
   tooltip: { theme: 'dark', shared: true, intersect: false, y: { formatter: (val) => formatCurrency(val) } }
 }));
 
