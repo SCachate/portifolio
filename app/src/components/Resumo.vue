@@ -102,6 +102,8 @@
           >
             <div class="chart-wrapper-dynamic">
               <apexchart 
+                v-if="historicoResultadoSeries.length > 0"
+                :key="historicoResultadoSeries.length + '-' + historicoResultadoOptions.xaxis.categories.length"
                 type="bar" 
                 height="220" 
                 width="100%"
@@ -307,7 +309,7 @@ const mudarAno = (delta) => {
   anoVisualizado.value += delta; 
 };
 
-// --- PROPRIEDADES COMPUTADAS (Substituindo os Watches antigos) ---
+// --- PROPRIEDADES COMPUTADAS ---
 
 const series = computed(() => data.value?.map(item => Number(item.valor)) || []);
 
@@ -364,7 +366,6 @@ const totaisResultado = computed(() => {
   }, { dia: 0, mes: 0, ano: 0 });
 });
 
-// --- EVITA RENDERIZAÇÃO INFINITA NO SEU CARD INFERIOR ---
 const baseBarOptions = computed(() => {
   const coresBackend = dadosResultado.value?.map(item => item.cor) || ['#10b981'];
   return {
@@ -419,9 +420,11 @@ const barOptionsDia = computed(() => generateBarOptionsForType('dia'));
 const barOptionsMes = computed(() => generateBarOptionsForType('mes'));
 const barOptionsAno = computed(() => generateBarOptionsForType('ano'));
 
-// --- LÓGICA DO GRÁFICO HISTÓRICO (CORRIGIDO) ---
+// --- PROCESSAMENTO DO HISTÓRICO COM HIGIENE DE DADOS ---
 const historicoResultadoProcessado = computed(() => {
-  const dadosFonte = dadosMockadosHistorico.value;
+  const dadosFonte = dadosMockadosHistorico.value || [];
+  if (dadosFonte.length === 0) return { meses: [], series: [], cores: [] };
+
   const mesesSet = new Set();
   dadosFonte.forEach(item => { if (item.yearMonth) mesesSet.add(item.yearMonth); });
   const mesesOrdenados = Array.from(mesesSet).sort();
@@ -452,20 +455,28 @@ const historicoResultadoProcessado = computed(() => {
 
 const historicoResultadoSeries = computed(() => historicoResultadoProcessado.value.series);
 
+// REESTRUTURAÇÃO DAS OPÇÕES PARA ANULAR ERROS DE ESCALA DO APEXCHARTS
 const historicoResultadoOptions = computed(() => ({
   chart: { 
     type: 'bar',
     stacked: true, 
     toolbar: { show: false }, 
-    fontFamily: 'inherit' 
+    fontFamily: 'inherit',
+    animations: { enabled: false } // Evita bugs visuais de entrada vazia
   },
   colors: historicoResultadoProcessado.value.cores,
   grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 15, right: 15, bottom: 5, top: 10 } },
   xaxis: { 
+    type: 'category',
     categories: historicoResultadoProcessado.value.meses,
     labels: { style: { colors: '#94a3b8', fontSize: '9px' } }
   },
-  yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
+  yaxis: { 
+    labels: { 
+      style: { colors: '#94a3b8', fontSize: '10px' },
+      formatter: (val) => val.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+    } 
+  },
   legend: { show: false }, 
   dataLabels: { enabled: false },
   plotOptions: {
