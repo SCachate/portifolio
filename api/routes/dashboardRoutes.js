@@ -7,5 +7,6 @@ router.get('/pendencias', authMiddleware, dashboardController.getPendencias);
 router.get('/resumo', authMiddleware, dashboardController.getResumo);
 router.get('/evolucao', authMiddleware, dashboardController.getEvolucao);
 router.get('/resultado', authMiddleware, dashboardController.getResultado);
+router.get('/historico', authMiddleware, dashboardController.getHistorico);
 
 module.exports = router;
