@@ -8,44 +8,24 @@
         :disabled="loading"
         class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-md active:scale-95"
       >
-        <svg 
-          v-if="!loading"
-          xmlns="http://www.w3.org/2000/svg" 
-          class="h-4 w-4" 
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke="currentColor"
-        >
+        <svg v-if="!loading" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
-        
-        <svg 
-          v-else 
-          class="animate-spin h-4 w-4 text-white" 
-          xmlns="http://www.w3.org/2000/svg" 
-          fill="none" 
-          viewBox="0 0 24 24"
-        >
+        <svg v-else class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
-
         <span>{{ loading ? 'Atualizando...' : 'Atualizar' }}</span>
       </button>
     </div>
     
     <div class="charts-grid">
+      
       <div class="chart-card donut-wrapper flex flex-col items-center">
         <h3 class="chart-title text-center w-full">Distribuição</h3>
         <AsyncLoader :loading="loading" :error="error" class="flex-grow-loader">
           <div class="donut-chart-box flex items-center justify-center w-full h-full overflow-hidden">
-            <apexchart 
-              type="donut" 
-              width="100%" 
-              height="250" 
-              :options="chartOptions" 
-              :series="series" 
-            />
+            <apexchart type="donut" width="100%" height="250" :options="chartOptions" :series="series" />
           </div>
         </AsyncLoader>
       </div>
@@ -54,67 +34,43 @@
         <div class="header-top-row">
           <h3 class="chart-title m-0">Evolução Patrimonial</h3>
           <div class="year-navigator">
-            <button 
-              @click="mudarAno(-1)" 
-              class="nav-btn" 
-              :disabled="loadingEvolucao"
-              title="Ano Anterior"
-            >&lt;</button>
+            <button @click="mudarAno(-1)" class="nav-btn" :disabled="loadingEvolucao" title="Ano Anterior">&lt;</button>
             <span class="year-display">{{ anoVisualizado }}</span>
-            <button 
-              @click="mudarAno(1)" 
-              class="nav-btn" 
-              :disabled="loadingEvolucao"
-              title="Próximo Ano"
-            >&gt;</button>
+            <button @click="mudarAno(1)" class="nav-btn" :disabled="loadingEvolucao" title="Próximo Ano">&gt;</button>
           </div>
         </div>
-        
         <div class="card-body-v2">
-          <AsyncLoader 
-            :loading="loadingEvolucao" 
-            :error="errorEvolucao" 
-            class="flex-grow-loader"
-          >
+          <AsyncLoader :loading="loadingEvolucao" :error="errorEvolucao" class="flex-grow-loader">
             <div class="chart-wrapper-dynamic">
-              <apexchart 
-                type="line" 
-                height="100%" 
-                width="100%"
-                :options="evolucaoOptions" 
-                :series="evolucaoSeries" 
-              />
+              <apexchart type="line" height="100%" width="100%" :options="evolucaoOptions" :series="evolucaoSeries" />
             </div>
           </AsyncLoader>
         </div>
       </div>
 
-      <div class="chart-card block clear-both">
+      <div class="chart-card flex-col-container">
         <h3 class="chart-title mb-4">Resultado por Classe (Histórico)</h3>
-        
-        <AsyncLoader :loading="loadingHistorico" :error="errorHistorico">
-          <div style="display: block; width: 100%; height: 230px; position: relative;">
-            <apexchart 
-              v-if="historicoPronto"
-              type="bar" 
-              height="230" 
-              width="100%"
-              :options="historicoResultadoOptions" 
-              :series="historicoResultadoSeries" 
-            />
-            <div v-else class="flex items-center justify-center h-full text-slate-500 text-xs">
-              Carregando histórico...
+        <div class="card-body-v2">
+          <AsyncLoader :loading="loadingHistorico" :error="errorHistorico" class="flex-grow-loader">
+            <div class="chart-wrapper-dynamic">
+              <apexchart 
+                v-if="historicoPronto"
+                type="bar" 
+                height="100%" 
+                width="100%"
+                :options="historicoResultadoOptions" 
+                :series="historicoResultadoSeries" 
+              />
+              <div v-else class="flex items-center justify-center h-full text-slate-500 text-xs">
+                Nenhum dado histórico encontrado para o período.
+              </div>
             </div>
-          </div>
-        </AsyncLoader>
+          </AsyncLoader>
+        </div>
       </div>
 
       <div class="chart-card">
-        <AsyncLoader 
-          :loading="loadingResultado" 
-          :error="errorResultado" 
-          class="flex-grow-loader"
-        >
+        <AsyncLoader :loading="loadingResultado" :error="errorResultado" class="flex-grow-loader">
           <h3 class="chart-title">Resultado do Dia</h3>
           <span :class="['result-value', totaisResultado.dia >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.dia) }}
@@ -124,11 +80,7 @@
       </div>
 
       <div class="chart-card">
-        <AsyncLoader 
-          :loading="loadingResultado" 
-          :error="errorResultado" 
-          class="flex-grow-loader"
-        >
+        <AsyncLoader :loading="loadingResultado" :error="errorResultado" class="flex-grow-loader">
           <h3 class="chart-title">Resultado do Mês</h3>
           <span :class="['result-value', totaisResultado.mes >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.mes) }}
@@ -138,11 +90,7 @@
       </div>
 
       <div class="chart-card">
-        <AsyncLoader 
-          :loading="loadingResultado" 
-          :error="errorResultado" 
-          class="flex-grow-loader"
-        >
+        <AsyncLoader :loading="loadingResultado" :error="errorResultado" class="flex-grow-loader">
           <h3 class="chart-title">Resultado do Ano</h3>
           <span :class="['result-value', totaisResultado.ano >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.ano) }}
@@ -150,8 +98,8 @@
           <apexchart type="bar" height="100%" :options="barOptionsAno" :series="anoSeries" />
         </AsyncLoader>
       </div>
-    </div>
-  </div>
+
+    </div> </div>
 
   <ModalDetalhamento 
     v-model="modalAberto"
