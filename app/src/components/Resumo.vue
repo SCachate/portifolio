@@ -89,29 +89,29 @@
         </div>
       </div>
 
-     <div class="chart-card flex-col-container">
-  <div class="header-top-row">
-    <h3 class="chart-title m-0">Resultado por Classe (Histórico)</h3>
-  </div>
-  
-  <div class="card-body-v2">
-    <AsyncLoader 
-      :loading="false" 
-      :error="null" 
-      class="flex-grow-loader"
-    >
-      <div class="chart-wrapper-dynamic">
-        <apexchart 
-          type="bar" 
-          height="100%" 
-          width="100%"
-          :options="historicoResultadoOptions" 
-          :series="historicoResultadoSeries" 
-        />
+      <div class="chart-card flex-col-container">
+        <div class="header-top-row">
+          <h3 class="chart-title m-0">Resultado por Classe (Histórico)</h3>
+        </div>
+        
+        <div class="card-body-v2">
+          <AsyncLoader 
+            :loading="false" 
+            :error="null" 
+            class="flex-grow-loader"
+          >
+            <div class="chart-wrapper-dynamic">
+              <apexchart 
+                type="bar" 
+                height="220" 
+                width="100%"
+                :options="historicoResultadoOptions" 
+                :series="historicoResultadoSeries" 
+              />
+            </div>
+          </AsyncLoader>
+        </div>
       </div>
-    </AsyncLoader>
-  </div>
-</div>
 
       <div class="chart-card">
         <AsyncLoader 
@@ -123,7 +123,7 @@
           <span :class="['result-value', totaisResultado.dia >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.dia) }}
           </span>
-          <apexchart type="bar" height="100%" :options="getBarOptions('dia')" :series="diaSeries" />
+          <apexchart type="bar" height="100%" :options="barOptionsDia" :series="diaSeries" />
         </AsyncLoader>
       </div>
 
@@ -137,7 +137,7 @@
           <span :class="['result-value', totaisResultado.mes >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.mes) }}
           </span>
-          <apexchart type="bar" height="100%" :options="getBarOptions('mes')" :series="mesSeries" />
+          <apexchart type="bar" height="100%" :options="barOptionsMes" :series="mesSeries" />
         </AsyncLoader>
       </div>
 
@@ -151,7 +151,7 @@
           <span :class="['result-value', totaisResultado.ano >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.ano) }}
           </span>
-          <apexchart type="bar" height="100%" :options="getBarOptions('ano')" :series="anoSeries" />
+          <apexchart type="bar" height="100%" :options="barOptionsAno" :series="anoSeries" />
         </AsyncLoader>
       </div>
     </div>
@@ -171,7 +171,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useApi } from '../composables/useApi';
 import AsyncLoader from './AsyncLoader.vue';
 import ModalDetalhamento from './ModalDetalhamento.vue';
@@ -186,7 +186,6 @@ const abrirPeloGrafico = (dados) => {
 
 // 1. Lógica da Distribuição (Donut)
 const { data, loading, error, fetchData: fetchResumo } = useApi(`/dashboard/resumo`);
-const series = ref([]);
 
 // 2. Lógica da Evolução (API Reativa por Ano)
 const anoVisualizado = ref(new Date().getFullYear());
@@ -290,7 +289,7 @@ const formatCurrency = (val) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
-}
+};
 
 const atualizarTudo = async () => {
   try {
@@ -304,27 +303,130 @@ const atualizarTudo = async () => {
   }
 };
 
-const evolucaoSeries = computed(() => {
-  return (dadosEvolucao.value && Array.isArray(dadosEvolucao.value)) ? dadosEvolucao.value : [];
-});
-
 const mudarAno = (delta) => { 
   anoVisualizado.value += delta; 
 };
 
-// Lógica de Processamento Dinâmico (Lendo os dados Mockados)
-const historicoResultadoProcessado = computed(() => {
-  // Passa a ler do Mock estático temporariamente
-  const dadosFonte = dadosMockadosHistorico.value;
+// --- PROPRIEDADES COMPUTADAS (Substituindo os Watches antigos) ---
 
+const series = computed(() => data.value?.map(item => Number(item.valor)) || []);
+
+const chartOptions = computed(() => ({
+  chart: { type: 'donut' },
+  labels: data.value?.map(item => item.classe) || [],
+  colors: data.value?.map(item => item.color) || [],
+  legend: { show: false },
+  stroke: { show: false },
+  plotOptions: {
+    pie: {
+      donut: {
+        size: '75%',
+        labels: {
+          show: true,
+          total: {
+            show: true,
+            label: 'TOTAL',
+            color: '#94a3b8',
+            formatter: function (w) {
+              const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+              return total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            }
+          },
+          value: {
+            show: true,
+            color: '#fff',
+            formatter: function (val) {
+              return parseFloat(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            }
+          }
+        }
+      }
+    }
+  },
+  tooltip: { y: { formatter: (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) } }
+}));
+
+const evolucaoSeries = computed(() => {
+  return (dadosEvolucao.value && Array.isArray(dadosEvolucao.value)) ? dadosEvolucao.value : [];
+});
+
+const diaSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.dia) || [] }]);
+const mesSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.mes) || [] }]);
+const anoSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.ano) || [] }]);
+
+const totaisResultado = computed(() => {
+  if (!dadosResultado.value || !Array.isArray(dadosResultado.value)) return { dia: 0, mes: 0, ano: 0 };
+  return dadosResultado.value.reduce((acc, item) => {
+    acc.dia += Number(item.dia) || 0;
+    acc.mes += Number(item.mes) || 0;
+    acc.ano += Number(item.ano) || 0;
+    return acc;
+  }, { dia: 0, mes: 0, ano: 0 });
+});
+
+// --- EVITA RENDERIZAÇÃO INFINITA NO SEU CARD INFERIOR ---
+const baseBarOptions = computed(() => {
+  const coresBackend = dadosResultado.value?.map(item => item.cor) || ['#10b981'];
+  return {
+    chart: { toolbar: { show: false }, parentHeightOffset: 0 },   
+    grid: { padding: { top: 0, right: 10, bottom: 10, left: 10 } },
+    colors: coresBackend,
+    plotOptions: { bar: { borderRadius: 4, distributed: true, columnWidth: '70%' } },
+    fill: { type: 'solid', colors: coresBackend },
+    xaxis: {
+      categories: dadosResultado.value?.map(item => item.classe) || [], 
+      labels: { 
+        show: true, rotate: -45, rotateAlways: true, hideOverlappingLabels: false,
+        style: { colors: '#94a3b8', fontSize: '9px' } 
+      },
+      axisBorder: { show: false }, axisTicks: { show: false }
+    },
+    legend: { show: false }, yaxis: { show: false }, dataLabels: { enabled: false }
+  };
+});
+
+const generateBarOptionsForType = (tipo) => ({
+  ...baseBarOptions.value,
+  chart: {
+    ...baseBarOptions.value.chart,
+    events: {
+      dataPointSelection: (event, chartContext, config) => {
+        const item = dadosResultado.value[config.dataPointIndex];
+        if (item) abrirPeloGrafico({ classe: item.classe, tipo });
+      }
+    }
+  },
+  tooltip: {
+    theme: 'dark',
+    custom: function({ series, seriesIndex, dataPointIndex, w }) {
+      const val = series[seriesIndex][dataPointIndex];
+      const label = w.globals.labels[dataPointIndex];
+      const statusColor = val >= 0 ? '#10b981' : '#f87171';
+      return `
+        <div style="background: #1a1c24; border: 1px solid #334155; padding: 10px; border-radius: 8px;">
+          <div style="color: #94a3b8; font-size: 10px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">${label}</div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor}; display: inline-block;"></span>
+            <span style="color: #f1f5f9; font-size: 12px;">Resultado:</span>
+            <span style="color: ${statusColor}; font-size: 12px; font-weight: 700;">${formatCurrency(val)}</span>
+          </div>
+        </div>`;
+    }
+  }
+});
+
+const barOptionsDia = computed(() => generateBarOptionsForType('dia'));
+const barOptionsMes = computed(() => generateBarOptionsForType('mes'));
+const barOptionsAno = computed(() => generateBarOptionsForType('ano'));
+
+// --- LÓGICA DO GRÁFICO HISTÓRICO (CORRIGIDO) ---
+const historicoResultadoProcessado = computed(() => {
+  const dadosFonte = dadosMockadosHistorico.value;
   const mesesSet = new Set();
-  dadosFonte.forEach(item => {
-    if (item.yearMonth) mesesSet.add(item.yearMonth);
-  });
+  dadosFonte.forEach(item => { if (item.yearMonth) mesesSet.add(item.yearMonth); });
   const mesesOrdenados = Array.from(mesesSet).sort();
 
   const classesMap = new Map();
-
   dadosFonte.forEach(item => {
     if (!classesMap.has(item.name)) {
       classesMap.set(item.name, {
@@ -341,18 +443,11 @@ const historicoResultadoProcessado = computed(() => {
 
   classesMap.forEach(classeData => {
     const dataAlinhada = mesesOrdenados.map(mes => classeData.valoresPorMes.get(mes) || 0);
-    seriesGeradas.push({
-      name: classeData.name,
-      data: dataAlinhada
-    });
+    seriesGeradas.push({ name: classeData.name, data: dataAlinhada });
     coresGeradas.push(classeData.color);
   });
 
-  return {
-    meses: mesesOrdenados,
-    series: seriesGeradas,
-    cores: coresGeradas
-  };
+  return { meses: mesesOrdenados, series: seriesGeradas, cores: coresGeradas };
 });
 
 const historicoResultadoSeries = computed(() => historicoResultadoProcessado.value.series);
@@ -365,7 +460,7 @@ const historicoResultadoOptions = computed(() => ({
     fontFamily: 'inherit' 
   },
   colors: historicoResultadoProcessado.value.cores,
-  grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 10 } },
+  grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 15, right: 15, bottom: 5, top: 10 } },
   xaxis: { 
     categories: historicoResultadoProcessado.value.meses,
     labels: { style: { colors: '#94a3b8', fontSize: '9px' } }
@@ -382,9 +477,7 @@ const historicoResultadoOptions = computed(() => ({
   tooltip: {
     theme: 'dark',
     shared: true,
-    y: {
-      formatter: (val) => formatCurrency(val)
-    }
+    y: { formatter: (val) => formatCurrency(val) }
   }
 }));
 
@@ -425,138 +518,6 @@ const evolucaoOptions = computed(() => ({
     }
   }
 }));
-
-const getBarOptions = (tipo) => {
-  const coresBackend = dadosResultado.value?.map(item => item.cor) || ['#10b981'];
-
-  return {
-    chart: { 
-      toolbar: { show: false },
-      parentHeightOffset: 0,
-      events: {
-        dataPointSelection: (event, chartContext, config) => {
-          const item = dadosResultado.value[config.dataPointIndex];
-          if (item) {
-            abrirPeloGrafico({
-              classe: item.classe,
-              tipo: tipo,
-            });
-          }
-        }
-      },
-    },  
-    grid: { padding: { top: 0, right: 10, bottom: 10, left: 10 } },
-    colors: coresBackend,
-    plotOptions: { 
-      bar: { 
-        borderRadius: 4, 
-        distributed: true,
-        columnWidth: '70%'
-      } 
-    },
-    fill: {
-      type: 'solid',
-      colors: coresBackend
-    },
-    xaxis: {
-      categories: dadosResultado.value?.map(item => item.classe) || [], 
-      labels: { 
-        show: true,
-        rotate: -45, 
-        rotateAlways: true,
-        hideOverlappingLabels: false,
-        style: { colors: '#94a3b8', fontSize: '9px' } 
-      },
-      axisBorder: { show: false },
-      axisTicks: { show: false }
-    },
-    legend: { show: false },
-    yaxis: { show: false },
-    dataLabels: { enabled: false },
-    tooltip: {
-      theme: 'dark',
-      custom: function({ series, seriesIndex, dataPointIndex, w }) {
-        const val = series[seriesIndex][dataPointIndex];
-        const label = w.globals.labels[dataPointIndex];
-        const isPositive = val >= 0;
-        const statusColor = isPositive ? '#10b981' : '#f87171';
-        return `
-          <div style="background: #1a1c24; border: 1px solid #334155; padding: 10px; border-radius: 8px;">
-            <div style="color: #94a3b8; font-size: 10px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">${label}</div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor}; display: inline-block;"></span>
-              <span style="color: #f1f5f9; font-size: 12px;">Resultado:</span>
-              <span style="color: ${statusColor}; font-size: 12px; font-weight: 700;">${formatCurrency(val)}</span>
-            </div>
-          </div>
-        `;
-      }
-    }
-  }
-};
-  
-const diaSeries = ref([]);
-const mesSeries = ref([]);
-const anoSeries = ref([]);
-
-const chartOptions = ref({
-  chart: { type: 'donut' },
-  labels: [],
-  legend: { show: false },
-  stroke: { show: false },
-  plotOptions: {
-    pie: {
-      donut: {
-        size: '75%',
-        labels: {
-          show: true,
-          total: {
-            show: true,
-            label: 'TOTAL',
-            color: '#94a3b8',
-            formatter: function (w) {
-              const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
-              return `R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            }
-          },
-          value: {
-            show: true,
-            color: '#fff',
-            formatter: function (val) {
-              return `R$ ${parseFloat(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            }
-          }
-        }
-      }
-    }
-  },
-  tooltip: { y: { formatter: (val) => `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` } }
-});
-
-watch(data, (newData) => {
-  if (newData?.length > 0) {
-    series.value = newData.map(item => Number(item.valor));
-    chartOptions.value = { ...chartOptions.value, labels: newData.map(item => item.classe), colors: newData.map(item => item.color)};
-  }
-}, { immediate: true });
-
-const totaisResultado = computed(() => {
-  if (!dadosResultado.value || !Array.isArray(dadosResultado.value)) return { dia: 0, mes: 0, ano: 0 };
-  return dadosResultado.value.reduce((acc, item) => {
-    acc.dia += Number(item.dia) || 0;
-    acc.mes += Number(item.mes) || 0;
-    acc.ano += Number(item.ano) || 0;
-    return acc;
-  }, { dia: 0, mes: 0, ano: 0 });
-});
-
-watch(dadosResultado, (newData) => {
-  if (newData && Array.isArray(newData) && newData.length > 0) {
-    diaSeries.value = [{ name: 'Resultado', data: newData.map(item => item.dia) }];
-    mesSeries.value = [{ name: 'Resultado', data: newData.map(item => item.mes) }];
-    anoSeries.value = [{ name: 'Resultado', data: newData.map(item => item.ano) }];
-  }
-}, { immediate: true });
 </script>
 
 <style scoped>
@@ -569,7 +530,7 @@ watch(dadosResultado, (newData) => {
 .card-body-v2 { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .flex-grow-loader { flex: 1; display: flex; flex-direction: column; width: 100%; }
 :deep(.flex-grow-loader > div) { flex: 1; display: flex; flex-direction: column; height: 100%; }
-.chart-wrapper-dynamic { flex: 1; height: 100%; width: 100%; }
+.chart-wrapper-dynamic { flex: 1; height: 100%; width: 100%; min-height: 210px; }
 .year-navigator { display: flex; align-items: center; background: #0f172a; border-radius: 6px; padding: 2px; border: 1px solid #334155; }
 .nav-btn { background: transparent; border: none; color: #10b981; padding: 0 10px; cursor: pointer; font-size: 14px; font-weight: bold; }
 .nav-btn:disabled { color: #475569; }
