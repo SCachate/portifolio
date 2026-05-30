@@ -92,7 +92,7 @@
       <div class="chart-card flex-col-container">
         <h3 class="chart-title mb-4">Resultado por Classe (Histórico)</h3>
         <div class="card-body-v2">
-          <AsyncLoader :loading="false" :error="null" class="flex-grow-loader">
+          <AsyncLoader :loading="loadingHistorico" :error="errorHistorico" class="flex-grow-loader">
             <div class="chart-wrapper-dynamic">
               <apexchart 
                 v-if="historicoPronto"
@@ -168,7 +168,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useApi } from '../composables/useApi';
 import AsyncLoader from './AsyncLoader.vue';
 import ModalDetalhamento from './ModalDetalhamento.vue';
@@ -181,7 +181,7 @@ const abrirPeloGrafico = (dados) => {
   modalAberto.value = true;
 };
 
-// Lógicas de API
+// Lógicas de API Existentes
 const { data, loading, error, fetchData: fetchResumo } = useApi(`/dashboard/resumo`);
 
 const anoVisualizado = ref(new Date().getFullYear());
@@ -201,7 +201,15 @@ const {
   fetchData: fetchResultado
 } = useApi(`/dashboard/resultado`);
 
-// --- SEU MOCK DO JSON RESTAURADO ---
+// NOVA CHAMADA DE API: Conectando com a rota do histórico do seu Express
+const {
+  data: dadosHistoricoBackend,
+  loading: loadingHistorico,
+  error: errorHistorico,
+  fetchData: fetchHistorico
+} = useApi(`/dashboard/historico`);
+
+// Seus dados mockados originais preservados como Fallback de segurança
 const dadosMockadosHistorico = ref([
   { "yearMonth": "2025-04", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
   { "yearMonth": "2025-05", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
@@ -289,7 +297,12 @@ const formatCurrency = (val) => {
 
 const atualizarTudo = async () => {
   try {
-    await Promise.all([fetchResumo(), fetchEvolucao(), fetchResultado()]);
+    await Promise.all([
+      fetchResumo(), 
+      fetchEvolucao(), 
+      fetchResultado(),
+      fetchHistorico() // Atualiza também o Histórico Real
+    ]);
   } catch (error) {
     console.error("Erro na atualização global:", error);
   }
@@ -334,7 +347,7 @@ const chartOptions = computed(() => ({
 
 const evolucaoSeries = computed(() => (dadosEvolucao.value && Array.isArray(dadosEvolucao.value)) ? dadosEvolucao.value : []);
 const diaSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.dia) || [] }]);
-const mesSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.mes) || [] }]);
+const mesSeries = [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.mes) || [] }]; // fallback ajustado
 const anoSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.ano) || [] }]);
 
 const totaisResultado = computed(() => {
@@ -358,7 +371,7 @@ const baseBarOptions = computed(() => {
       labels: { show: true, rotate: -45, rotateAlways: true, style: { colors: '#94a3b8', fontSize: '9px' } },
       axisBorder: { show: false }, axisTicks: { show: false }
     },
-    legend: { show: false }, yaxis: { show: false }, dataLabels: { disabled: false }
+    legend: { show: false }, yaxis: { show: false }, dataLabels: { enabled: false }
   };
 });
 
@@ -394,9 +407,13 @@ const barOptionsDia = computed(() => generateBarOptionsForType('dia'));
 const barOptionsMes = computed(() => generateBarOptionsForType('mes'));
 const barOptionsAno = computed(() => generateBarOptionsForType('ano'));
 
-// --- LOGICA DE TRATAMENTO FILTRADO DO HISTÓRICO ---
+// --- ESTRATÉGIA INTELEGENTE DE POOL DE DADOS (BACKEND OU MOCK AS FALLBACK) ---
 const historicoResultadoProcessado = computed(() => {
-  const dadosFonte = dadosMockadosHistorico.value || [];
+  // Se houver dados reais vindos do endpoint do banco, use-os. Caso contrário, mantenha o mock.
+  const dadosFonte = (dadosHistoricoBackend.value && dadosHistoricoBackend.value.length > 0)
+    ? dadosHistoricoBackend.value
+    : dadosMockadosHistorico.value;
+
   if (dadosFonte.length === 0) return { meses: [], series: [], cores: [] };
 
   const mesesSet = new Set();
@@ -444,8 +461,6 @@ const historicoResultadoOptions = computed(() => ({
   legend: { show: false }, 
   dataLabels: { enabled: false },
   plotOptions: { bar: { borderRadius: 4, columnWidth: '65%' } },
-  
-  // CORREÇÃO DO CONSOLE AQUI: intersect forçado para false junto com shared true
   tooltip: { theme: 'dark', shared: true, intersect: false, y: { formatter: (val) => formatCurrency(val) } }
 }));
 
@@ -472,6 +487,11 @@ const evolucaoOptions = computed(() => ({
     }
   }
 }));
+
+// DISPARO INICIAL: Executa ao carregar a página para preencher os gráficos
+onMounted(() => {
+  fetchHistorico();
+});
 </script>
 
 <style scoped>
