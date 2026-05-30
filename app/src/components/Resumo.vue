@@ -92,7 +92,7 @@
       <div class="chart-card block clear-both">
         <h3 class="chart-title mb-4">Resultado por Classe (Histórico)</h3>
         
-        <AsyncLoader :loading="false" :error="null">
+        <AsyncLoader :loading="loadingHistorico" :error="errorHistorico">
           <div style="display: block; width: 100%; height: 230px; position: relative;">
             <apexchart 
               v-if="historicoPronto"
@@ -180,8 +180,15 @@ const abrirPeloGrafico = (dados) => {
   modalAberto.value = true;
 };
 
-// 1. Lógicas de API existentes
+// 1. Chamadas de API do Dashboard
 const { data, loading, error, fetchData: fetchResumo } = useApi(`/dashboard/resumo`);
+
+const { 
+  data: dadosResultado, 
+  loading: loadingResultado, 
+  error: errorResultado,
+  fetchData: fetchResultado
+} = useApi(`/dashboard/resultado`);
 
 const anoVisualizado = ref(new Date().getFullYear());
 const urlEvolucao = computed(() => `/dashboard/evolucao?ano=${anoVisualizado.value}`);
@@ -193,88 +200,14 @@ const {
   fetchData: fetchEvolucao
 } = useApi(urlEvolucao);
 
-const { 
-  data: dadosResultado, 
-  loading: loadingResultado, 
-  error: errorResultado,
-  fetchData: fetchResultado
-} = useApi(`/dashboard/resultado`);
+// INTERLIGAÇÃO DO HISTÓRICO COM O BACKEND REAL:
+const {
+  data: dadosHistorico,
+  loading: loadingHistorico,
+  error: errorHistorico,
+  fetchData: fetchHistorico
+} = useApi(`/dashboard/historico`);
 
-// --- SEU MOCK DO JSON ---
-const dadosMockadosHistorico = ref([
-  { "yearMonth": "2025-04", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-05", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-06", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-07", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-08", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-09", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-10", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-11", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-12", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2026-01", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-04", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-05", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-06", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-07", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-08", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-09", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-10", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-11", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-12", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2026-01", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-04", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-05", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-06", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-07", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-08", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-09", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-10", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-11", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-12", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2026-01", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-04", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-05", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-06", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-07", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-08", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-09", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-10", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-11", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-12", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2026-01", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-04", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2025-05", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2025-06", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2025-07", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2025-08", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2025-09", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2025-10", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2025-11", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2025-12", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2026-01", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2026-02", "classId": 2, "netResult": 2640.69, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2026-02", "classId": 3, "netResult": 26414.53, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2026-02", "classId": 4, "netResult": 18615.97, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2026-02", "classId": 5, "netResult": 6344.11, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2026-02", "classId": 6, "netResult": 6125.87, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2026-03", "classId": 2, "netResult": 479.74, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2026-03", "classId": 3, "netResult": 2195.38, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2026-03", "classId": 4, "netResult": -1779.95, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2026-03", "classId": 5, "netResult": -811.58, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2026-03", "classId": 6, "netResult": -929.58, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2026-04", "classId": 2, "netResult": 148.86, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2026-04", "classId": 3, "netResult": 2148.86, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2026-04", "classId": 4, "netResult": 7565.67, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2026-04", "classId": 5, "netResult": -331.26, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2026-04", "classId": 6, "netResult": -681.27, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2026-04", "classId": 7, "netResult": -57.00, "name": "Opções", "color": "#116651" },
-  { "yearMonth": "2026-05", "classId": 2, "netResult": -422.54, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2026-05", "classId": 3, "netResult": 1359.51, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2026-05", "classId": 4, "netResult": -621.46, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2026-05", "classId": 5, "netResult": -234.44, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2026-05", "classId": 6, "netResult": -2498.52, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2026-05", "classId": 7, "netResult": -327.00, "name": "Opções", "color": "#116651" }
-]);
 
 const formatCurrency = (val) => {
   if (val === undefined || val === null) return 'R$ 0,00';
@@ -286,9 +219,15 @@ const formatCurrency = (val) => {
   });
 };
 
+// Atualiza todos os blocos do dashboard, incluindo o novo histórico
 const atualizarTudo = async () => {
   try {
-    await Promise.all([fetchResumo(), fetchEvolucao(), fetchResultado()]);
+    await Promise.all([
+      fetchResumo(),
+      fetchEvolucao(),
+      fetchResultado(),
+      fetchHistorico() // Atualização do histórico real
+    ]);
   } catch (error) {
     console.error("Erro na atualização global:", error);
   }
@@ -296,7 +235,7 @@ const atualizarTudo = async () => {
 
 const mudarAno = (delta) => { anoVisualizado.value += delta; };
 
-// --- PROPRIEDADES COMPUTADAS REATIVAS ---
+// --- PROPRIEDADES COMPUTADAS DO DONUT E BARRAS DO DIA/MÊS/ANO ---
 const series = computed(() => data.value?.map(item => Number(item.valor)) || []);
 
 const chartOptions = computed(() => ({
@@ -393,9 +332,10 @@ const barOptionsDia = computed(() => generateBarOptionsForType('dia'));
 const barOptionsMes = computed(() => generateBarOptionsForType('mes'));
 const barOptionsAno = computed(() => generateBarOptionsForType('ano'));
 
-// --- LOGICA DE TRATAMENTO FILTRADO DO HISTÓRICO ---
+// --- PROCESSAMENTO DO HISTÓRICO COM DADOS DO BACKEND ---
 const historicoResultadoProcessado = computed(() => {
-  const dadosFonte = dadosMockadosHistorico.value || [];
+  // MUDANÇA: Agora consome de dadosHistorico.value vindo da API
+  const dadosFonte = dadosHistorico.value || [];
   if (dadosFonte.length === 0) return { meses: [], series: [], cores: [] };
 
   const mesesSet = new Set();
@@ -424,7 +364,6 @@ const historicoResultadoProcessado = computed(() => {
 
 const historicoResultadoSeries = computed(() => historicoResultadoProcessado.value.series);
 
-// Validador estrutural para impedir que o componente monte sem os dados carregados
 const historicoPronto = computed(() => {
   return historicoResultadoSeries.value && 
          historicoResultadoSeries.value.length > 0 && 
@@ -471,26 +410,3 @@ const evolucaoOptions = computed(() => ({
   }
 }));
 </script>
-
-<style scoped>
-.result-value { font-variant-numeric: tabular-nums; font-family: 'Inter', sans-serif; font-weight: 700; }
-.charts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; }
-.chart-card { background: #1a1c24; padding: 20px; border-radius: 12px; height: 320px; display: flex; flex-direction: column; overflow: hidden; }
-.chart-title { color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
-.flex-col-container { display: flex; flex-direction: column; }
-.header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-.card-body-v2 { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.flex-grow-loader { flex: 1; display: flex; flex-direction: column; width: 100%; }
-:deep(.flex-grow-loader > div) { flex: 1; display: flex; flex-direction: column; height: 100%; }
-.chart-wrapper-dynamic { flex: 1; height: 100%; width: 100%; min-height: 210px; }
-.year-navigator { display: flex; align-items: center; background: #0f172a; border-radius: 6px; padding: 2px; border: 1px solid #334155; }
-.nav-btn { background: transparent; border: none; color: #10b981; padding: 0 10px; cursor: pointer; font-size: 14px; font-weight: bold; }
-.nav-btn:disabled { color: #475569; }
-.year-display { color: #fff; font-size: 0.85rem; font-weight: 600; min-width: 45px; text-align: center; border-left: 1px solid #334155; border-right: 1px solid #334155; }
-:deep(.custom-tooltip-box) { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; min-width: 180px; }
-:deep(.tooltip-header) { border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 8px; color: #f1f5f9; font-weight: bold; }
-:deep(.tooltip-row) { display: flex; justify-content: space-between; font-size: 11px; padding: 2px 0; }
-:deep(.dot) { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-:deep(.tooltip-total) { border-top: 1px solid #475569; margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-weight: 700; color: #34d399; }
-@media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr; } }
-</style>
