@@ -1,196 +1,3 @@
-<template>
-  <div class="w-full">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-white text-xl font-bold">Meu Patrimônio</h2>
-
-      <button 
-        @click="atualizarTudo" 
-        :disabled="loading"
-        class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-md active:scale-95"
-      >
-        <svg 
-          v-if="!loading"
-          xmlns="http://www.w3.org/2000/svg" 
-          class="h-4 w-4" 
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke="currentColor"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        
-        <svg 
-          v-else 
-          class="animate-spin h-4 w-4 text-white" 
-          xmlns="http://www.w3.org/2000/svg" 
-          fill="none" 
-          viewBox="0 0 24 24"
-        >
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-
-        <span>{{ loading ? 'Atualizando...' : 'Atualizar' }}</span>
-      </button>
-    </div>
-    
-    <div class="charts-grid">
-      <!-- ROW 1 - COLUNA 1: DISTRIBUIÇÃO -->
-      <div class="chart-card donut-wrapper flex flex-col items-center">
-        <h3 class="chart-title text-center w-full">Distribuição</h3>
-        <AsyncLoader :loading="loading" :error="error" class="flex-grow-loader">
-          <div class="donut-chart-box flex items-center justify-center w-full h-full overflow-hidden">
-            <apexchart 
-              type="donut" 
-              width="100%" 
-              height="250" 
-              :options="chartOptions" 
-              :series="series" 
-            />
-          </div>
-        </AsyncLoader>
-      </div>
-
-      <!-- ROW 1 - COLUNA 2: EVOLUÇÃO PATRIMONIAL (REDUZIDO PARA 1 COLUNA) -->
-      <div class="chart-card flex-col-container">
-        <div class="header-top-row">
-          <h3 class="chart-title m-0">Evolução Patrimonial</h3>
-          <div class="year-navigator">
-            <button 
-              @click="mudarAno(-1)" 
-              class="nav-btn" 
-              :disabled="loadingEvolucao"
-              title="Ano Anterior"
-            >&lt;</button>
-            <span class="year-display">{{ anoVisualizado }}</span>
-            <button 
-              @click="mudarAno(1)" 
-              class="nav-btn" 
-              :disabled="loadingEvolucao"
-              title="Próximo Ano"
-            >&gt;</button>
-          </div>
-        </div>
-        
-        <div class="card-body-v2">
-          <AsyncLoader 
-            :loading="loadingEvolucao" 
-            :error="errorEvolucao" 
-            class="flex-grow-loader"
-          >
-            <div class="chart-wrapper-dynamic">
-              <apexchart 
-                type="line" 
-                height="100%" 
-                width="100%"
-                :options="evolucaoOptions" 
-                :series="evolucaoSeries" 
-              />
-            </div>
-          </AsyncLoader>
-        </div>
-      </div>
-
-      <!-- ROW 1 - COLUNA 3: CLONE DA EVOLUÇÃO PATRIMONIAL (NOVA COLUNA DISPONIBILIZADA) -->
-      <div class="chart-card flex-col-container">
-        <div class="header-top-row">
-          <h3 class="chart-title m-0">Evolução Patrimonial (Clone)</h3>
-          <div class="year-navigator">
-            <button 
-              @click="mudarAno(-1)" 
-              class="nav-btn" 
-              :disabled="loadingEvolucao"
-              title="Ano Anterior"
-            >&lt;</button>
-            <span class="year-display">{{ anoVisualizado }}</span>
-            <button 
-              @click="mudarAno(1)" 
-              class="nav-btn" 
-              :disabled="loadingEvolucao"
-              title="Próximo Ano"
-            >&gt;</button>
-          </div>
-        </div>
-        
-        <div class="card-body-v2">
-          <AsyncLoader 
-            :loading="loadingEvolucao" 
-            :error="errorEvolucao" 
-            class="flex-grow-loader"
-          >
-            <div class="chart-wrapper-dynamic">
-              <apexchart 
-                type="line" 
-                height="100%" 
-                width="100%"
-                :options="evolucaoOptions" 
-                :series="evolucaoSeries" 
-              />
-            </div>
-          </AsyncLoader>
-        </div>
-      </div>
-
-      <!-- ROW 2 - COLUNA 1: RESULTADO DO DIA -->
-      <div class="chart-card">
-        <AsyncLoader 
-          :loading="loadingResultado" 
-          :error="errorResultado" 
-          class="flex-grow-loader"
-        >
-          <h3 class="chart-title">Resultado do Dia</h3>
-          <span :class="['result-value', totaisResultado.dia >= 0 ? 'text-emerald-400' : 'text-red-400']">
-            {{ formatCurrency(totaisResultado.dia) }}
-          </span>
-          <apexchart type="bar" height="100%" :options="getBarOptions('dia')" :series="diaSeries" />
-        </AsyncLoader>
-      </div>
-
-      <!-- ROW 2 - COLUNA 2: RESULTADO DO MÊS -->
-      <div class="chart-card">
-        <AsyncLoader 
-          :loading="loadingResultado" 
-          :error="errorResultado" 
-          class="flex-grow-loader"
-        >
-          <h3 class="chart-title">Resultado do Mês</h3>
-          <span :class="['result-value', totaisResultado.mes >= 0 ? 'text-emerald-400' : 'text-red-400']">
-            {{ formatCurrency(totaisResultado.mes) }}
-          </span>
-          <apexchart type="bar" height="100%" :options="getBarOptions('mes')" :series="mesSeries" />
-        </AsyncLoader>
-      </div>
-
-      <!-- ROW 2 - COLUNA 3: RESULTADO DO ANO -->
-      <div class="chart-card">
-        <AsyncLoader 
-          :loading="loadingResultado" 
-          :error="errorResultado" 
-          class="flex-grow-loader"
-        >
-          <h3 class="chart-title">Resultado do Ano</h3>
-          <span :class="['result-value', totaisResultado.ano >= 0 ? 'text-emerald-400' : 'text-red-400']">
-            {{ formatCurrency(totaisResultado.ano) }}
-          </span>
-          <apexchart type="bar" height="100%" :options="getBarOptions('ano')" :series="anoSeries" />
-        </AsyncLoader>
-      </div>
-    </div>
-  </div>
-
-  <ModalDetalhamento 
-    v-model="modalAberto"
-    :tipo="filtrosAtivos.tipo"
-    :classeSelecionada="filtrosAtivos.classe"
-    :listaClasses="dadosResultado?.map(i => i.classe) || []"
-    @update:classe="(v) => filtrosAtivos.classe = v"
-  >
-    <template #default="{ periodo }">
-      <p class="text-slate-400">Exibindo dados de {{ periodo.inicio }} até {{ periodo.fim }}</p>
-    </template>
-  </ModalDetalhamento>
-</template>
-
 <script setup>
 import { ref, watch, computed } from 'vue';
 import { useApi } from '../composables/useApi';
@@ -201,7 +8,7 @@ const modalAberto = ref(false);
 const filtrosAtivos = ref({ classe: '', tipo: '' });
 
 const abrirPeloGrafico = (dados) => {
-  filtrosAtivos.value = { ...dados }; // Spread para garantir nova referência
+  filtrosAtivos.value = { ...dados };
   modalAberto.value = true;
 };
 
@@ -226,6 +33,82 @@ const {
   error: errorResultado,
   fetchData: fetchResultado
 } = useApi(`/dashboard/resultado`);
+
+// --- MOCK DO SEU JSON (Temporário para Desenvolvimento) ---
+const dadosMockadosHistorico = ref([
+  { "yearMonth": "2025-04", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
+  { "yearMonth": "2025-05", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
+  { "yearMonth": "2025-06", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
+  { "yearMonth": "2025-07", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
+  { "yearMonth": "2025-08", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
+  { "yearMonth": "2025-09", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
+  { "yearMonth": "2025-10", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
+  { "yearMonth": "2025-11", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
+  { "yearMonth": "2025-12", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
+  { "yearMonth": "2026-01", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
+  { "yearMonth": "2025-04", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
+  { "yearMonth": "2025-05", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
+  { "yearMonth": "2025-06", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
+  { "yearMonth": "2025-07", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
+  { "yearMonth": "2025-08", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
+  { "yearMonth": "2025-09", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
+  { "yearMonth": "2025-10", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
+  { "yearMonth": "2025-11", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
+  { "yearMonth": "2025-12", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
+  { "yearMonth": "2026-01", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
+  { "yearMonth": "2025-04", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
+  { "yearMonth": "2025-05", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
+  { "yearMonth": "2025-06", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
+  { "yearMonth": "2025-07", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
+  { "yearMonth": "2025-08", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
+  { "yearMonth": "2025-09", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
+  { "yearMonth": "2025-10", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
+  { "yearMonth": "2025-11", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
+  { "yearMonth": "2025-12", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
+  { "yearMonth": "2026-01", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
+  { "yearMonth": "2025-04", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
+  { "yearMonth": "2025-05", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
+  { "yearMonth": "2025-06", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
+  { "yearMonth": "2025-07", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
+  { "yearMonth": "2025-08", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
+  { "yearMonth": "2025-09", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
+  { "yearMonth": "2025-10", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
+  { "yearMonth": "2025-11", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
+  { "yearMonth": "2025-12", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
+  { "yearMonth": "2026-01", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
+  { "yearMonth": "2025-04", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
+  { "yearMonth": "2025-05", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
+  { "yearMonth": "2025-06", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
+  { "yearMonth": "2025-07", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
+  { "yearMonth": "2025-08", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
+  { "yearMonth": "2025-09", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
+  { "yearMonth": "2025-10", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
+  { "yearMonth": "2025-11", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
+  { "yearMonth": "2025-12", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
+  { "yearMonth": "2026-01", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
+  { "yearMonth": "2026-02", "classId": 2, "netResult": 2640.69, "name": "FII", "color": "#FEB019" },
+  { "yearMonth": "2026-02", "classId": 3, "netResult": 26414.53, "name": "Renda fixa", "color": "#008FFB" },
+  { "yearMonth": "2026-02", "classId": 4, "netResult": 18615.97, "name": "Internacional", "color": "#FF4560" },
+  { "yearMonth": "2026-02", "classId": 5, "netResult": 6344.11, "name": "Moedas", "color": "#775DD0" },
+  { "yearMonth": "2026-02", "classId": 6, "netResult": 6125.87, "name": "Ações", "color": "#00E396" },
+  { "yearMonth": "2026-03", "classId": 2, "netResult": 479.74, "name": "FII", "color": "#FEB019" },
+  { "yearMonth": "2026-03", "classId": 3, "netResult": 2195.38, "name": "Renda fixa", "color": "#008FFB" },
+  { "yearMonth": "2026-03", "classId": 4, "netResult": -1779.95, "name": "Internacional", "color": "#FF4560" },
+  { "yearMonth": "2026-03", "classId": 5, "netResult": -811.58, "name": "Moedas", "color": "#775DD0" },
+  { "yearMonth": "2026-03", "classId": 6, "netResult": -929.58, "name": "Ações", "color": "#00E396" },
+  { "yearMonth": "2026-04", "classId": 2, "netResult": 148.86, "name": "FII", "color": "#FEB019" },
+  { "yearMonth": "2026-04", "classId": 3, "netResult": 2148.86, "name": "Renda fixa", "color": "#008FFB" },
+  { "yearMonth": "2026-04", "classId": 4, "netResult": 7565.67, "name": "Internacional", "color": "#FF4560" },
+  { "yearMonth": "2026-04", "classId": 5, "netResult": -331.26, "name": "Moedas", "color": "#775DD0" },
+  { "yearMonth": "2026-04", "classId": 6, "netResult": -681.27, "name": "Ações", "color": "#00E396" },
+  { "yearMonth": "2026-04", "classId": 7, "netResult": -57.00, "name": "Opções", "color": "#116651" },
+  { "yearMonth": "2026-05", "classId": 2, "netResult": -422.54, "name": "FII", "color": "#FEB019" },
+  { "yearMonth": "2026-05", "classId": 3, "netResult": 1359.51, "name": "Renda fixa", "color": "#008FFB" },
+  { "yearMonth": "2026-05", "classId": 4, "netResult": -621.46, "name": "Internacional", "color": "#FF4560" },
+  { "yearMonth": "2026-05", "classId": 5, "netResult": -234.44, "name": "Moedas", "color": "#775DD0" },
+  { "yearMonth": "2026-05", "classId": 6, "netResult": -2498.52, "name": "Ações", "color": "#00E396" },
+  { "yearMonth": "2026-05", "classId": 7, "netResult": -327.00, "name": "Opções", "color": "#116651" }
+]);
 
 const formatCurrency = (val) => {
   if (val === undefined || val === null) return 'R$ 0,00';
@@ -256,6 +139,82 @@ const evolucaoSeries = computed(() => {
 const mudarAno = (delta) => { 
   anoVisualizado.value += delta; 
 };
+
+// Lógica de Processamento Dinâmico (Lendo os dados Mockados)
+const historicoResultadoProcessado = computed(() => {
+  // Passa a ler do Mock estático temporariamente
+  const dadosFonte = dadosMockadosHistorico.value;
+
+  const mesesSet = new Set();
+  dadosFonte.forEach(item => {
+    if (item.yearMonth) mesesSet.add(item.yearMonth);
+  });
+  const mesesOrdenados = Array.from(mesesSet).sort();
+
+  const classesMap = new Map();
+
+  dadosFonte.forEach(item => {
+    if (!classesMap.has(item.name)) {
+      classesMap.set(item.name, {
+        name: item.name,
+        color: item.color || '#10b981',
+        valoresPorMes: new Map()
+      });
+    }
+    classesMap.get(item.name).valoresPorMes.set(item.yearMonth, Number(item.netResult) || 0);
+  });
+
+  const seriesGeradas = [];
+  const coresGeradas = [];
+
+  classesMap.forEach(classeData => {
+    const dataAlinhada = mesesOrdenados.map(mes => classeData.valoresPorMes.get(mes) || 0);
+    seriesGeradas.push({
+      name: classeData.name,
+      data: dataAlinhada
+    });
+    coresGeradas.push(classeData.color);
+  });
+
+  return {
+    meses: mesesOrdenados,
+    series: seriesGeradas,
+    cores: coresGeradas
+  };
+});
+
+const historicoResultadoSeries = computed(() => historicoResultadoProcessado.value.series);
+
+const historicoResultadoOptions = computed(() => ({
+  chart: { 
+    type: 'bar',
+    stacked: true, 
+    toolbar: { show: false }, 
+    fontFamily: 'inherit' 
+  },
+  colors: historicoResultadoProcessado.value.cores,
+  grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 10 } },
+  xaxis: { 
+    categories: historicoResultadoProcessado.value.meses,
+    labels: { style: { colors: '#94a3b8', fontSize: '9px' } }
+  },
+  yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
+  legend: { show: false }, 
+  dataLabels: { enabled: false },
+  plotOptions: {
+    bar: {
+      borderRadius: 4,
+      columnWidth: '60%'
+    }
+  },
+  tooltip: {
+    theme: 'dark',
+    shared: true,
+    y: {
+      formatter: (val) => formatCurrency(val)
+    }
+  }
+}));
 
 const evolucaoOptions = computed(() => ({
   chart: { stacked: true, toolbar: { show: false }, fontFamily: 'inherit' },
@@ -315,25 +274,18 @@ const getBarOptions = (tipo) => {
       },
     },  
     grid: { padding: { top: 0, right: 10, bottom: 10, left: 10 } },
-    
     colors: coresBackend,
-
     plotOptions: { 
       bar: { 
         borderRadius: 4, 
         distributed: true,
-        columnWidth: '70%',
-        colors: {
-          ranges: [] 
-        } 
+        columnWidth: '70%'
       } 
     },
-
     fill: {
       type: 'solid',
       colors: coresBackend
     },
-
     xaxis: {
       categories: dadosResultado.value?.map(item => item.classe) || [], 
       labels: { 
@@ -349,39 +301,20 @@ const getBarOptions = (tipo) => {
     legend: { show: false },
     yaxis: { show: false },
     dataLabels: { enabled: false },
-    
     tooltip: {
       theme: 'dark',
       custom: function({ series, seriesIndex, dataPointIndex, w }) {
         const val = series[seriesIndex][dataPointIndex];
         const label = w.globals.labels[dataPointIndex];
         const isPositive = val >= 0;
-        
         const statusColor = isPositive ? '#10b981' : '#f87171';
-        
         return `
-          <div style="
-            background: #1a1c24; 
-            border: 1px solid #334155; 
-            padding: 10px; 
-            border-radius: 8px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          ">
-            <div style="color: #94a3b8; font-size: 10px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">
-              ${label}
-            </div>
+          <div style="background: #1a1c24; border: 1px solid #334155; padding: 10px; border-radius: 8px;">
+            <div style="color: #94a3b8; font-size: 10px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">${label}</div>
             <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="
-                width: 8px; 
-                height: 8px; 
-                border-radius: 50%; 
-                background-color: ${statusColor}; 
-                display: inline-block;
-              "></span>
+              <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor}; display: inline-block;"></span>
               <span style="color: #f1f5f9; font-size: 12px;">Resultado:</span>
-              <span style="color: ${statusColor}; font-size: 12px; font-weight: 700;">
-                ${formatCurrency(val)}
-              </span>
+              <span style="color: ${statusColor}; font-size: 12px; font-weight: 700;">${formatCurrency(val)}</span>
             </div>
           </div>
         `;
@@ -453,29 +386,3 @@ watch(dadosResultado, (newData) => {
   }
 }, { immediate: true });
 </script>
-
-<style scoped>
-.result-value { font-variant-numeric: tabular-nums; font-family: 'Inter', sans-serif; font-weight: 700; }
-.charts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; }
-.chart-card { background: #1a1c24; padding: 20px; border-radius: 12px; height: 320px; display: flex; flex-direction: column; overflow: hidden; }
-
-/* .card-span-2 foi removido daqui para que todos os cards herdem 1 coluna padrão */
-
-.chart-title { color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
-.flex-col-container { display: flex; flex-direction: column; }
-.header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-.card-body-v2 { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.flex-grow-loader { flex: 1; display: flex; flex-direction: column; width: 100%; }
-:deep(.flex-grow-loader > div) { flex: 1; display: flex; flex-direction: column; height: 100%; }
-.chart-wrapper-dynamic { flex: 1; height: 100%; width: 100%; }
-.year-navigator { display: flex; align-items: center; background: #0f172a; border-radius: 6px; padding: 2px; border: 1px solid #334155; }
-.nav-btn { background: transparent; border: none; color: #10b981; padding: 0 10px; cursor: pointer; font-size: 14px; font-weight: bold; }
-.nav-btn:disabled { color: #475569; }
-.year-display { color: #fff; font-size: 0.85rem; font-weight: 600; min-width: 45px; text-align: center; border-left: 1px solid #334155; border-right: 1px solid #334155; }
-:deep(.custom-tooltip-box) { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; min-width: 180px; }
-:deep(.tooltip-header) { border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 8px; color: #f1f5f9; font-weight: bold; }
-:deep(.tooltip-row) { display: flex; justify-content: space-between; font-size: 11px; padding: 2px 0; }
-:deep(.dot) { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-:deep(.tooltip-total) { border-top: 1px solid #475569; margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-weight: 700; color: #34d399; }
-@media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr; } }
-</style>
