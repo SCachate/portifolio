@@ -26,10 +26,10 @@ exports.getAssetsByClassWithResult = asyncHandler(async (req, res) => {
 		        WHERE userId = ? AND fromClassId = ?
 		    ) t
 		    GROUP BY assetId
-		    HAVING SUM(quantity) <> 0
+		    -- HAVING SUM(quantity) <> 0
 		) resumo
 		JOIN assets a ON resumo.assetId = a.id
-		LEFT JOIN (
+		JOIN JOIN (
 		    SELECT 
 		        vrda.assetId, 
 		        SUM(vrda.lucro_prejuizo_dia_brl) AS total_lucro
