@@ -209,82 +209,6 @@ const {
   fetchData: fetchHistorico
 } = useApi(`/dashboard/historico`);
 
-// Seus dados mockados originais preservados como Fallback de segurança
-const dadosMockadosHistorico = ref([
-  { "yearMonth": "2025-04", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-05", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-06", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-07", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-08", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-09", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-10", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-11", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-12", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2026-01", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2025-04", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-05", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-06", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-07", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-08", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-09", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-10", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-11", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-12", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2026-01", "classId": 6, "netResult": 0.00, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2025-04", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-05", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-06", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-07", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-08", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-09", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-10", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-11", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-12", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2026-01", "classId": 4, "netResult": 0.00, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2025-04", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-05", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-06", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-07", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-08", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-09", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-10", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-11", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-12", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2026-01", "classId": 5, "netResult": 0.00, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2025-04", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2025-05", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2025-06", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2025-07", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2025-08", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2025-09", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2025-10", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2025-11", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2025-12", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2026-01", "classId": 3, "netResult": 0.00, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2026-02", "classId": 2, "netResult": 2640.69, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2026-02", "classId": 3, "netResult": 26414.53, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2026-02", "classId": 4, "netResult": 18615.97, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2026-02", "classId": 5, "netResult": 6344.11, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2026-02", "classId": 6, "netResult": 6125.87, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2026-03", "classId": 2, "netResult": 479.74, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2026-03", "classId": 3, "netResult": 2195.38, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2026-03", "classId": 4, "netResult": -1779.95, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2026-03", "classId": 5, "netResult": -811.58, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2026-03", "classId": 6, "netResult": -929.58, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2026-04", "classId": 2, "netResult": 148.86, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2026-04", "classId": 3, "netResult": 2148.86, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2026-04", "classId": 4, "netResult": 7565.67, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2026-04", "classId": 5, "netResult": -331.26, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2026-04", "classId": 6, "netResult": -681.27, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2026-04", "classId": 7, "netResult": -57.00, "name": "Opções", "color": "#116651" },
-  { "yearMonth": "2026-05", "classId": 2, "netResult": -422.54, "name": "FII", "color": "#FEB019" },
-  { "yearMonth": "2026-05", "classId": 3, "netResult": 1359.51, "name": "Renda fixa", "color": "#008FFB" },
-  { "yearMonth": "2026-05", "classId": 4, "netResult": -621.46, "name": "Internacional", "color": "#FF4560" },
-  { "yearMonth": "2026-05", "classId": 5, "netResult": -234.44, "name": "Moedas", "color": "#775DD0" },
-  { "yearMonth": "2026-05", "classId": 6, "netResult": -2498.52, "name": "Ações", "color": "#00E396" },
-  { "yearMonth": "2026-05", "classId": 7, "netResult": -327.00, "name": "Opções", "color": "#116651" }
-]);
-
 const formatCurrency = (val) => {
   if (val === undefined || val === null) return 'R$ 0,00';
   return val.toLocaleString('pt-BR', {
@@ -347,7 +271,7 @@ const chartOptions = computed(() => ({
 
 const evolucaoSeries = computed(() => (dadosEvolucao.value && Array.isArray(dadosEvolucao.value)) ? dadosEvolucao.value : []);
 const diaSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.dia) || [] }]);
-const mesSeries = [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.mes) || [] }]; // fallback ajustado
+const mesSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.mes) || [] }]); // <--- CORRIGIDO AQUI!
 const anoSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.ano) || [] }]);
 
 const totaisResultado = computed(() => {
@@ -410,9 +334,7 @@ const barOptionsAno = computed(() => generateBarOptionsForType('ano'));
 // --- ESTRATÉGIA INTELEGENTE DE POOL DE DADOS (BACKEND OU MOCK AS FALLBACK) ---
 const historicoResultadoProcessado = computed(() => {
   // Se houver dados reais vindos do endpoint do banco, use-os. Caso contrário, mantenha o mock.
-  const dadosFonte = (dadosHistoricoBackend.value && dadosHistoricoBackend.value.length > 0)
-    ? dadosHistoricoBackend.value
-    : dadosMockadosHistorico.value;
+  const dadosFonte = dadosHistoricoBackend.value;
 
   if (dadosFonte.length === 0) return { meses: [], series: [], cores: [] };
 
