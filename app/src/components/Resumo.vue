@@ -95,13 +95,16 @@
         <AsyncLoader :loading="false" :error="null">
           <div style="display: block; width: 100%; height: 230px; position: relative;">
             <apexchart 
-              v-if="historicoResultadoSeries && historicoResultadoSeries.length > 0"
+              v-if="historicoPronto"
               type="bar" 
               height="230" 
               width="100%"
               :options="historicoResultadoOptions" 
               :series="historicoResultadoSeries" 
             />
+            <div v-else class="flex items-center justify-center h-full text-slate-500 text-xs">
+              Carregando histórico...
+            </div>
           </div>
         </AsyncLoader>
       </div>
@@ -177,10 +180,9 @@ const abrirPeloGrafico = (dados) => {
   modalAberto.value = true;
 };
 
-// 1. Lógica da Distribuição (Donut)
+// 1. Lógicas de API existentes
 const { data, loading, error, fetchData: fetchResumo } = useApi(`/dashboard/resumo`);
 
-// 2. Lógica da Evolução (API Reativa por Ano)
 const anoVisualizado = ref(new Date().getFullYear());
 const urlEvolucao = computed(() => `/dashboard/evolucao?ano=${anoVisualizado.value}`);
 
@@ -198,7 +200,7 @@ const {
   fetchData: fetchResultado
 } = useApi(`/dashboard/resultado`);
 
-// --- MOCK DO SEU JSON ---
+// --- SEU MOCK DO JSON ---
 const dadosMockadosHistorico = ref([
   { "yearMonth": "2025-04", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
   { "yearMonth": "2025-05", "classId": 2, "netResult": 0.00, "name": "FII", "color": "#FEB019" },
@@ -286,22 +288,15 @@ const formatCurrency = (val) => {
 
 const atualizarTudo = async () => {
   try {
-    await Promise.all([
-      fetchResumo(),
-      fetchEvolucao(),
-      fetchResultado()
-    ]);
+    await Promise.all([fetchResumo(), fetchEvolucao(), fetchResultado()]);
   } catch (error) {
     console.error("Erro na atualização global:", error);
   }
 };
 
-const mudarAno = (delta) => { 
-  anoVisualizado.value += delta; 
-};
+const mudarAno = (delta) => { anoVisualizado.value += delta; };
 
-// --- PROPRIEDADES COMPUTADAS ---
-
+// --- PROPRIEDADES COMPUTADAS REATIVAS ---
 const series = computed(() => data.value?.map(item => Number(item.valor)) || []);
 
 const chartOptions = computed(() => ({
@@ -321,16 +316,13 @@ const chartOptions = computed(() => ({
             label: 'TOTAL',
             color: '#94a3b8',
             formatter: function (w) {
-              const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
-              return total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+              return w.globals.seriesTotals.reduce((a, b) => a + b, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             }
           },
           value: {
             show: true,
             color: '#fff',
-            formatter: function (val) {
-              return parseFloat(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            }
+            formatter: (val) => parseFloat(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
           }
         }
       }
@@ -339,10 +331,7 @@ const chartOptions = computed(() => ({
   tooltip: { y: { formatter: (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) } }
 }));
 
-const evolucaoSeries = computed(() => {
-  return (dadosEvolucao.value && Array.isArray(dadosEvolucao.value)) ? dadosEvolucao.value : [];
-});
-
+const evolucaoSeries = computed(() => (dadosEvolucao.value && Array.isArray(dadosEvolucao.value)) ? dadosEvolucao.value : []);
 const diaSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.dia) || [] }]);
 const mesSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.mes) || [] }]);
 const anoSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.ano) || [] }]);
@@ -350,9 +339,7 @@ const anoSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.valu
 const totaisResultado = computed(() => {
   if (!dadosResultado.value || !Array.isArray(dadosResultado.value)) return { dia: 0, mes: 0, ano: 0 };
   return dadosResultado.value.reduce((acc, item) => {
-    acc.dia += Number(item.dia) || 0;
-    acc.mes += Number(item.mes) || 0;
-    acc.ano += Number(item.ano) || 0;
+    acc.dia += Number(item.dia) || 0; acc.mes += Number(item.mes) || 0; acc.ano += Number(item.ano) || 0;
     return acc;
   }, { dia: 0, mes: 0, ano: 0 });
 });
@@ -367,10 +354,7 @@ const baseBarOptions = computed(() => {
     fill: { type: 'solid', colors: coresBackend },
     xaxis: {
       categories: dadosResultado.value?.map(item => item.classe) || [], 
-      labels: { 
-        show: true, rotate: -45, rotateAlways: true, hideOverlappingLabels: false,
-        style: { colors: '#94a3b8', fontSize: '9px' } 
-      },
+      labels: { show: true, rotate: -45, rotateAlways: true, style: { colors: '#94a3b8', fontSize: '9px' } },
       axisBorder: { show: false }, axisTicks: { show: false }
     },
     legend: { show: false }, yaxis: { show: false }, dataLabels: { enabled: false }
@@ -394,15 +378,13 @@ const generateBarOptionsForType = (tipo) => ({
       const val = series[seriesIndex][dataPointIndex];
       const label = w.globals.labels[dataPointIndex];
       const statusColor = val >= 0 ? '#10b981' : '#f87171';
-      return `
-        <div style="background: #1a1c24; border: 1px solid #334155; padding: 10px; border-radius: 8px;">
-          <div style="color: #94a3b8; font-size: 10px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">${label}</div>
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor}; display: inline-block;"></span>
-            <span style="color: #f1f5f9; font-size: 12px;">Resultado:</span>
-            <span style="color: ${statusColor}; font-size: 12px; font-weight: 700;">${formatCurrency(val)}</span>
-          </div>
-        </div>`;
+      return `<div style="background: #1a1c24; border: 1px solid #334155; padding: 10px; border-radius: 8px;">
+                <div style="color: #94a3b8; font-size: 10px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">${label}</div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor};"></span>
+                  <span style="color: #f1f5f9; font-size: 12px;">Resultado: ${formatCurrency(val)}</span>
+                </div>
+              </div>`;
     }
   }
 });
@@ -411,29 +393,26 @@ const barOptionsDia = computed(() => generateBarOptionsForType('dia'));
 const barOptionsMes = computed(() => generateBarOptionsForType('mes'));
 const barOptionsAno = computed(() => generateBarOptionsForType('ano'));
 
-// --- LOGICA DE ALINHAMENTO DO HISTÓRICO ---
+// --- LOGICA DE TRATAMENTO FILTRADO DO HISTÓRICO ---
 const historicoResultadoProcessado = computed(() => {
   const dadosFonte = dadosMockadosHistorico.value || [];
-  
+  if (dadosFonte.length === 0) return { meses: [], series: [], cores: [] };
+
   const mesesSet = new Set();
   dadosFonte.forEach(item => { if (item.yearMonth) mesesSet.add(item.yearMonth); });
   const mesesOrdenados = Array.from(mesesSet).sort();
 
   const classesMap = new Map();
   dadosFonte.forEach(item => {
+    if (!item.name) return;
     if (!classesMap.has(item.name)) {
-      classesMap.set(item.name, {
-        name: item.name,
-        color: item.color || '#10b981',
-        valoresPorMes: new Map()
-      });
+      classesMap.set(item.name, { name: item.name, color: item.color || '#10b981', valoresPorMes: new Map() });
     }
     classesMap.get(item.name).valoresPorMes.set(item.yearMonth, Number(item.netResult) || 0);
   });
 
   const seriesGeradas = [];
   const coresGeradas = [];
-
   classesMap.forEach(classeData => {
     const dataAlinhada = mesesOrdenados.map(mes => classeData.valoresPorMes.get(mes) || 0);
     seriesGeradas.push({ name: classeData.name, data: dataAlinhada });
@@ -445,13 +424,15 @@ const historicoResultadoProcessado = computed(() => {
 
 const historicoResultadoSeries = computed(() => historicoResultadoProcessado.value.series);
 
+// Validador estrutural para impedir que o componente monte sem os dados carregados
+const historicoPronto = computed(() => {
+  return historicoResultadoSeries.value && 
+         historicoResultadoSeries.value.length > 0 && 
+         historicoResultadoProcessado.value.meses.length > 0;
+});
+
 const historicoResultadoOptions = computed(() => ({
-  chart: { 
-    type: 'bar',
-    stacked: true, 
-    toolbar: { show: false }, 
-    fontFamily: 'inherit'
-  },
+  chart: { type: 'bar', stacked: true, toolbar: { show: false }, fontFamily: 'inherit' },
   colors: historicoResultadoProcessado.value.cores,
   grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 10 } },
   xaxis: { 
@@ -459,25 +440,11 @@ const historicoResultadoOptions = computed(() => ({
     categories: historicoResultadoProcessado.value.meses,
     labels: { style: { colors: '#94a3b8', fontSize: '9px' } }
   },
-  yaxis: { 
-    labels: { 
-      style: { colors: '#94a3b8', fontSize: '10px' },
-      formatter: (val) => val.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
-    } 
-  },
+  yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' }, formatter: (v) => Math.round(v).toLocaleString('pt-BR') } },
   legend: { show: false }, 
   dataLabels: { enabled: false },
-  plotOptions: {
-    bar: {
-      borderRadius: 4,
-      columnWidth: '65%'
-    }
-  },
-  tooltip: {
-    theme: 'dark',
-    shared: true,
-    y: { formatter: (val) => formatCurrency(val) }
-  }
+  plotOptions: { bar: { borderRadius: 4, columnWidth: '65%' } },
+  tooltip: { theme: 'dark', shared: true, y: { formatter: (val) => formatCurrency(val) } }
 }));
 
 const evolucaoOptions = computed(() => ({
@@ -485,35 +452,21 @@ const evolucaoOptions = computed(() => ({
   stroke: { width: [0, 0, 0, 0, 0, 3], curve: 'smooth' },
   colors: ['#A78BFA', '#F472B6', '#FBBF24', '#60A5FA', '#34D399', '#F87171'],
   grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 10 } },
-  xaxis: { 
-    categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-    labels: { style: { colors: '#94a3b8', fontSize: '10px' } }
-  },
+  xaxis: { categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
   yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
-  legend: { position: 'top', horizontalAlign: 'center', labels: { colors: '#f1f5f9' }, fontSize: '11px', offsetY: 0 },
+  legend: { position: 'top', horizontalAlign: 'center', labels: { colors: '#f1f5f9' }, fontSize: '11px' },
   dataLabels: { enabled: false },
   tooltip: {
-    theme: 'dark',
-    shared: true,
+    theme: 'dark', shared: true,
     custom: function({ series, dataPointIndex, w }) {
       let total = 0;
-      let html = `<div class="custom-tooltip-box">
-                    <div class="tooltip-header">${w.globals.categoryLabels[dataPointIndex]} ${anoVisualizado.value}</div>
-                    <div class="tooltip-body">`;
+      let html = `<div class="custom-tooltip-box"><div class="tooltip-header">${w.globals.categoryLabels[dataPointIndex]} ${anoVisualizado.value}</div><div class="tooltip-body">`;
       w.config.series.forEach((s, idx) => {
         const val = series[idx][dataPointIndex];
         if (s.type === 'column') total += val;
-        html += `<div class="tooltip-row">
-                  <span class="dot" style="background:${w.globals.colors[idx]}"></span>
-                  <span>${s.name}:</span>
-                  <span class="value">${formatCurrency(val)}</span>
-                </div>`;
+        html += `<div class="tooltip-row"><span class="dot" style="background:${w.globals.colors[idx]}"></span><span>${s.name}:</span><span class="value">${formatCurrency(val)}</span></div>`;
       });
-      html += `<div class="tooltip-total">
-                  <span>TOTAL:</span>
-                  <span class="text-emerald-400">${formatCurrency(total)}</span>
-               </div></div></div>`;
-      return html;
+      return html + `<div class="tooltip-total"><span>TOTAL:</span><span>${formatCurrency(total)}</span></div></div></div>`;
     }
   }
 }));
