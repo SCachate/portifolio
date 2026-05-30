@@ -2,6 +2,44 @@ const db = require('../config/db');
 const { format, toZonedTime } = require('date-fns-tz');
 const { subDays, startOfMonth, startOfYear, subYears, subMonths } = require('date-fns');
 
+exports.getHistorico = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const query = `
+SELECT 
+    mr.yearMonth,
+    mr.classId,
+    mr.netResult,
+    ic.name,
+    ic.color
+FROM 
+    monthly_reports mr
+    LEFT JOIN investment_classes ic ON mr.classId = ic.id
+WHERE
+    mr.userId = ?
+    AND mr.yearMonth > '2026-02'
+    AND mr.yearMonth >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 12 MONTH), '%Y-%m')
+ORDER BY 
+    mr.yearMonth ASC, 
+    ic.name ASC;
+        `;
+
+        const [rows] = await db.execute(query, [userId]);
+        const formattedRows = rows.map(row => ({
+            yearMonth: row.yearMonth,
+            classId: parseInt(row.classId),
+            netResult: parseFloat(row.netResult || 0),
+            name: row.name,
+            color: row.color
+        }));
+
+        res.json(formattedRows);
+    } catch (error) {
+        console.error("Erro no getHistorico:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
 exports.getPendencias = async (req, res) => {
     try {
         const [rows] = await db.query('CALL sp_obter_pendencias_dashboard(?)', [req.userId]);
