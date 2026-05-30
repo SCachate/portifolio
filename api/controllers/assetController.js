@@ -29,7 +29,7 @@ exports.getAssetsByClassWithResult = asyncHandler(async (req, res) => {
 		    -- HAVING SUM(quantity) <> 0
 		) resumo
 		JOIN assets a ON resumo.assetId = a.id
-		JOIN JOIN (
+		JOIN (
 		    SELECT 
 		        vrda.assetId, 
 		        SUM(vrda.lucro_prejuizo_dia_brl) AS total_lucro
