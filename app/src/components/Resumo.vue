@@ -373,7 +373,7 @@ const historicoPronto = computed(() => {
 const historicoResultadoOptions = computed(() => ({
   chart: { type: 'bar', stacked: true, toolbar: { show: false }, fontFamily: 'inherit' },
   colors: historicoResultadoProcessado.value.cores,
-  grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 10 } },
+  grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 20 } }, // Aumentado o top para dar espaço ao texto
   xaxis: { 
     type: 'category',
     categories: historicoResultadoProcessado.value.meses,
@@ -381,29 +381,26 @@ const historicoResultadoOptions = computed(() => ({
   },
   yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' }, formatter: (v) => Math.round(v).toLocaleString('pt-BR') } },
   legend: { show: false }, 
-  
-  // Mantém os dataLabels das fatias individuais ocultos para não poluir
   dataLabels: { enabled: false },
-  
   plotOptions: { 
     bar: { 
       borderRadius: 4, 
       columnWidth: '65%',
-      // --- CONFIGURAÇÃO DO TOTALIZADOR NO TOPO DA BARRA ---
       dataLabels: {
         total: {
-          enabled: true, // Ativa a exibição do valor total
+          enabled: true,
+          offsetX: 0,
+          offsetY: -8, // Joga o texto para cima da barra para não sumir no topo
           style: {
-            colors: ['#ffffff'], // Cor do texto (Branco para destacar no fundo escuro)
-            fontSize: '10px',
-            fontWeight: 600
+            color: '#ffffff', // Força a cor branca pura para dar contraste total no fundo escuro
+            fontSize: '11px',
+            fontWeight: 700
           },
-          // Formata o número para o padrão de moeda encurtado ou arredondado se preferir
           formatter: function (val) {
             return Number(val).toLocaleString('pt-BR', {
               style: 'currency',
               currency: 'BRL',
-              minimumFractionDigits: 0, // Remove centavos no topo para não embolar visualmente
+              minimumFractionDigits: 0,
               maximumFractionDigits: 0
             });
           }
