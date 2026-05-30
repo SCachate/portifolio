@@ -444,7 +444,7 @@ const historicoResultadoOptions = computed(() => ({
   legend: { show: false }, 
   dataLabels: { enabled: false },
   plotOptions: { bar: { borderRadius: 4, columnWidth: '65%' } },
-  tooltip: { theme: 'dark', shared: true, y: { formatter: (val) => formatCurrency(val) } }
+  tooltip: { theme: 'dark', shared: true, intersect: false, y: { formatter: (val) => formatCurrency(val) } }
 }));
 
 const evolucaoOptions = computed(() => ({
