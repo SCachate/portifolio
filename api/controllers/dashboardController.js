@@ -6,22 +6,56 @@ exports.getHistorico = async (req, res) => {
     try {
         const userId = req.userId;
         const query = `
+-- 1. Buscamos e filtramos os dados detalhados mês a mês (Sua query original)
+WITH dados_mensais AS (
+    SELECT 
+        mr.yearMonth,
+        mr.classId,
+        mr.netResult,
+        ic.name,
+        ic.color
+    FROM 
+        monthly_reports mr
+        LEFT JOIN investment_classes ic ON mr.classId = ic.id
+    WHERE
+        mr.userId = ?
+        AND mr.yearMonth > '2026-02'
+        AND mr.yearMonth >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 12 MONTH), '%Y-%m')
+)
+
+-- 2. Trazemos os meses normais
 SELECT 
-    mr.yearMonth,
-    mr.classId,
-    mr.netResult,
-    ic.name,
-    ic.color
+    yearMonth,
+    classId,
+    netResult,
+    name,
+    color,
+    0 AS ordenacao -- Usado para garantir que os meses venham primeiro
 FROM 
-    monthly_reports mr
-    LEFT JOIN investment_classes ic ON mr.classId = ic.id
-WHERE
-    mr.userId = ?
-    AND mr.yearMonth > '2026-02'
-    AND mr.yearMonth >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 12 MONTH), '%Y-%m')
+    dados_mensais
+
+UNION ALL
+
+-- 3. Injetamos a barra de Acumulado/Total somando cada classe individualmente
+SELECT 
+    'Acumulado' AS yearMonth, -- Texto que vai aparecer no eixo X do gráfico
+    classId,
+    SUM(netResult) AS netResult, -- Soma tudo daquela classe específica
+    name,
+    color,
+    1 AS ordenacao -- Garante que essa coluna fique fixada na última posição (extrema direita)
+FROM 
+    dados_mensais
+GROUP BY 
+    classId, 
+    name, 
+    color
+
+-- 4. Ordena tudo colocando os meses em ordem cronológica e o Acumulado no final
 ORDER BY 
-    mr.yearMonth ASC, 
-    ic.name ASC;
+    ordenacao ASC, 
+    yearMonth ASC, 
+    name ASC;
         `;
 
         const [rows] = await db.execute(query, [userId]);
