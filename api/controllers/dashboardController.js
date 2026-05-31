@@ -50,6 +50,22 @@ GROUP BY
     classId, 
     name, 
     color
+UNION ALL
+
+-- 4. Injetamos a barra de Média de cada classe individualmente
+SELECT 
+    'Média' AS yearMonth, -- Texto que vai aparecer no eixo X do gráfico
+    classId,
+    AVG(netResult) AS netResult, -- Soma tudo daquela classe específica
+    name,
+    color,
+    2 AS ordenacao -- Garante que essa coluna fique fixada na última posição (extrema direita)
+FROM 
+    dados_mensais
+GROUP BY 
+    classId, 
+    name, 
+    color
 
 -- 4. Ordena tudo colocando os meses em ordem cronológica e o Acumulado no final
 ORDER BY 
