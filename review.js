@@ -3,7 +3,7 @@ import execSync from 'child_process';
 import fs from 'fs';
 
 // 1. Inicializa a API do Gemini (ela pega a GEMINI_API_KEY automaticamente das variáveis de ambiente)
-const ai = new GoogleGenAI();
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 async function runCodeReview() {
   try {

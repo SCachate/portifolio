@@ -1,4 +1,7 @@
-name: AI Code Review
+- name: Run AI Review Script
+  env:
+    GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  run: node --experimental-default-type=module review.js
 
 on:
   push:
