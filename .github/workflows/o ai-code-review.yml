@@ -1,7 +1,4 @@
-- name: Run AI Review Script
-  env:
-    GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-  run: node --experimental-default-type=module review.js
+name: AI Code Review
 
 on:
   push:
@@ -27,12 +24,9 @@ jobs:
         with:
           node-version: '20'
 
-      # Instala o SDK da IA na raiz temporária da máquina virtual do GitHub
       - name: Install Gemini SDK
         run: npm install @google/genai
 
-      # O segredo está aqui: adicionamos a flag '--experimental-default-type=module'
-      # Isso força o Node a aceitar o 'import' mesmo sem um package.json por perto
       - name: Run AI Review Script
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
