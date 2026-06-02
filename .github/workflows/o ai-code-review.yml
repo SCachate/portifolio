@@ -1,0 +1,47 @@
+name: AI Code Review
+
+on:
+  push:
+    branches:
+      - main # Dispara sempre que você enviar alterações para a branch principal
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write # Permissão caso queira evoluir para comentar em PRs depois
+
+    steps:
+      # 1. Baixa o código do repositório para a máquina virtual do GitHub
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # Necessário para o git diff conseguir comparar com o commit anterior
+
+      # 2. Configura o ambiente Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 3. Instala apenas a biblioteca do Gemini necessária para o script
+      - name: Install Gemini SDK
+        run: npm install @google/genai
+
+      # 4. Executa o script que criamos no Passo 2
+      - name: Run AI Review Script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node review.js
+
+      # 5. Cria um sumário nativo no próprio painel do GitHub Actions com o resultado
+      - name: Add Review to Job Summary
+        if: always()
+        run: |
+          if [ -f review_output.md ]; then
+            cat review_output.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Nenhum relatório de review foi gerado." >> $GITHUB_STEP_SUMMARY
+          fi
