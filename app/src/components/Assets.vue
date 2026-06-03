@@ -33,9 +33,9 @@
         </div>
 
         <div class="space-y-12 pb-10">
-          <section v-for="(grupo, classe) in patrimonioAgrupado" :key="classe" class="bg-[#1a1d2b] rounded-xl border border-slate-800/50 overflow-hidden shadow-sm">
+          <section v-for="(grupo, classe) in patrimonioAgrupado" :key="classe" class="bg-[#1a1d2b] rounded-xl border border-slate-800/50 overflow-hidden shadow-sm section-block">
             
-            <div class="px-8 py-6 border-b border-slate-800/50 bg-[#1c2030]">
+            <div class="px-8 py-6 border-b border-slate-800/50 bg-[#1c2030] header-block">
               <div class="flex justify-between items-start mb-5">
                 <div class="flex items-center gap-4">
                   <div class="w-1.5 h-10 bg-emerald-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.4)]"></div>
@@ -75,47 +75,49 @@
             </div>
 
             <div class="overflow-x-auto">
-              <table class="w-full">
+              <table class="w-full pdf-table">
                 <thead>
                   <tr class="text-left text-[10px] uppercase tracking-[0.2em] text-slate-500 border-b border-slate-800/30">
-                    <th class="px-8 py-5">Ativo</th>
-                    <th class="px-8 py-5">Instituição</th>
-                    <th class="px-8 py-5 text-right font-bold text-emerald-500/80">Valor</th>
-                    <th class="px-8 py-5 text-right">Quantidade</th>
-                    <th class="px-8 py-5 text-right">Preço Médio</th>
-                    <th class="px-8 py-5 text-right">Cotação</th>
-                    <th class="px-8 py-5 text-right">Rentabilidade (%)</th>
+                    <th class="px-8 py-5 cell-ativo">Ativo</th>
+                    <th class="px-8 py-5 cell-inst">Instituição</th>
+                    <th class="px-8 py-5 text-right font-bold text-emerald-500/80 cell-val">Valor</th>
+                    <th class="px-8 py-5 text-right cell-qtd">Quantidade</th>
+                    <th class="px-8 py-5 text-right cell-pm">Preço Médio</th>
+                    <th class="px-8 py-5 text-right cell-cot">Cotação</th>
+                    <th class="px-8 py-5 text-right cell-res">Resultado</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/30">
                   <tr v-for="item in grupo.itens" :key="item.ativo" class="hover:bg-slate-800/20 transition-all group">
                     
-                    <td class="px-8 py-5">
+                    <td class="px-8 py-5 cell-ativo">
                       <div class="font-bold text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight">
                         {{ item.ativo || '---' }}
                       </div>
                       <div class="text-[10px] text-slate-500 font-medium uppercase mt-0.5">{{ item.description }}</div>
                     </td>
                     
-                    <td class="px-8 py-5 text-[11px] text-slate-400 uppercase tracking-tighter">{{ item.corretora }}</td>
+                    <td class="px-8 py-5 text-[11px] text-slate-400 uppercase tracking-tighter cell-inst">{{ item.corretora }}</td>
                     
-                    <td class="px-8 py-5 text-right">
+                    <td class="px-8 py-5 text-right cell-val">
                       <span class="font-bold text-white" :class="{'text-rose-500': item.valor_mercado_brl < 0}">
                         {{ formatCurrency(item.valor_mercado_brl) }}
                       </span>
                     </td>
 
-                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400">{{ item.quantidade }}</td>
+                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400 cell-qtd">
+                      {{ item.quantidade ? Number(item.quantidade).toFixed(2) : '0.00' }}
+                    </td>
                     
-                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400">
+                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400 cell-pm">
                       {{ formatCurrency(item.preco_medio_brl) }}
                     </td>
 
-                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400">
+                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400 cell-cot">
                       {{ formatCurrency(item.cotacao_atual_brl) }}
                     </td>
                     
-                    <td class="px-8 py-5 text-right font-mono text-[12px]">
+                    <td class="px-8 py-5 text-right font-mono text-[12px] cell-res">
                       <span 
                         v-if="item.preco_medio_brl && item.preco_medio_brl > 0"
                         :class="((item.cotacao_atual_brl / item.preco_medio_brl) - 1) * 100 >= 0 ? 'text-emerald-400' : 'text-rose-400'"
@@ -192,14 +194,16 @@ const formatCurrency = (v) => {
 const generatePDF = () => {
   const element = document.getElementById('report-container');
   const opt = {
-    margin: [10, 5, 10, 5],
+    margin: [12, 8, 12, 8],
     filename: 'K-Portfolio-Ativos.pdf',
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { 
       scale: 2, 
       useCORS: true, 
       backgroundColor: '#0f111a',
-      logging: false 
+      logging: false,
+      letterRendering: true,
+      windowWidth: 1250 // Força o motor a criar uma área virtual ampla para que as colunas caibam
     },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
@@ -211,7 +215,53 @@ const generatePDF = () => {
 .font-mono {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
+
 @media print {
-  .no-print { display: none !important; }
+  .no-print { 
+    display: none !important; 
+  }
+  
+  #report-container {
+    width: 100% !important;
+    max-w-full !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .section-block {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-bottom: 20px !important;
+  }
+
+  .header-block {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+  }
+
+  .pdf-table {
+    table-layout: fixed !important;
+    width: 100% !important;
+  }
+
+  /* Redefinição de paddings internos para comprimir a tabela horizontalmente no papel */
+  .pdf-table th, 
+  .pdf-table td {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+  }
+
+  /* Distribuição proporcional exata das colunas para evitar estouro da margem direita */
+  .cell-ativo { width: 18% !important; }
+  .cell-inst  { width: 16% !important; }
+  .cell-val   { width: 15% !important; }
+  .cell-qtd   { width: 12% !important; }
+  .cell-pm    { width: 13% !important; }
+  .cell-cot   { width: 13% !important; }
+  .cell-res   { width: 13% !important; }
 }
 </style>
