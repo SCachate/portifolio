@@ -52,22 +52,7 @@
 
       <div class="chart-card flex-col-container">
         <div class="header-top-row">
-          <h3 class="chart-title m-0">Evolução Patrimonial</h3>
-          <div class="year-navigator">
-            <button 
-              @click="mudarAno(-1)" 
-              class="nav-btn" 
-              :disabled="loadingEvolucao"
-              title="Ano Anterior"
-            >&lt;</button>
-            <span class="year-display">{{ anoVisualizado }}</span>
-            <button 
-              @click="mudarAno(1)" 
-              class="nav-btn" 
-              :disabled="loadingEvolucao"
-              title="Próximo Ano"
-            >&gt;</button>
-          </div>
+          <h3 class="chart-title m-0">Evolução Patrimonial</h3>          
         </div>
         
         <div class="card-body-v2">
@@ -418,7 +403,7 @@ const evolucaoOptions = computed(() => ({
   grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 10 } },
   xaxis: { categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
   yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
-  legend: { position: 'top', horizontalAlign: 'center', labels: { colors: '#f1f5f9' }, fontSize: '11px' },
+  legend: { display: false, position: 'top', horizontalAlign: 'center', labels: { colors: '#f1f5f9' }, fontSize: '11px' },
   dataLabels: { enabled: false },
   tooltip: {
     theme: 'dark', shared: true,
