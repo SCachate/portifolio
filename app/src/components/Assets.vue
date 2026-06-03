@@ -18,14 +18,14 @@
           </button>
         </div>
 
-        <div class="bg-[#1a1d2b] rounded-xl p-8 border border-slate-800/50 relative overflow-hidden shadow-2xl">
+        <div class="bg-[#1a1d2b] rounded-xl p-8 border border-slate-800/50 relative overflow-hidden shadow-2xl total-card">
           <div class="relative z-10">
             <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Valor Total de Mercado</p>
-            <h2 class="text-4xl font-bold text-white tracking-tighter">
+            <h2 class="text-4xl font-bold text-white tracking-tighter total-val-text">
               {{ formatCurrency(totalGeral) }}
             </h2>
           </div>
-          <div class="absolute right-8 top-1/2 -translate-y-1/2 hidden md:block">
+          <div class="absolute right-8 top-1/2 -translate-y-1/2 hidden md:block icon-box">
              <div class="bg-slate-800/30 p-3 rounded-lg border border-slate-700/50 backdrop-blur-sm">
                <span class="text-3xl opacity-80">📊</span>
              </div>
@@ -33,17 +33,17 @@
         </div>
 
         <div class="space-y-12 pb-10">
-          <section v-for="(grupo, classe) in patrimonioAgrupado" :key="classe" class="bg-[#1a1d2b] rounded-xl border border-slate-800/50 overflow-hidden shadow-sm">
+          <section v-for="(grupo, classe) in patrimonioAgrupado" :key="classe" class="bg-[#1a1d2b] rounded-xl border border-slate-800/50 overflow-hidden shadow-sm section-block">
             
-            <div class="px-8 py-6 border-b border-slate-800/50 bg-[#1c2030]">
+            <div class="px-8 py-6 border-b border-slate-800/50 bg-[#1c2030] header-block">
               <div class="flex justify-between items-start mb-5">
                 <div class="flex items-center gap-4">
-                  <div class="w-1.5 h-10 bg-emerald-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.4)]"></div>
+                  <div class="w-1.5 h-10 bg-emerald-500 rounded-full indicator-bar shadow-[0_0_12px_rgba(16,185,129,0.4)]"></div>
                   <div>
-                    <h3 class="font-bold text-white text-xl uppercase tracking-tight">{{ classe }}</h3>
-                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">
+                    <h3 class="font-bold text-white text-xl uppercase tracking-tight class-title">{{ classe }}</h3>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-1 meta-text">
                       Meta: {{ grupo.target }}% | 
-                      <span :class="getStatusColor(grupo.percentualAtual, grupo.target)">
+                      <span :class="getStatusColor(grupo.percentualAtual, grupo.target)" class="diff-text">
                         Diferença: {{ (grupo.percentualAtual - grupo.target).toFixed(1) }}%
                       </span>
                     </p>
@@ -51,34 +51,33 @@
                 </div>
                 
                 <div class="text-right">
-                  <span class="text-xl font-bold text-white font-mono block leading-none">
+                  <span class="text-xl font-bold text-white font-mono block leading-none class-total-text">
                     {{ formatCurrency(grupo.totalClasse) }}
                   </span>
-                  <span class="inline-block mt-2 text-[10px] font-black text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 uppercase tracking-tighter">
+                  <span class="inline-block mt-2 text-[10px] font-black text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 uppercase tracking-tighter badge-atual">
                     Atual: {{ grupo.percentualAtual.toFixed(1) }}%
                   </span>
                 </div>
               </div>
 
-              <div class="relative w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800/50">
+              <div class="relative w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800/50 progress-bg">
                 <div 
-                  class="h-full transition-all duration-1000 ease-out"
+                  class="h-full transition-all duration-1000 ease-out progress-bar"
                   :class="grupo.percentualAtual > grupo.target ? 'bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.3)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]'"
                   :style="{ width: `${Math.min(grupo.percentualAtual, 100)}%` }"
                 ></div>
                 
                 <div 
-                  class="absolute top-0 h-full w-0.5 bg-white z-20 shadow-[0_0_8px_white]"
+                  class="absolute top-0 h-full w-0.5 bg-white z-20 target-line shadow-[0_0_8px_white]"
                   :style="{ left: `${grupo.target}%` }"
                 ></div>
               </div>
             </div>
 
-            <!-- Mantemos a div com overflow-x-auto nativa para a experiência responsiva em telas móveis e monitores -->
             <div class="overflow-x-auto pdf-table-wrapper">
               <table class="w-full min-w-[900px] md:min-w-0 table-fixed-layout">
                 <thead>
-                  <tr class="text-left text-[10px] uppercase tracking-[0.2em] text-slate-500 border-b border-slate-800/30">
+                  <tr class="text-left text-[10px] uppercase tracking-[0.2em] text-slate-500 border-b border-slate-800/30 table-header-row">
                     <th class="px-8 py-5 col-ativo">Ativo</th>
                     <th class="px-8 py-5 col-inst">Instituição</th>
                     <th class="px-8 py-5 text-right font-bold text-emerald-500/80 col-val">Valor</th>
@@ -88,44 +87,44 @@
                     <th class="px-8 py-5 text-right col-res">Resultado</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-800/30">
-                  <tr v-for="item in grupo.itens" :key="item.ativo" class="hover:bg-slate-800/20 transition-all group">
+                <tbody class="divide-y divide-slate-800/30 table-body">
+                  <tr v-for="item in grupo.itens" :key="item.ativo" class="hover:bg-slate-800/20 transition-all group table-row">
                     
-                    <td class="px-8 py-5 col-ativo">
-                      <div class="font-bold text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight">
+                    <td class="px-8 py-5 col-ativo cell-data">
+                      <div class="font-bold text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight asset-ticker">
                         {{ item.ativo || '---' }}
                       </div>
-                      <div class="text-[10px] text-slate-500 font-medium uppercase mt-0.5">{{ item.description }}</div>
+                      <div class="text-[10px] text-slate-500 font-medium uppercase mt-0.5 asset-desc">{{ item.description }}</div>
                     </td>
                     
-                    <td class="px-8 py-5 text-[11px] text-slate-400 uppercase tracking-tighter col-inst">{{ item.corretora }}</td>
+                    <td class="px-8 py-5 text-[11px] text-slate-400 uppercase tracking-tighter col-inst cell-data inst-text">{{ item.corretora }}</td>
                     
-                    <td class="px-8 py-5 text-right col-val">
-                      <span class="font-bold text-white" :class="{'text-rose-500': item.valor_mercado_brl < 0}">
+                    <td class="px-8 py-5 text-right col-val cell-data val-text">
+                      <span class="font-bold text-white" :class="item.valor_mercado_brl < 0 ? 'text-rose-500 custom-negative' : 'custom-positive'">
                         {{ formatCurrency(item.valor_mercado_brl) }}
                       </span>
                     </td>
 
-                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400 col-qtd">
+                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400 col-qtd cell-data numeric-text">
                       {{ item.quantidade ? Number(item.quantidade).toFixed(2) : '0.00' }}
                     </td>
                     
-                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400 col-pm">
+                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400 col-pm cell-data numeric-text">
                       {{ formatCurrency(item.preco_medio_brl) }}
                     </td>
 
-                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400 col-cot">
+                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400 col-cot cell-data numeric-text">
                       {{ formatCurrency(item.cotacao_atual_brl) }}
                     </td>
                     
-                    <td class="px-8 py-5 text-right font-mono text-[12px] col-res">
+                    <td class="px-8 py-5 text-right font-mono text-[12px] col-res cell-data result-cell">
                       <span 
                         v-if="item.preco_medio_brl && item.preco_medio_brl > 0"
-                        :class="((item.cotacao_atual_brl / item.preco_medio_brl) - 1) * 100 >= 0 ? 'text-emerald-400' : 'text-rose-400'"
+                        :class="((item.cotacao_atual_brl / item.preco_medio_brl) - 1) * 100 >= 0 ? 'text-emerald-400 custom-positive-pct' : 'text-rose-400 custom-negative-pct'"
                       >
                         {{ (((item.cotacao_atual_brl / item.preco_medio_brl) - 1) * 100).toFixed(2) }}%
                       </span>
-                      <span v-else class="text-slate-600">---</span>
+                      <span v-else class="text-slate-600 null-text">---</span>
                     </td>
 
                   </tr>
@@ -196,60 +195,161 @@ const generatePDF = () => {
   const originalElement = document.getElementById('report-container');
   if (!originalElement) return;
 
-  // 1. Criação do Clone Profundo na Memória para isolamento total do escopo de tela
+  // 1. Criação do Clone para isolamento total do escopo
   const clonedElement = originalElement.cloneNode(true);
 
-  // 2. Remove componentes de interface irrelevantes para o relatório impresso
-  const noPrintItems = clonedElement.querySelectorAll('.no-print');
-  noPrintItems.forEach(el => el.remove());
+  // 2. Remove botões e elementos de interface interativos
+  clonedElement.querySelectorAll('.no-print').forEach(el => el.remove());
 
-  // 3. Sobrescrita Cirúrgica de Layout para dimensionamento A4 estrito (Evita cortes laterais)
+  // 3. Reconfiguração de dimensões para o padrão A4 físico
   clonedElement.style.width = '840px'; 
   clonedElement.style.maxWidth = '840px';
-  clonedElement.style.padding = '10px';
+  clonedElement.style.padding = '15px';
   clonedElement.style.margin = '0';
 
-  // 4. Tratamento dos wrappers de tabela para remover restrições de rolagem lateral (overflow)
-  const wrappers = clonedElement.querySelectorAll('.pdf-table-wrapper');
-  wrappers.forEach(w => {
-    w.style.overflowX = 'visible';
-    w.style.width = '100%';
-    w.style.maxWidth = '100%';
-  });
-
-  // 5. Configuração estrita de proporção de colunas e quebras de página
-  const tables = clonedElement.querySelectorAll('.table-fixed-layout');
-  tables.forEach(t => {
-    t.style.tableLayout = 'fixed';
-    t.style.width = '100%';
-    t.style.minWidth = '100%';
+  // =========================================================================
+  // 🌟 INJEÇÃO DO CONCEITO CLEAN PAPER (MODO CLARO EXCLUSIVO DO PDF)
+  // =========================================================================
+  
+  // Card de Valor Total
+  const totalCard = clonedElement.querySelector('.total-card');
+  if (totalCard) {
+    totalCard.style.backgroundColor = '#f8fafc'; // bg-slate-50
+    totalCard.style.borderColor = '#cbd5e1';     // border-slate-300
+    totalCard.style.padding = '1.5rem';
     
-    // Otimização das células para compressão segura de dados financeiros
-    const cells = t.querySelectorAll('th, td');
-    cells.forEach(c => {
-      c.style.paddingLeft = '6px';
-      c.style.paddingRight = '6px';
-      c.style.fontSize = '11px';
-      c.style.wordBreak = 'break-all';
-      c.style.whiteSpace = 'normal';
-    });
+    const totalValText = totalCard.querySelector('.total-val-text');
+    if (totalValText) totalValText.style.color = '#0f172a'; // text-slate-900
+  }
+  
+  // Oculta caixa do ícone decorativo
+  const iconBox = clonedElement.querySelector('.icon-box');
+  if (iconBox) iconBox.remove();
 
-    // Injeção inline de larguras relativas baseadas nas classes dinâmicas
-    t.querySelectorAll('.col-ativo').forEach(el => el.style.width = '16%');
-    t.querySelectorAll('.col-inst').forEach(el => el.style.width = '16%');
-    t.querySelectorAll('.col-val').forEach(el => el.style.width = '16%');
-    t.querySelectorAll('.col-qtd').forEach(el => el.style.width = '13%');
-    t.querySelectorAll('.col-pm').forEach(el => el.style.width = '13%');
-    t.querySelectorAll('.col-cot').forEach(el => el.style.width = '13%');
-    t.querySelectorAll('.col-res').forEach(el => el.style.width = '13%');
-  });
+  // Tratamento de Seções de Classes de Ativo e Tabelas
+  clonedElement.querySelectorAll('.section-block').forEach(section => {
+    section.style.backgroundColor = '#ffffff';
+    section.style.borderColor = '#cbd5e1';
+    section.style.pageBreakInside = 'avoid';
+    section.style.breakInside = 'avoid';
+    section.style.marginBottom = '25px';
+    section.style.boxShadow = 'none';
 
-  // Força quebras de página limpas entre blocos de ativos
-  const sections = clonedElement.querySelectorAll('section');
-  sections.forEach(s => {
-    s.style.pageBreakInside = 'avoid';
-    s.style.breakInside = 'avoid';
-    s.style.marginBottom = '25px';
+    // Cabeçalho da Seção de Classe
+    const headerBlock = section.querySelector('.header-block');
+    if (headerBlock) {
+      headerBlock.style.backgroundColor = '#f1f5f9'; // bg-slate-100
+      headerBlock.style.borderColor = '#cbd5e1';
+      headerBlock.style.padding = '1rem 1.25rem';
+      
+      const classTitle = headerBlock.querySelector('.class-title');
+      if (classTitle) classTitle.style.color = '#0f172a';
+
+      const classTotalText = headerBlock.querySelector('.class-total-text');
+      if (classTotalText) classTotalText.style.color = '#0f172a';
+
+      const metaText = headerBlock.querySelector('.meta-text');
+      if (metaText) metaText.style.color = '#475569'; // text-slate-600
+
+      // Ajusta o badge de alocação atual
+      const badgeAtual = headerBlock.querySelector('.badge-atual');
+      if (badgeAtual) {
+        badgeAtual.style.backgroundColor = '#e2e8f0';
+        badgeAtual.style.borderColor = '#cbd5e1';
+        badgeAtual.style.color = '#334155';
+      }
+    }
+
+    // Barra de Progresso e Linha Alvo
+    const progressBg = section.querySelector('.progress-bg');
+    if (progressBg) {
+      progressBg.style.backgroundColor = '#cbd5e1'; // Fundo claro para a barra vazia
+      progressBg.style.borderColor = '#94a3b8';
+      
+      const targetLine = progressBg.querySelector('.target-line');
+      if (targetLine) targetLine.style.backgroundColor = '#0f172a'; // Linha de meta vira preta/escura
+    }
+
+    // Configurações das tabelas e remoção de overflows
+    const tableWrapper = section.querySelector('.pdf-table-wrapper');
+    if (tableWrapper) {
+      tableWrapper.style.overflowX = 'visible';
+      tableWrapper.style.width = '100%';
+    }
+
+    const table = section.querySelector('.table-fixed-layout');
+    if (table) {
+      table.style.tableLayout = 'fixed';
+      table.style.width = '100%';
+      table.style.minWidth = '100%';
+
+      // Linha de Cabeçalhos da Tabela
+      const thRow = table.querySelector('.table-header-row');
+      if (thRow) {
+        thRow.style.borderColor = '#cbd5e1';
+        thRow.querySelectorAll('th').forEach(th => {
+          th.style.color = '#475569'; // Títulos das colunas em slate escuro
+        });
+      }
+
+      // Células de Dados da Tabela
+      table.querySelectorAll('.table-row').forEach((row, rowIndex) => {
+        row.style.borderColor = '#e2e8f0';
+        // Efeito zebrado sutil para facilitar leitura em papel
+        if (rowIndex % 2 === 1) {
+          row.style.backgroundColor = '#f8fafc';
+        }
+
+        row.querySelectorAll('.cell-data').forEach(cell => {
+          cell.style.paddingLeft = '6px';
+          cell.style.paddingRight = '6px';
+          cell.style.paddingTop = '0.75rem';
+          cell.style.paddingBottom = '0.75rem';
+          cell.style.fontSize = '11px';
+          cell.style.wordBreak = 'break-all';
+          cell.style.whiteSpace = 'normal';
+          cell.style.color = '#334155'; // Texto padrão cinza-grafite
+        });
+
+        // Estilizações específicas dos elementos internos do grid do PDF
+        const assetTicker = row.querySelector('.asset-ticker');
+        if (assetTicker) assetTicker.style.color = '#0f172a'; // Ticker em preto destacado
+
+        const assetDesc = row.querySelector('.asset-desc');
+        if (assetDesc) assetDesc.style.color = '#64748b';
+
+        const instText = row.querySelector('.inst-text');
+        if (instText) instText.style.color = '#475569';
+
+        const numericTexts = row.querySelectorAll('.numeric-text');
+        numericTexts.forEach(nt => { nt.style.color = '#334155'; });
+
+        // Cores de performance adaptadas para fundo claro (Melhor contraste)
+        const posElement = row.querySelector('.custom-positive');
+        if (posElement) posElement.style.color = '#0f172a'; // Valor total positivo fica preto
+
+        const negElement = row.querySelector('.custom-negative');
+        if (negElement) negElement.style.color = '#b91c1c'; // Vermelho mais forte para papel
+
+        const posPct = row.querySelector('.custom-positive-pct');
+        if (posPct) posPct.style.color = '#047857'; // Verde escuro corporativo
+
+        const negPct = row.querySelector('.custom-negative-pct');
+        if (negPct) negPct.style.color = '#b91c1c'; // Vermelho escuro corporativo
+
+        const nullText = row.querySelector('.null-text');
+        if (nullText) nullText.style.color = '#94a3b8';
+      });
+
+      // Aplicação das larguras calculadas milimetricamente das colunas para A4
+      table.querySelectorAll('.col-ativo').forEach(el => el.style.width = '16%');
+      table.querySelectorAll('.col-inst').forEach(el => el.style.width = '16%');
+      table.querySelectorAll('.col-val').forEach(el => el.style.width = '16%');
+      table.querySelectorAll('.col-qtd').forEach(el => el.style.width = '13%');
+      table.querySelectorAll('.col-pm').forEach(el => el.style.width = '13%');
+      table.querySelectorAll('.col-cot').forEach(el => el.style.width = '13%');
+      table.querySelectorAll('.col-res').forEach(el => el.style.width = '13%');
+    }
   });
 
   const opt = {
@@ -259,17 +359,17 @@ const generatePDF = () => {
     html2canvas: { 
       scale: 2, 
       useCORS: true, 
-      backgroundColor: '#0f111a',
+      backgroundColor: '#ffffff', // 🌟 O fundo do canvas passa a ser estritamente branco
       logging: false,
       letterRendering: true,
-      width: 840 // Garante que a captura fotográfica case exatamente com a largura do clone
+      width: 840
     },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
-  // Passa o clone em memória diretamente para renderização e efetua o download do arquivo estruturado
+  // Renderiza o clone em modo claro e limpa a memória após o download
   html2pdf().set(opt).from(clonedElement).save().then(() => {
-    clonedElement.remove(); // Desaloca o nó clonado da memória
+    clonedElement.remove();
   });
 };
 </script>
@@ -279,7 +379,6 @@ const generatePDF = () => {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
-/* Garante o comportamento correto das tabelas responsivas no dashboard (Ecrã) */
 .table-fixed-layout {
   table-layout: fixed;
   width: 100%;
