@@ -12,9 +12,20 @@
           
           <button 
             @click="generatePDF" 
-            class="flex items-center gap-2 bg-[#1a1d2b] border border-slate-800 text-slate-300 px-4 py-2 rounded-md hover:bg-[#252a3d] transition-all shadow-lg text-sm font-medium"
+            :disabled="isExporting"
+            class="flex items-center gap-2 bg-[#1a1d2b] border border-slate-800 text-slate-300 px-4 py-2 rounded-md hover:bg-[#252a3d] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg text-sm font-medium"
           >
-            <span class="text-emerald-500">📄</span> Exportar PDF
+            <template v-if="isExporting">
+              <svg class="animate-spin h-4 w-4 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Gerando Relatório...</span>
+            </template>
+            <template v-else>
+              <span class="text-emerald-500">📄</span> 
+              <span>Exportar PDF</span>
+            </template>
           </button>
         </div>
 
@@ -147,12 +158,15 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useApi } from '../composables/useApi';
 import AsyncLoader from './AsyncLoader.vue';
 import html2pdf from 'html2pdf.js';
 
 const { data: assets, loading, error } = useApi('/assets/patrimonio');
+
+// Estado reativo para controlar o feedback de carregamento da exportação
+const isExporting = ref(false);
 
 const totalGeral = computed(() => {
   if (!assets.value) return 0;
@@ -195,52 +209,57 @@ const generatePDF = () => {
   const originalElement = document.getElementById('report-container');
   if (!originalElement) return;
 
-  // 1. Criação do Clone para isolamento total do escopo
+  // Ativa o feedback visual imediatamente no clique
+  isExporting.value = true;
+
+  // 1. Criação do Clone para isolamento do escopo gráfico
   const clonedElement = originalElement.cloneNode(true);
 
-  // 2. Remove botões e elementos de interface interativos
+  // 2. Remove componentes decorativos e botões
   clonedElement.querySelectorAll('.no-print').forEach(el => el.remove());
 
-  // 3. Reconfiguração de dimensões para o padrão A4 físico
+  // 3. Reconfiguração estrita de dimensões A4 base
   clonedElement.style.width = '840px'; 
   clonedElement.style.maxWidth = '840px';
   clonedElement.style.padding = '15px';
   clonedElement.style.margin = '0';
 
   // =========================================================================
-  // 🌟 INJEÇÃO DO CONCEITO CLEAN PAPER (MODO CLARO EXCLUSIVO DO PDF)
+  // CUSTOMIZAÇÃO DO MODO PAPER CLEAN (FONTE BRANCA -> GRAFITE)
   // =========================================================================
   
-  // Card de Valor Total
   const totalCard = clonedElement.querySelector('.total-card');
   if (totalCard) {
-    totalCard.style.backgroundColor = '#f8fafc'; // bg-slate-50
-    totalCard.style.borderColor = '#cbd5e1';     // border-slate-300
+    totalCard.style.backgroundColor = '#f8fafc';
+    totalCard.style.borderColor = '#cbd5e1';
     totalCard.style.padding = '1.5rem';
     
     const totalValText = totalCard.querySelector('.total-val-text');
-    if (totalValText) totalValText.style.color = '#0f172a'; // text-slate-900
+    if (totalValText) totalValText.style.color = '#0f172a';
   }
   
-  // Oculta caixa do ícone decorativo
   const iconBox = clonedElement.querySelector('.icon-box');
   if (iconBox) iconBox.remove();
 
-  // Tratamento de Seções de Classes de Ativo e Tabelas
   clonedElement.querySelectorAll('.section-block').forEach(section => {
     section.style.backgroundColor = '#ffffff';
     section.style.borderColor = '#cbd5e1';
-    section.style.pageBreakInside = 'avoid';
-    section.style.breakInside = 'avoid';
-    section.style.marginBottom = '25px';
     section.style.boxShadow = 'none';
+    section.style.marginBottom = '20px';
+    
+    // 🌟 RESOLUÇÃO DO ESPAÇAMENTO EXCESSIVO: 
+    // Removemos a proibição de quebra na section inteira para evitar que blocos grandes pulem de página
+    section.style.pageBreakInside = 'auto';
+    section.style.breakInside = 'auto';
 
-    // Cabeçalho da Seção de Classe
     const headerBlock = section.querySelector('.header-block');
     if (headerBlock) {
-      headerBlock.style.backgroundColor = '#f1f5f9'; // bg-slate-100
+      headerBlock.style.backgroundColor = '#f1f5f9';
       headerBlock.style.borderColor = '#cbd5e1';
       headerBlock.style.padding = '1rem 1.25rem';
+      // 🌟 Evita que apenas o cabeçalho da classe fique órfão no fim de uma página
+      headerBlock.style.pageBreakAfter = 'avoid';
+      headerBlock.style.breakAfter = 'avoid';
       
       const classTitle = headerBlock.querySelector('.class-title');
       if (classTitle) classTitle.style.color = '#0f172a';
@@ -249,9 +268,8 @@ const generatePDF = () => {
       if (classTotalText) classTotalText.style.color = '#0f172a';
 
       const metaText = headerBlock.querySelector('.meta-text');
-      if (metaText) metaText.style.color = '#475569'; // text-slate-600
+      if (metaText) metaText.style.color = '#475569';
 
-      // Ajusta o badge de alocação atual
       const badgeAtual = headerBlock.querySelector('.badge-atual');
       if (badgeAtual) {
         badgeAtual.style.backgroundColor = '#e2e8f0';
@@ -260,17 +278,15 @@ const generatePDF = () => {
       }
     }
 
-    // Barra de Progresso e Linha Alvo
     const progressBg = section.querySelector('.progress-bg');
     if (progressBg) {
-      progressBg.style.backgroundColor = '#cbd5e1'; // Fundo claro para a barra vazia
+      progressBg.style.backgroundColor = '#cbd5e1';
       progressBg.style.borderColor = '#94a3b8';
       
       const targetLine = progressBg.querySelector('.target-line');
-      if (targetLine) targetLine.style.backgroundColor = '#0f172a'; // Linha de meta vira preta/escura
+      if (targetLine) targetLine.style.backgroundColor = '#0f172a';
     }
 
-    // Configurações das tabelas e remoção de overflows
     const tableWrapper = section.querySelector('.pdf-table-wrapper');
     if (tableWrapper) {
       tableWrapper.style.overflowX = 'visible';
@@ -283,19 +299,23 @@ const generatePDF = () => {
       table.style.width = '100%';
       table.style.minWidth = '100%';
 
-      // Linha de Cabeçalhos da Tabela
       const thRow = table.querySelector('.table-header-row');
       if (thRow) {
         thRow.style.borderColor = '#cbd5e1';
+        // 🌟 Força o cabeçalho da tabela a não desgrudar da primeira linha
+        thRow.style.pageBreakAfter = 'avoid';
+        thRow.style.breakAfter = 'avoid';
         thRow.querySelectorAll('th').forEach(th => {
-          th.style.color = '#475569'; // Títulos das colunas em slate escuro
+          th.style.color = '#475569';
         });
       }
 
-      // Células de Dados da Tabela
       table.querySelectorAll('.table-row').forEach((row, rowIndex) => {
         row.style.borderColor = '#e2e8f0';
-        // Efeito zebrado sutil para facilitar leitura em papel
+        // 🌟 Protege cada linha de ativo para não ser "cortada ao meio" horizontalmente entre páginas
+        row.style.pageBreakInside = 'avoid';
+        row.style.breakInside = 'avoid';
+
         if (rowIndex % 2 === 1) {
           row.style.backgroundColor = '#f8fafc';
         }
@@ -308,15 +328,14 @@ const generatePDF = () => {
           cell.style.fontSize = '11px';
           cell.style.wordBreak = 'break-all';
           cell.style.whiteSpace = 'normal';
-          cell.style.color = '#334155'; // Texto padrão cinza-grafite
+          cell.style.color = '#334155';
         });
 
-        // Estilizações específicas dos elementos internos do grid do PDF
         const assetTicker = row.querySelector('.asset-ticker');
-        if (assetTicker) assetTicker.style.color = '#0f172a'; // Ticker em preto destacado
+        if (assetTicker) assetTicker.style.color = '#0f172a';
 
         const assetDesc = row.querySelector('.asset-desc');
-        if (assetDesc) assetDesc.style.color = '#64748b';
+        if (assetDesc) 285; assetDesc.style.color = '#64748b';
 
         const instText = row.querySelector('.inst-text');
         if (instText) instText.style.color = '#475569';
@@ -324,24 +343,22 @@ const generatePDF = () => {
         const numericTexts = row.querySelectorAll('.numeric-text');
         numericTexts.forEach(nt => { nt.style.color = '#334155'; });
 
-        // Cores de performance adaptadas para fundo claro (Melhor contraste)
         const posElement = row.querySelector('.custom-positive');
-        if (posElement) posElement.style.color = '#0f172a'; // Valor total positivo fica preto
+        if (posElement) posElement.style.color = '#0f172a';
 
         const negElement = row.querySelector('.custom-negative');
-        if (negElement) negElement.style.color = '#b91c1c'; // Vermelho mais forte para papel
+        if (negElement) negElement.style.color = '#b91c1c';
 
         const posPct = row.querySelector('.custom-positive-pct');
-        if (posPct) posPct.style.color = '#047857'; // Verde escuro corporativo
+        if (posPct) posPct.style.color = '#047857';
 
         const negPct = row.querySelector('.custom-negative-pct');
-        if (negPct) negPct.style.color = '#b91c1c'; // Vermelho escuro corporativo
+        if (negPct) negPct.style.color = '#b91c1c';
 
         const nullText = row.querySelector('.null-text');
         if (nullText) nullText.style.color = '#94a3b8';
       });
 
-      // Aplicação das larguras calculadas milimetricamente das colunas para A4
       table.querySelectorAll('.col-ativo').forEach(el => el.style.width = '16%');
       table.querySelectorAll('.col-inst').forEach(el => el.style.width = '16%');
       table.querySelectorAll('.col-val').forEach(el => el.style.width = '16%');
@@ -359,7 +376,7 @@ const generatePDF = () => {
     html2canvas: { 
       scale: 2, 
       useCORS: true, 
-      backgroundColor: '#ffffff', // 🌟 O fundo do canvas passa a ser estritamente branco
+      backgroundColor: '#ffffff',
       logging: false,
       letterRendering: true,
       width: 840
@@ -367,10 +384,19 @@ const generatePDF = () => {
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
-  // Renderiza o clone em modo claro e limpa a memória após o download
-  html2pdf().set(opt).from(clonedElement).save().then(() => {
-    clonedElement.remove();
-  });
+  // Renderização assíncrona do PDF
+  html2pdf()
+    .set(opt)
+    .from(clonedElement)
+    .save()
+    .then(() => {
+      clonedElement.remove(); // Desaloca a cópia do DOM
+      isExporting.value = false; // Desativa o Loader imediatamente após concluir o download
+    })
+    .catch((err) => {
+      console.error('Erro ao gerar relatório:', err);
+      isExporting.value = false;
+    });
 };
 </script>
 
