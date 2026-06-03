@@ -2,7 +2,12 @@
   <div class="w-full">
     <AsyncLoader :loading="loading" :error="!!error">
       
-      <div v-if="!loading && assets && assets.length > 0" id="report-container" class="max-w-[1400px] mx-auto space-y-10">
+      <div 
+        v-if="!loading && assets && assets.length > 0" 
+        id="report-container" 
+        ref="pdfContainer"
+        class="max-w-[1400px] mx-auto space-y-10"
+      >
         
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print mt-4">
           <div>
@@ -18,14 +23,14 @@
           </button>
         </div>
 
-        <div class="bg-[#1a1d2b] rounded-xl p-8 border border-slate-800/50 relative overflow-hidden shadow-2xl">
+        <div class="bg-[#1a1d2b] rounded-xl p-8 border border-slate-800/50 relative overflow-hidden shadow-2xl total-card">
           <div class="relative z-10">
             <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Valor Total de Mercado</p>
             <h2 class="text-4xl font-bold text-white tracking-tighter">
               {{ formatCurrency(totalGeral) }}
             </h2>
           </div>
-          <div class="absolute right-8 top-1/2 -translate-y-1/2 hidden md:block">
+          <div class="absolute right-8 top-1/2 -translate-y-1/2 hidden md:block icon-box">
              <div class="bg-slate-800/30 p-3 rounded-lg border border-slate-700/50 backdrop-blur-sm">
                <span class="text-3xl opacity-80">📊</span>
              </div>
@@ -147,12 +152,13 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useApi } from '../composables/useApi';
 import AsyncLoader from './AsyncLoader.vue';
 import html2pdf from 'html2pdf.js';
 
 const { data: assets, loading, error } = useApi('/assets/patrimonio');
+const pdfContainer = ref(null);
 
 const totalGeral = computed(() => {
   if (!assets.value) return 0;
@@ -192,7 +198,12 @@ const formatCurrency = (v) => {
 };
 
 const generatePDF = () => {
-  const element = document.getElementById('report-container');
+  const element = pdfContainer.value;
+  if (!element) return;
+
+  // 🌟 TRUQUE CORPORATIVO: Injetamos uma classe de exportação no elemento antes do print
+  element.classList.add('exporting-pdf');
+
   const opt = {
     margin: [12, 8, 12, 8],
     filename: 'K-Portfolio-Ativos.pdf',
@@ -207,7 +218,11 @@ const generatePDF = () => {
     },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
-  html2pdf().set(opt).from(element).save();
+
+  // Executamos o html2pdf e removemos a classe logo a seguir para o utilizador não notar alteração no ecrã
+  html2pdf().set(opt).from(element).toPdf().get('pdf').then(() => {
+    element.classList.remove('exporting-pdf');
+  }).save();
 };
 </script>
 
