@@ -55,7 +55,7 @@
                     {{ formatCurrency(grupo.totalClasse) }}
                   </span>
                   <span class="inline-block mt-2 text-[10px] font-black text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 uppercase tracking-tighter">
-                    Atual: {{ grupo.percentualAtual }}%
+                    Atual: {{ grupo.percentualAtual.toFixed(1) }}%
                   </span>
                 </div>
               </div>
@@ -63,7 +63,7 @@
               <div class="relative w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800/50">
                 <div 
                   class="h-full transition-all duration-1000 ease-out"
-                  :class="parseFloat(grupo.percentualAtual) > parseFloat(grupo.target) ? 'bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.3)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]'"
+                  :class="grupo.percentualAtual > grupo.target ? 'bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.3)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]'"
                   :style="{ width: `${Math.min(grupo.percentualAtual, 100)}%` }"
                 ></div>
                 
@@ -80,29 +80,51 @@
                   <tr class="text-left text-[10px] uppercase tracking-[0.2em] text-slate-500 border-b border-slate-800/30">
                     <th class="px-8 py-5">Ativo</th>
                     <th class="px-8 py-5">Instituição</th>
-                    <th class="px-8 py-5 text-right">Qtd</th>
+                    <th class="px-8 py-5 text-right font-bold text-emerald-500/80">Valor</th>
+                    <th class="px-8 py-5 text-right">Quantidade</th>
+                    <th class="px-8 py-5 text-right">Preço Médio</th>
                     <th class="px-8 py-5 text-right">Cotação</th>
-                    <th class="px-8 py-5 text-right font-bold text-emerald-500/80">Total</th>
+                    <th class="px-8 py-5 text-right">Rentabilidade (%)</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/30">
                   <tr v-for="item in grupo.itens" :key="item.ativo" class="hover:bg-slate-800/20 transition-all group">
+                    
                     <td class="px-8 py-5">
                       <div class="font-bold text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight">
                         {{ item.ativo || '---' }}
                       </div>
                       <div class="text-[10px] text-slate-500 font-medium uppercase mt-0.5">{{ item.description }}</div>
                     </td>
+                    
                     <td class="px-8 py-5 text-[11px] text-slate-400 uppercase tracking-tighter">{{ item.corretora }}</td>
-                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400">{{ item.quantidade }}</td>
-                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400">
-                      {{ formatCurrency(item.cotacao_atual_brl) }}
-                    </td>
+                    
                     <td class="px-8 py-5 text-right">
                       <span class="font-bold text-white" :class="{'text-rose-500': item.valor_mercado_brl < 0}">
                         {{ formatCurrency(item.valor_mercado_brl) }}
                       </span>
                     </td>
+
+                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400">{{ item.quantidade }}</td>
+                    
+                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400">
+                      {{ formatCurrency(item.preco_medio_brl) }}
+                    </td>
+
+                    <td class="px-8 py-5 text-right font-mono text-[12px] text-slate-400">
+                      {{ formatCurrency(item.cotacao_atual_brl) }}
+                    </td>
+                    
+                    <td class="px-8 py-5 text-right font-mono text-[12px]">
+                      <span 
+                        v-if="item.preco_medio_brl && item.preco_medio_brl > 0"
+                        :class="((item.cotacao_atual_brl / item.preco_medio_brl) - 1) * 100 >= 0 ? 'text-emerald-400' : 'text-rose-400'"
+                      >
+                        {{ (((item.cotacao_atual_brl / item.preco_medio_brl) - 1) * 100).toFixed(2) }}%
+                      </span>
+                      <span v-else class="text-slate-600">---</span>
+                    </td>
+
                   </tr>
                 </tbody>
               </table>
@@ -145,12 +167,13 @@ const patrimonioAgrupado = computed(() => {
       acc[cls] = { 
         itens: [], 
         totalClasse: 0, 
-        target: item.target || 0 
+        target: Number(item.target || 0),
+        percentualAtual: 0
       };
     }
     acc[cls].itens.push(item);
     acc[cls].totalClasse += parseFloat(item.valor_mercado_brl || 0);
-    acc[cls].percentualAtual = total > 0 ? ((acc[cls].totalClasse / total) * 100).toFixed(1) : 0;
+    acc[cls].percentualAtual = total > 0 ? (acc[cls].totalClasse / total) * 100 : 0;
     return acc;
   }, {});
 });
@@ -162,16 +185,22 @@ const getStatusColor = (atual, alvo) => {
 };
 
 const formatCurrency = (v) => {
+  if (v === undefined || v === null) return 'R$ 0,00';
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 };
 
 const generatePDF = () => {
   const element = document.getElementById('report-container');
   const opt = {
-    margin: 5,
+    margin: [10, 5, 10, 5],
     filename: 'K-Portfolio-Ativos.pdf',
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#0f111a' },
+    html2canvas: { 
+      scale: 2, 
+      useCORS: true, 
+      backgroundColor: '#0f111a',
+      logging: false 
+    },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
   html2pdf().set(opt).from(element).save();
