@@ -1,14 +1,167 @@
+<template>
+  <div class="w-full text-slate-200">
+    
+    <div class="w-full bg-[#1a1d2b] border border-slate-800/50 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 no-print mb-6 shadow-md">
+      <div>
+        <h1 class="text-xl font-bold text-white tracking-tight">Relatório de Rendimentos</h1>
+        <p class="text-slate-500 text-xs italic mt-0.5">Histórico consolidador de fluxo de caixa</p>
+      </div>
+      
+      <div class="flex items-center gap-2 self-end sm:self-auto">
+        <select 
+          v-model="selectedMonth" 
+          class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500/50"
+        >
+          <option v-for="m in months" :key="m.value" :value="m.value" class="bg-[#0a0f18] text-slate-300">{{ m.label }}</option>
+        </select>
+        
+        <select 
+          v-model="selectedYear" 
+          class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500/50"
+        >
+          <option v-for="y in [2024, 2025, 2026]" :key="y" :value="y" class="bg-[#0a0f18] text-slate-300">{{ y }}</option>
+        </select>
+
+        <button 
+          @click="filtrarPeriodo" 
+          :disabled="loading" 
+          class="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-[#0a0f18] font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-lg transition-all"
+        >
+          Filtrar
+        </button>
+
+        <button 
+          @click="generatePDF" 
+          :disabled="isExporting || loading || !reportData?.totalGeneral" 
+          class="flex items-center gap-2 bg-[#1c2030] border border-slate-800 text-slate-300 px-4 py-2 rounded-lg hover:bg-[#252a3d] disabled:opacity-50 disabled:cursor-not-allowed transition-all text-xs font-medium"
+        >
+          <template v-if="isExporting">
+            <svg class="animate-spin h-3.5 w-3.5 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Gerando...</span>
+          </template>
+          <template v-else>
+            <span class="text-emerald-500">📄</span> 
+            <span>Exportar PDF</span>
+          </template>
+        </button>
+      </div>
+    </div>
+
+    <AsyncLoader :loading="loading" :error="!!error">
+      
+      <div v-if="!loading && reportData && reportData.totalGeneral >= 0" id="report-container" class="max-w-[1400px] mx-auto space-y-8">
+        
+        <div class="bg-[#1a1d2b] rounded-xl p-8 border border-slate-800/50 relative overflow-hidden shadow-2xl total-card">
+          <div class="relative z-10">
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Total Geral Recebido no Período</p>
+            <h2 class="text-4xl font-bold text-white tracking-tighter total-val-text">
+              {{ formatCurrency(reportData.totalGeneral) }}
+            </h2>
+          </div>
+          <div class="absolute right-8 top-1/2 -translate-y-1/2 hidden md:block icon-box">
+             <div class="bg-slate-800/30 p-3 rounded-lg border border-slate-700/50 backdrop-blur-sm">
+               <span class="text-3xl opacity-80">💰</span>
+             </div>
+          </div>
+        </div>
+
+        <div v-if="reportData.totalGeneral > 0" class="space-y-10 pb-10">
+          <section 
+            v-for="(classGroup, classId) in reportData.classes" 
+            :key="classId" 
+            class="bg-[#1a1d2b] rounded-xl border border-slate-800/50 overflow-hidden shadow-sm section-block"
+          >
+            <div class="px-8 py-5 border-b border-slate-800/50 bg-[#1c2030] flex justify-between items-center header-block">
+              <div class="flex items-center gap-4">
+                <div class="w-1.5 h-8 bg-emerald-500 rounded-full indicator-bar shadow-[0_0_12px_rgba(16,185,129,0.4)]"></div>
+                <h3 class="font-bold text-white text-lg uppercase tracking-tight class-title">📁 {{ classGroup.className }}</h3>
+              </div>
+              <div class="text-right">
+                <span class="text-base font-bold text-white font-mono block class-total-text">
+                  Subtotal: {{ formatCurrency(classGroup.classTotal) }}
+                </span>
+              </div>
+            </div>
+
+            <div class="p-6 space-y-6 broker-wrapper-block">
+              <div 
+                v-for="(brokerGroup, brokerId) in classGroup.brokers" 
+                :key="brokerId" 
+                class="bg-slate-900/30 border border-slate-800/40 rounded-lg p-5 broker-sub-card"
+              >
+                <div class="flex justify-between items-center mb-4 border-b border-slate-800/30 pb-2 broker-header-row">
+                  <h4 class="text-sm font-bold text-slate-400 flex items-center gap-2 broker-title">
+                    <span>🏦</span> {{ brokerGroup.brokerName }}
+                  </h4>
+                  <span class="text-sm font-mono font-bold text-emerald-400 broker-total-val">
+                    {{ formatCurrency(brokerGroup.brokerTotal) }}
+                  </span>
+                </div>
+
+                <div class="overflow-x-auto pdf-table-wrapper">
+                  <table class="w-full text-left border-collapse table-fixed-layout">
+                    <thead>
+                      <tr class="text-[10px] uppercase tracking-[0.2em] text-slate-500 border-b border-slate-800/30 table-header-row">
+                        <th class="pb-3 col-ativo font-semibold">Ativo</th>
+                        <th class="pb-3 col-tipo text-center font-semibold">Tipo</th>
+                        <th class="pb-3 col-qtd text-right font-semibold">Quantidade</th>
+                        <th class="pb-3 col-val text-right font-semibold text-emerald-500/80">Valor Recebido</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/20 table-body">
+                      <tr v-for="asset in brokerGroup.assets" :key="asset.eventId" class="hover:bg-slate-800/10 transition-all group table-row">
+                        <td class="py-3 col-ativo cell-data">
+                          <div class="font-bold text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight asset-ticker">
+                            {{ asset.ticker }}
+                          </div>
+                          <div class="text-[10px] text-slate-500 font-medium uppercase mt-0.5 max-w-xs truncate asset-desc">
+                            {{ asset.assetName || '---' }}
+                          </div>
+                        </td>
+                        <td class="py-3 text-center col-tipo cell-data">
+                          <span class="bg-slate-800 border border-slate-700/50 text-slate-400 font-black text-[9px] px-2 py-0.5 rounded tracking-wide type-tag">
+                            {{ asset.eventType }}
+                          </span>
+                        </td>
+                        <td class="py-3 text-right font-mono text-xs text-slate-400 col-qtd cell-data numeric-text">
+                          {{ formatQty(asset.quantityReceived) }}
+                        </td>
+                        <td class="py-3 text-right font-mono font-bold text-emerald-400 col-val cell-data highlight-money">
+                          {{ formatCurrency(asset.amountTotal) }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div v-else class="border border-slate-800/40 border-dashed rounded-xl p-16 text-center text-slate-500">
+          <span class="text-4xl block mb-3">📭</span>
+          <p class="text-sm font-medium tracking-wide">Nenhum provento ou evento corporativo liquidado nesta competência.</p>
+        </div>
+
+      </div>
+    </AsyncLoader>
+  </div>
+</template>
+
 <script setup>
-import { ref, onMounted } from 'vue';
-import axios from 'axios';
+import { computed, ref } from 'vue';
+import { useApi } from '../composables/useApi';
+import AsyncLoader from './AsyncLoader.vue';
 import html2pdf from 'html2pdf.js';
 
-// Estado reativo dos filtros e dados operacionais
+// Inicialização reativa de filtros baseada na data de hoje
 const selectedYear = ref(new Date().getFullYear());
 const selectedMonth = ref(new Date().getMonth() + 1);
-const reportData = ref({ totalGeneral: 0, classes: {} });
-const loading = ref(false);
-const reportContainer = ref(null);
+const isExporting = ref(false);
 
 const months = [
   { value: 1, label: 'Janeiro' }, { value: 2, label: 'Fevereiro' }, { value: 3, label: 'Março' },
@@ -17,287 +170,239 @@ const months = [
   { value: 10, label: 'Outubro' }, { value: 11, label: 'Novembro' }, { value: 12, label: 'Dezembro' }
 ];
 
-// Busca os dados baseados no mês e ano operando com a rota parametrizada
-const fetchReport = async () => {
-  loading.value = true;
-  try {
-    const ano = selectedYear.value;
-    const mesFormatado = String(selectedMonth.value).padStart(2, '0');
-    
-    const inicio = `${ano}-${mesFormatado}-01`;
-    const ultimoDia = new Date(ano, selectedMonth.value, 0).getDate();
-    const termino = `${ano}-${mesFormatado}-${String(ultimoDia).padStart(2, '0')}`;
-
-    // Chamada idêntica à sua estrutura de roteamento do Express (/Dividendos/:inicio/:termino)
-    const response = await axios.get(`/api/Dividendos/${inicio}/${termino}`);
-    reportData.value = response.data;
-  } catch (error) {
-    console.error("Erro ao processar dados no ecossistema K-Portfolio:", error);
-  } finally {
-    loading.value = false;
-  }
+// Função auxiliar para calcular a string parametrizada de início e término
+const extrairParametrosDatas = (mes, ano) => {
+  const mesFormatado = String(mes).padStart(2, '0');
+  const inicio = `${ano}-${mesFormatado}-01`;
+  const ultimoDia = new Date(ano, mes, 0).getDate();
+  const termino = `${ano}-${mesFormatado}-${String(ultimoDia).padStart(2, '0')}`;
+  return { inicio, termino };
 };
 
-// Chaveamento dinâmico para renderização em White Mode para o arquivo físico
-const exportToPDF = () => {
-  const element = reportContainer.value;
-  element.classList.add('pdf-printing');
+// Gera as datas iniciais para o primeiro carregamento da tela
+const datasIniciais = extrairParametrosDatas(selectedMonth.value, selectedYear.value);
+
+// 🔥 CONFIGURAÇÃO DA URL REATIVA DO COMPOSABLE:
+// O segredo do useApi com parâmetros dinâmicos é passar uma função ou string computada
+const urlFiltro = ref(`/assets/Dividendos/${datasIniciais.inicio}/${datasIniciais.termino}`);
+
+// Consome a rota através do seu padrão arquitetural oficial
+const { data: reportData, loading, error } = useApi(urlFiltro);
+
+// Força o re-trigger reativo do useApi atualizando o valor da urlFiltro ref
+const filtrarPeriodo = () => {
+  const { inicio, termino } = extrairParametrosDatas(selectedMonth.value, selectedYear.value);
+  urlFiltro.value = `/assets/Dividendos/${inicio}/${termino}`;
+};
+
+// Auxiliares Matemáticos e Formatação B3/Banco Central
+const formatCurrency = (v) => {
+  if (v === undefined || v === null) return 'R$ 0,00';
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+};
+
+const formatQty = (v) => {
+  if (!v) return '0,00';
+  return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(v);
+};
+
+// 🔥 PROCESSO DE EXPORTAÇÃO COMPLETO EM WHITE MODE POR ISOLAMENTO DE CLONE
+const generatePDF = () => {
+  const originalElement = document.getElementById('report-container');
+  if (!originalElement) return;
+
+  isExporting.value = true;
+
+  // 1. Clonagem limpa em memória sem interferir no visor do cliente
+  const clonedElement = originalElement.cloneNode(true);
+
+  // 2. Expulsa botões e elementos no-print da renderização física
+  clonedElement.querySelectorAll('.no-print').forEach(el => el.remove());
+
+  // 3. Setup de tamanho de página base A4 para conversão estável do canvas
+  clonedElement.style.width = '840px'; 
+  clonedElement.style.maxWidth = '840px';
+  clonedElement.style.padding = '15px';
+  clonedElement.style.margin = '0';
+
+  // =========================================================================
+  // MAPA DE STYLES INLINE: CONVERSÃO DE TEMAS (DARK MODE -> PAPER WHITE)
+  // =========================================================================
+  
+  // Card de Destaque Superior (Total Geral)
+  const totalCard = clonedElement.querySelector('.total-card');
+  if (totalCard) {
+    totalCard.style.backgroundColor = '#f8fafc';
+    totalCard.style.borderColor = '#cbd5e1';
+    totalCard.style.padding = '1.5rem';
+    
+    const totalValText = totalCard.querySelector('.total-val-text');
+    if (totalValText) totalValText.style.color = '#0f172a';
+  }
+  
+  const iconBox = clonedElement.querySelector('.icon-box');
+  if (iconBox) iconBox.remove();
+
+  // Tratamento de Blocos por Classe de Ativos
+  clonedElement.querySelectorAll('.section-block').forEach(section => {
+    section.style.backgroundColor = '#ffffff';
+    section.style.borderColor = '#cbd5e1';
+    section.style.boxShadow = 'none';
+    section.style.marginBottom = '24px';
+    section.style.pageBreakInside = 'auto'; // Permite que a classe se estenda por mais folhas se for gigante
+    section.style.breakInside = 'auto';
+
+    // Cabeçalho da Classe
+    const headerBlock = section.querySelector('.header-block');
+    if (headerBlock) {
+      headerBlock.style.backgroundColor = '#f1f5f9';
+      headerBlock.style.borderColor = '#cbd5e1';
+      headerBlock.style.padding = '1rem 1.25rem';
+      headerBlock.style.pageBreakAfter = 'avoid'; // Impede o cabeçalho de ficar isolado no rodapé
+      headerBlock.style.breakAfter = 'avoid';
+      
+      const classTitle = headerBlock.querySelector('.class-title');
+      if (classTitle) classTitle.style.color = '#0f172a';
+
+      const classTotalText = headerBlock.querySelector('.class-total-text');
+      if (classTotalText) classTotalText.style.color = '#0f172a';
+    }
+
+    // Seção de Corretoras
+    section.querySelectorAll('.broker-sub-card').forEach(brokerCard => {
+      brokerCard.style.backgroundColor = '#fdfdfd';
+      brokerCard.style.borderColor = '#e2e8f0';
+      brokerCard.style.padding = '12px';
+      brokerCard.style.marginBottom = '12px';
+      brokerCard.style.pageBreakInside = 'avoid'; // 🌟 Evita que a tabela de uma corretora seja cortada na metade
+      brokerCard.style.breakInside = 'avoid';
+
+      const brokerHeader = brokerCard.querySelector('.broker-header-row');
+      if (brokerHeader) brokerHeader.style.borderColor = '#e2e8f0';
+
+      const brokerTitle = brokerCard.querySelector('.broker-title');
+      if (brokerTitle) brokerTitle.style.color = '#475569';
+
+      const brokerTotalVal = brokerCard.querySelector('.broker-total-val');
+      if (brokerTotalVal) brokerTotalVal.style.color = '#059669';
+
+      const tableWrapper = brokerCard.querySelector('.pdf-table-wrapper');
+      if (tableWrapper) {
+        tableWrapper.style.overflowX = 'visible';
+        tableWrapper.style.width = '100%';
+      }
+
+      // Configuração Estrita de Grid de Tabelas Fixas
+      const table = brokerCard.querySelector('.table-fixed-layout');
+      if (table) {
+        table.style.tableLayout = 'fixed';
+        table.style.width = '100%';
+        table.style.minWidth = '100%';
+
+        const thRow = table.querySelector('.table-header-row');
+        if (thRow) {
+          thRow.style.borderColor = '#cbd5e1';
+          thRow.querySelectorAll('th').forEach(th => {
+            th.style.color = '#475569';
+          });
+        }
+
+        // Linhas de Dividendos por Ativo
+        table.querySelectorAll('.table-row').forEach((row, rowIndex) => {
+          row.style.borderColor = '#e2e8f0';
+          row.style.pageBreakInside = 'avoid';
+          row.style.breakInside = 'avoid';
+
+          if (rowIndex % 2 === 1) {
+            row.style.backgroundColor = '#f8fafc'; // Efeito zebra cinza suave
+          }
+
+          row.querySelectorAll('.cell-data').forEach(cell => {
+            cell.style.paddingLeft = '6px';
+            cell.style.paddingRight = '6px';
+            cell.style.paddingTop = '0.6rem';
+            cell.style.paddingBottom = '0.6rem';
+            cell.style.fontSize = '11px';
+            cell.style.color = '#334155';
+          });
+
+          const assetTicker = row.querySelector('.asset-ticker');
+          if (assetTicker) assetTicker.style.color = '#0f172a';
+
+          const assetDesc = row.querySelector('.asset-desc');
+          if (assetDesc) assetDesc.style.color = '#64748b';
+
+          const typeTag = row.querySelector('.type-tag');
+          if (typeTag) {
+            typeTag.style.backgroundColor = '#e2e8f0';
+            typeTag.style.borderColor = '#cbd5e1';
+            typeTag.style.color = '#475569';
+          }
+
+          const numericTexts = row.querySelectorAll('.numeric-text');
+          numericTexts.forEach(nt => { nt.style.color = '#475569'; });
+
+          const highlightMoney = row.querySelector('.highlight-money');
+          if (highlightMoney) highlightMoney.style.color = '#059669';
+        });
+
+        // Alinhamento proporcional das larguras de colunas fixadas no A4
+        table.querySelectorAll('.col-ativo').forEach(el => el.style.width = '35%');
+        table.querySelectorAll('.col-tipo').forEach(el => el.style.width = '15%');
+        table.querySelectorAll('.col-qtd').forEach(el => el.style.width = '25%');
+        table.querySelectorAll('.col-val').forEach(el => el.style.width = '25%');
+      }
+    });
+  });
 
   const opt = {
-    margin:       [12, 12, 12, 12],
-    filename:     `K-Portfolio_Rendimentos_${selectedYear.value}_${String(selectedMonth.value).padStart(2, '0')}.pdf`,
-    image:        { type: 'jpeg', quality: 0.99 },
-    html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    margin: [12, 10, 12, 10],
+    filename: `K-Portfolio-Rendimentos-${selectedYear.value}-${selectedMonth.value}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { 
+      scale: 2, 
+      useCORS: true, 
+      backgroundColor: '#ffffff',
+      logging: false,
+      letterRendering: true,
+      width: 840
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
+  // Compilação assíncrona da árvore gráfica do HTML2PDF
   html2pdf()
     .set(opt)
-    .from(element)
+    .from(clonedElement)
     .save()
-    .then(() => element.classList.remove('pdf-printing'))
+    .then(() => {
+      clonedElement.remove(); // Limpa e libera alocação do navegador
+      isExporting.value = false;
+    })
     .catch((err) => {
-      console.error("Falha ao compilar relatório PDF:", err);
-      element.classList.remove('pdf-printing');
+      console.error('Falha interna ao compilar arquivo físico:', err);
+      isExporting.value = false;
     });
 };
-
-// Formatadores com o padrão monetário nacional e precisão fracionária da B3
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-};
-
-const formatQty = (value) => {
-  return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(value);
-};
-
-onMounted(fetchReport);
 </script>
 
-<template>
-  <div class="space-y-6 text-slate-200">
-    
-    <div class="w-full bg-[#0a0f18] border border-white/5 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div class="text-sm font-medium text-slate-400">
-        Selecione o período para consolidação dos proventos point-in-time.
-      </div>
-      <div class="flex items-center gap-2 self-end sm:self-auto">
-        <select 
-          v-model="selectedMonth" 
-          class="bg-white/5 border border-white/5 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500/50"
-        >
-          <option v-for="m in months" :key="m.value" :value="m.value" class="bg-[#0a0f18] text-slate-200">{{ m.label }}</option>
-        </select>
-        
-        <select 
-          v-model="selectedYear" 
-          class="bg-white/5 border border-white/5 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500/50"
-        >
-          <option v-for="y in [2024, 2025, 2026]" :key="y" :value="y" class="bg-[#0a0f18] text-slate-200">{{ y }}</option>
-        </select>
-
-        <button 
-          @click="fetchReport" 
-          :disabled="loading" 
-          class="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-[#0a0f18] font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all"
-        >
-          Filtrar
-        </button>
-
-        <button 
-          @click="exportToPDF" 
-          :disabled="loading || !reportData.totalGeneral" 
-          class="bg-red-500/10 hover:bg-red-500/20 text-red-400 disabled:opacity-40 border border-red-500/20 font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all"
-        >
-          📄 PDF
-        </button>
-      </div>
-    </div>
-
-    <div v-if="loading" class="flex flex-col items-center justify-center py-20 space-y-3">
-      <div class="w-8 h-8 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
-      <p class="text-xs text-slate-500 font-mono italic">Mapeando alocações na custódia...</p>
-    </div>
-
-    <div v-else ref="reportContainer" class="space-y-6 report-container-root">
-      
-      <div class="pdf-header-wrapper hidden">
-        <div class="flex justify-between items-end border-b-2 border-slate-900 pb-4 mb-6">
-          <div>
-            <h1 class="text-xl font-black text-slate-900 tracking-tight">K-PORTFOLIO</h1>
-            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Extrato Consolidado de Proventos</p>
-          </div>
-          <div class="text-right text-xs font-mono text-slate-600">
-            Competência: {{ months.find(m => m.value === selectedMonth).label }} / {{ selectedYear }}
-          </div>
-        </div>
-      </div>
-
-      <div v-if="!reportData.totalGeneral" class="border border-white/5 border-dashed rounded-2xl p-12 text-center text-slate-500">
-        <span class="text-3xl block mb-2">📭</span>
-        <p class="text-sm font-medium">Nenhum rendimento ou dividendo distribuído para a sua custódia neste mês.</p>
-      </div>
-
-      <div 
-        v-for="(classGroup, classId) in reportData.classes" 
-        :key="classId" 
-        class="bg-[#0a0f18] border border-white/5 rounded-2xl p-6 border-l-4 border-l-emerald-500 shadow-sm page-break-avoid"
-      >
-        <div class="flex items-center justify-between border-b border-white/5 pb-4 mb-5">
-          <h3 class="text-base font-bold text-white flex items-center gap-2">
-            <span class="text-emerald-500/70">📁</span> {{ classGroup.className }}
-          </h3>
-          <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 px-3 py-1 rounded-full font-bold text-xs">
-            Subtotal: {{ formatCurrency(classGroup.classTotal) }}
-          </span>
-        </div>
-
-        <div v-for="(brokerGroup, brokerId) in classGroup.brokers" :key="brokerId" class="mb-6 last:mb-0 bg-white/[0.01] border border-white/5 rounded-xl p-4">
-          <div class="flex items-center justify-between mb-3">
-            <h4 class="text-sm font-semibold text-slate-400 flex items-center gap-2">
-              <span>🏦</span> {{ brokerGroup.brokerName }}
-            </h4>
-            <span class="text-xs font-mono font-bold text-emerald-500">
-              {{ formatCurrency(brokerGroup.brokerTotal) }}
-            </span>
-          </div>
-
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="border-b border-white/5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th class="pb-2 font-semibold">Ativo</th>
-                  <th class="pb-2 font-semibold text-center">Tipo</th>
-                  <th class="pb-2 font-semibold text-right">Quantidade (Cotas)</th>
-                  <th class="pb-2 font-semibold text-right">Valor Recebido</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-white/5">
-                <tr v-for="asset in brokerGroup.assets" :key="asset.eventId" class="text-sm text-slate-300 group">
-                  <td class="py-3 pr-4">
-                    <div class="font-bold text-white tracking-wide">{{ asset.ticker }}</div>
-                    <div class="text-[11px] text-slate-500 max-w-xs truncate mt-0.5">{{ asset.assetName }}</div>
-                  </td>
-                  <td class="py-3 text-center">
-                    <span class="bg-white/5 border border-white/5 text-slate-400 font-extrabold text-[9px] px-2 py-0.5 rounded uppercase tracking-wide">
-                      {{ asset.eventType }}
-                    </span>
-                  </td>
-                  <td class="py-3 text-right font-mono text-xs text-slate-400">
-                    {{ formatQty(asset.quantityReceived) }}
-                  </td>
-                  <td class="py-3 text-right font-mono font-bold text-emerald-400">
-                    {{ formatCurrency(asset.amountTotal) }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="reportData.totalGeneral" class="bg-slate-950 border border-white/5 rounded-2xl p-6 flex items-center justify-between shadow-lg page-break-avoid">
-        <div class="text-sm font-bold uppercase tracking-wider text-slate-400">TOTAL CONSOLIDADO RECEBIDO</div>
-        <div class="text-2xl font-black font-mono text-emerald-400 tracking-tight">
-          {{ formatCurrency(reportData.totalGeneral) }}
-        </div>
-      </div>
-
-    </div>
-  </div>
-</template>
-
 <style scoped>
-/* Controle de quebras de página nativas do gerador de PDF */
-.page-break-avoid { page-break-inside: avoid; }
-
-/* =======================================================
-   INVERSÃO DINÂMICA DE DESIGN - CONVERSÃO PARA WHITE MODE
-   ======================================================= */
-.report-container-root.pdf-printing {
-  background: #ffffff !important;
-  color: #0f172a !important;
-  padding: 0mm !important;
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
-/* Força a exibição do título exclusivo de impressão */
-.report-container-root.pdf-printing .pdf-header-wrapper {
-  display: block !important;
+.table-fixed-layout {
+  table-layout: fixed;
+  width: 100%;
 }
 
-/* Adapta os cards de classe para fundo branco e contorno cinza */
-.report-container-root.pdf-printing .page-break-avoid {
-  background: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-  border-left: 5px solid #059669 !important; /* Mantém a identidade esmeralda em tom impresso */
-  box-shadow: none !important;
-  color: #0f172a !important;
-  padding: 14px !important;
-  margin-bottom: 20px !important;
-}
+/* Alocação de Grid do visor web escuro */
+.col-ativo { width: 35%; }
+.col-tipo  { width: 15%; }
+.col-qtd   { width: 25%; }
+.col-val   { width: 25%; }
 
-.report-container-root.pdf-printing .border-b {
-  border-bottom-color: #cbd5e1 !important;
-}
-
-.report-container-root.pdf-printing h3,
-.report-container-root.pdf-printing h4,
-.report-container-root.pdf-printing .text-white {
-  color: #0f172a !important;
-}
-
-/* Emblema de subtotal da classe */
-.report-container-root.pdf-printing .total-badge {
-  background: #e2e8f0 !important;
-  color: #047857 !important;
-  border-color: #cbd5e1 !important;
-}
-
-/* Caixa das corretoras */
-.report-container-root.pdf-printing .bg-white\/\[0\.01\] {
-  background: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
-}
-
-.report-container-root.pdf-printing .text-slate-400 {
-  color: #475569 !important;
-}
-
-/* Tratamento da tabela de ativos */
-.report-container-root.pdf-printing th {
-  color: #64748b !important;
-  border-bottom: 1px solid #cbd5e1 !important;
-}
-
-.report-container-root.pdf-printing td,
-.report-container-root.pdf-printing .divide-y tr {
-  border-bottom-color: #e2e8f0 !important;
-  color: #334155 !important;
-}
-
-.report-container-root.pdf-printing .text-slate-500 {
-  color: #64748b !important;
-}
-
-.report-container-root.pdf-printing .type-tag {
-  background: #e2e8f0 !important;
-  color: #475569 !important;
-  border-color: #cbd5e1 !important;
-}
-
-.report-container-root.pdf-printing .highlight-money,
-.report-container-root.pdf-printing .text-emerald-400 {
-  color: #059669 !important;
-}
-
-/* Adaptação do rodapé geral de totalização */
-.report-container-root.pdf-printing .bg-slate-950 {
-  background: #f1f5f9 !important;
-  border: 2px solid #0f172a !important;
-  color: #0f172a !important;
-}
-
-.report-container-root.pdf-printing .text-emerald-400 {
-  color: #047857 !important;
+@media print {
+  .no-print { display: none !important; }
 }
 </style>
