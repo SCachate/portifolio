@@ -147,7 +147,8 @@ const navigationItems = [
       { id: 'cadastro-ativos',  label: 'Ativos',            icon: '📄' },
       { id: 'classes-ativos',   label: 'Classes de Ativos', icon: '📁' },
     ]
-  }
+  },
+  { id: 'dividendos', label: 'Dividendos',   icon: '💰' },
 ];
 
 // 2. Computada inteligente para buscar títulos normais ou de subitens

@@ -1,6 +1,119 @@
 const db = require('../config/db');
 const asyncHandler = require('../utils/asyncHandler');
 
+exports.getDividendReportByClass = asyncHandler(async (req, res) => {
+    const { inicio, termino } = req.params;
+    const userId = req.userId;
+
+    const query = `
+        SELECT 
+            ce.id AS eventId,
+            ce.userId,
+            ce.assetId,
+            COALESCE(a.ticket, SUBSTR(a.description, 1, 5)) AS ticker,
+            a.description AS assetName,
+            ce.brokerId,
+            b.name AS brokerName,
+            ce.eventType,
+            DATE_FORMAT(ce.eventDate, '%Y-%m-%d') AS eventDate,
+            saldos_historicos.classId,
+            ic.name AS className,
+            saldos_historicos.quantidade_na_classe AS quantityReceived,
+            -- Multiplicação segura prevenindo divisão por zero
+            (saldos_historicos.quantidade_na_classe * (ce.amountTotal / IF(ce.quantityChange = 0, 1, ce.quantityChange))) AS amountTotal
+        FROM 
+            corporate_events ce
+        INNER JOIN (
+            -- Subquery Point-in-Time isolando o saldo por Usuário, Ativo, Corretora e Classe
+            SELECT 
+                ce_interno.id AS event_id,
+                historico.brokerId,
+                historico.classId,
+                SUM(historico.q) AS quantidade_na_classe
+            FROM corporate_events ce_interno
+            INNER JOIN (
+                SELECT assetId, brokerId, toClassId AS classId, quantity AS q, eventDate 
+                FROM allocation_events 
+                WHERE userId = ?
+                
+                UNION ALL
+                
+                SELECT assetId, brokerId, fromClassId AS classId, -quantity AS q, eventDate 
+                FROM allocation_events 
+                WHERE userId = ?
+            ) historico ON historico.assetId = ce_interno.assetId 
+                       AND historico.brokerId = ce_interno.brokerId
+                       AND historico.eventDate <= ce_interno.eventDate
+            WHERE ce_interno.userId = ?
+            GROUP BY ce_interno.id, historico.brokerId, historico.classId
+            HAVING quantidade_na_classe <> 0
+        ) saldos_historicos ON saldos_historicos.event_id = ce.id
+        LEFT JOIN investment_classes ic ON saldos_historicos.classId = ic.id
+        LEFT JOIN brokers b ON ce.brokerId = b.id
+        LEFT JOIN assets a ON ce.assetId = a.id
+        WHERE ce.userId = ?
+          AND ce.eventDate BETWEEN ? AND ?
+        ORDER BY ce.eventDate ASC, ce.id ASC;
+    `;  
+
+    // Executa a query passando os parâmetros na ordem correta das interrogações (?)
+    const [rows] = await db.execute(query, [
+        userId,  userId, // Parâmetros da tabela temporária 'historico'
+        userId,                           // Parâmetro do filtro ce_interno
+        userId, inicio, termino           // Parâmetros do filtro principal da corporate_events
+    ]);
+
+    // Montagem da árvore de objetos estruturada (JSON) para consumo no Vue 3
+    const report = {
+        totalGeneral: 0,
+        classes: {}
+    };
+
+    rows.forEach(row => {
+        const cId = row.classId;
+        const className = row.className || 'Não Classificado';
+        const bId = row.brokerId;
+        const brokerName = row.brokerName || 'Desconhecido';
+        const amount = parseFloat(row.amountTotal);
+
+        // 1. Agrupa por Classe
+        if (!report.classes[cId]) {
+            report.classes[cId] = {
+                className: className,
+                classTotal: 0,
+                brokers: {}
+            };
+        }
+
+        // 2. Agrupa por Instituição/Corretora
+        if (!report.classes[cId].brokers[bId]) {
+            report.classes[cId].brokers[bId] = {
+                brokerName: brokerName,
+                brokerTotal: 0,
+                assets: []
+            };
+        }
+
+        // 3. Insere os detalhes granulares do Ativo
+        report.classes[cId].brokers[bId].assets.push({
+            eventId: row.eventId,
+            assetId: row.assetId,
+            ticker: row.ticker,
+            assetName: row.assetName,
+            eventType: row.eventType,
+            eventDate: row.eventDate,
+            quantityReceived: parseFloat(row.quantityReceived),
+            amountTotal: amount
+        });
+
+        // 4. Soma acumulativa dos subtotais e totais
+        report.classes[cId].brokers[bId].brokerTotal += amount;
+        report.classes[cId].classTotal += amount;
+        report.totalGeneral += amount;
+    });
+
+    res.json(report);
+});
 
 exports.getAssetsByClassWithResult = asyncHandler(async (req, res) => {
     const { classId, inicio, termino } = req.params;
