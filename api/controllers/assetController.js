@@ -56,7 +56,7 @@ SELECT
 	, vrda.valor_final_brl final
 	, vrda.lucro_prejuizo_dia_brl resultado
 FROM 
-    kaxatapi.v_rendimento_diario_asset AS vrda
+    v_rendimento_diario_asset AS vrda
 where 
     vrda.assetid = ?
     and vrda.classId = ?
