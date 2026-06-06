@@ -5,6 +5,7 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
     const { inicio, termino } = req.params;
     const userId = req.userId;
 
+    // 🔥 Query SQL Corrigida: Filtra os NULLs na origem do cálculo de saldo
     const query = `
         SELECT 
             ce.id AS eventId,
@@ -19,12 +20,10 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
             saldos_historicos.classId,
             ic.name AS className,
             saldos_historicos.quantidade_na_classe AS quantityReceived,
-            -- Multiplicação segura prevenindo divisão por zero
             (saldos_historicos.quantidade_na_classe * (ce.amountTotal / IF(ce.quantityChange = 0, 1, ce.quantityChange))) AS amountTotal
         FROM 
             corporate_events ce
         INNER JOIN (
-            -- Subquery Point-in-Time isolando o saldo por Usuário, Ativo, Corretora e Classe
             SELECT 
                 ce_interno.id AS event_id,
                 historico.brokerId,
@@ -32,15 +31,17 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
                 SUM(historico.q) AS quantidade_na_classe
             FROM corporate_events ce_interno
             INNER JOIN (
+                -- 🟢 ENTRADAS: Só contabiliza se a classe de destino for válida
                 SELECT assetId, brokerId, toClassId AS classId, quantity AS q, eventDate 
                 FROM allocation_events 
-                WHERE userId = ?
+                WHERE userId = ? AND toClassId IS NOT NULL
                 
                 UNION ALL
                 
+                -- 🔴 SAÍDAS/TRANSFERÊNCIAS: Só contabiliza se a classe de origem for válida
                 SELECT assetId, brokerId, fromClassId AS classId, -quantity AS q, eventDate 
                 FROM allocation_events 
-                WHERE userId = ?
+                WHERE userId = ? AND fromClassId IS NOT NULL
             ) historico ON historico.assetId = ce_interno.assetId 
                        AND historico.brokerId = ce_interno.brokerId
                        AND historico.eventDate <= ce_interno.eventDate
@@ -56,17 +57,14 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
         ORDER BY ce.eventDate ASC, ce.id ASC;
     `;  
 
-    // Executa a query passando os parâmetros na ordem correta das interrogações (?)
     const [rows] = await db.execute(query, [
-        userId,  userId, // Parâmetros da tabela temporária 'historico'
-        userId,           // Parâmetro do filtro ce_interno
-        userId, inicio, termino           // Parâmetros do filtro principal da corporate_events
+        userId, userId, // Parâmetros do UNION de saldo histórico
+        userId,         // Filtro ce_interno
+        userId, inicio, termino // Filtro principal
     ]);
 
-    // Usaremos uma variável let isolada para somar o total com segurança
     let acumuladorTotalGeral = 0;
 
-    // Estrutura inicial sem o totalGeneral hardcoded ainda
     const report = {
         totalGeneral: 0,
         classes: {}
@@ -77,11 +75,8 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
         const className = row.className || 'Não Classificado';
         const bId = row.brokerId;
         const brokerName = row.brokerName || 'Desconhecido';
-        
-        // Garante que se o valor for nulo/inválido ele vira 0 e não quebra o script
         const amount = parseFloat(row.amountTotal) || 0;
 
-        // 1. Agrupa por Classe
         if (!report.classes[cId]) {
             report.classes[cId] = {
                 className: className,
@@ -90,7 +85,6 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
             };
         }
 
-        // 2. Agrupa por Instituição/Corretora
         if (!report.classes[cId].brokers[bId]) {
             report.classes[cId].brokers[bId] = {
                 brokerName: brokerName,
@@ -99,7 +93,6 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
             };
         }
 
-        // 3. Insere os detalhes granulares do Ativo
         report.classes[cId].brokers[bId].assets.push({
             eventId: row.eventId,
             assetId: row.assetId,
@@ -107,17 +100,15 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
             assetName: row.assetName,
             eventType: row.eventType,
             eventDate: row.eventDate,
-            quantityReceived: parseFloat(row.quantityReceived) || 0,
+            quantityReceived: parseFloat(row.quantityReceived),
             amountTotal: amount
         });
 
-        // 4. Soma acumulativa dos subtotais e do total isolado
         report.classes[cId].brokers[bId].brokerTotal += amount;
         report.classes[cId].classTotal += amount;
-        acumuladorTotalGeral += amount; // 👈 Soma na variável local protegida
+        acumuladorTotalGeral += amount;
     });
 
-    // 🔥 Atribuição final da soma exata após o loop terminar com sucesso
     report.totalGeneral = acumuladorTotalGeral;
 
     res.json(report);
