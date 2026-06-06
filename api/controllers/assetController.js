@@ -59,11 +59,14 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
     // Executa a query passando os parâmetros na ordem correta das interrogações (?)
     const [rows] = await db.execute(query, [
         userId,  userId, // Parâmetros da tabela temporária 'historico'
-        userId,                           // Parâmetro do filtro ce_interno
+        userId,           // Parâmetro do filtro ce_interno
         userId, inicio, termino           // Parâmetros do filtro principal da corporate_events
     ]);
 
-    // Montagem da árvore de objetos estruturada (JSON) para consumo no Vue 3
+    // Usaremos uma variável let isolada para somar o total com segurança
+    let acumuladorTotalGeral = 0;
+
+    // Estrutura inicial sem o totalGeneral hardcoded ainda
     const report = {
         totalGeneral: 0,
         classes: {}
@@ -74,7 +77,9 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
         const className = row.className || 'Não Classificado';
         const bId = row.brokerId;
         const brokerName = row.brokerName || 'Desconhecido';
-        const amount = parseFloat(row.amountTotal);
+        
+        // Garante que se o valor for nulo/inválido ele vira 0 e não quebra o script
+        const amount = parseFloat(row.amountTotal) || 0;
 
         // 1. Agrupa por Classe
         if (!report.classes[cId]) {
@@ -102,15 +107,18 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
             assetName: row.assetName,
             eventType: row.eventType,
             eventDate: row.eventDate,
-            quantityReceived: parseFloat(row.quantityReceived),
+            quantityReceived: parseFloat(row.quantityReceived) || 0,
             amountTotal: amount
         });
 
-        // 4. Soma acumulativa dos subtotais e totais
+        // 4. Soma acumulativa dos subtotais e do total isolado
         report.classes[cId].brokers[bId].brokerTotal += amount;
         report.classes[cId].classTotal += amount;
-        report.totalGeneral += amount;
+        acumuladorTotalGeral += amount; // 👈 Soma na variável local protegida
     });
+
+    // 🔥 Atribuição final da soma exata após o loop terminar com sucesso
+    report.totalGeneral = acumuladorTotalGeral;
 
     res.json(report);
 });
