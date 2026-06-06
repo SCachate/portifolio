@@ -1,8 +1,6 @@
-<!-- src/views/DividendReport.vue -->
 <template>
   <div class="w-full text-slate-200">
     
-    <!-- 🎛️ CONTROLES & FILTROS (no-print) -->
     <div class="w-full bg-[#1a1d2b] border border-slate-800/50 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 no-print mb-6 shadow-md">
       <div>
         <h1 class="text-xl font-bold text-white tracking-tight">Relatório de Rendimentos</h1>
@@ -56,12 +54,10 @@
       </div>
     </div>
 
-    <!-- 🔄 LOADER OPERACIONAL INTEGRADO -->
     <AsyncLoader :loading="loading" :error="!!error">
       
       <div v-if="!loading && dadosProcessados && dadosProcessados.totalGeneral >= 0" id="report-container" class="max-w-[1400px] mx-auto space-y-8">
         
-        <!-- CARD CONSOLIDADO DE ENTRADA -->
         <div class="bg-[#1a1d2b] rounded-xl p-8 border border-slate-800/50 relative overflow-hidden shadow-2xl total-card">
           <div class="relative z-10">
             <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Total Geral Recebido no Período</p>
@@ -76,14 +72,12 @@
           </div>
         </div>
 
-        <!-- LISTAGEM SECCIONADA (Nível 1: Classes) -->
         <div v-if="dadosProcessados.totalGeneral > 0" class="space-y-10 pb-10">
           <section 
             v-for="(classGroup, classId) in dadosProcessados.classes" 
             :key="classId" 
             class="bg-[#1a1d2b] rounded-xl border border-slate-800/50 overflow-hidden shadow-sm section-block"
           >
-            <!-- Cabeçalho do Bloco da Classe -->
             <div class="px-8 py-5 border-b border-slate-800/50 bg-[#1c2030] flex justify-between items-center header-block">
               <div class="flex items-center gap-4">
                 <div class="w-1.5 h-8 bg-emerald-500 rounded-full indicator-bar shadow-[0_0_12px_rgba(16,185,129,0.4)]"></div>
@@ -96,7 +90,6 @@
               </div>
             </div>
 
-            <!-- Nível 2: Seções das Corretoras / Instituições -->
             <div class="p-6 space-y-6 broker-wrapper-block">
               <div 
                 v-for="(brokerGroup, brokerId) in classGroup.brokers" 
@@ -112,7 +105,6 @@
                   </span>
                 </div>
 
-                <!-- Nível 3: Tabela de Ativos daquela Corretora -->
                 <div class="overflow-x-auto pdf-table-wrapper">
                   <table class="w-full text-left border-collapse table-fixed-layout">
                     <thead>
@@ -154,7 +146,6 @@
           </section>
         </div>
 
-        <!-- Estado Amigável Sem Proventos no Mês -->
         <div v-else class="border border-slate-800/40 border-dashed rounded-xl p-16 text-center text-slate-500">
           <span class="text-4xl block mb-3">📭</span>
           <p class="text-sm font-medium tracking-wide">Nenhum provento ou evento corporativo liquidado nesta competência.</p>
@@ -171,7 +162,7 @@ import { useApi } from '../composables/useApi';
 import AsyncLoader from './AsyncLoader.vue';
 import html2pdf from 'html2pdf.js';
 
-// Inicialização reativa de filtros baseada na data atual do sistema
+// Inicialização reativa dos filtros
 const selectedYear = ref(new Date().getFullYear());
 const selectedMonth = ref(new Date().getMonth() + 1);
 const isExporting = ref(false);
@@ -183,7 +174,7 @@ const months = [
   { value: 10, label: 'Outubro' }, { value: 11, label: 'Novembro' }, { value: 12, label: 'Dezembro' }
 ];
 
-// Cálculo seguro de intervalo temporal para banco relacional (MySQL)
+// Cálculo de intervalo temporal para as rotas parametrizadas do K-Portfolio
 const extrairParametrosDatas = (mes, ano) => {
   const mesFormatado = String(mes).padStart(2, '0');
   const inicio = `${ano}-${mesFormatado}-01`;
@@ -194,30 +185,34 @@ const extrairParametrosDatas = (mes, ano) => {
 
 const datasIniciais = extrairParametrosDatas(selectedMonth.value, selectedYear.value);
 
-// 🔥 URL reativa que força o useApi a re-executar requisições mesmo em status 304 Not Modified
+// URL reativa inicial
 const urlFiltro = ref(`/assets/Dividendos/${datasIniciais.inicio}/${datasIniciais.termino}`);
 
-// Consome o backend utilizando a padronização oficial do ecossistema K-Portfolio
-const { data: reportData, loading, error } = useApi(urlFiltro);
+// 🔥 CAPTURA DA FUNÇÃO FETCHDATA:
+// Destestruturamos 'fetchData' de dentro do seu useApi oficial para chamá-lo sob demanda
+const { data: reportData, loading, error, fetchData } = useApi(urlFiltro);
 
-// Atualiza o gatilho reativo disparando a nova chamada HTTP via composable
+// Função do botão Filtrar -> Atualiza a string reativa e executa o disparo manual
 const filtrarPeriodo = () => {
   const { inicio, termino } = extrairParametrosDatas(selectedMonth.value, selectedYear.value);
   urlFiltro.value = `/assets/Dividendos/${inicio}/${termino}`;
+  
+  // 🔥 Executa o re-fetch imediato com a nova URL
+  fetchData();
 };
 
-// Parser e normalizador universal de estruturas de dados (Lista de Registros vs Árvores de Objetos)
+// Mapeamento e normalização inteligente da resposta da API
 const dadosProcessados = computed(() => {
   if (!reportData.value) {
     return { totalGeneral: 0, classes: {} };
   }
 
-  // Se o backend já devolve o formato agrupado correto
+  // Se o backend já retornar o formato aninhado completo
   if (reportData.value.classes && reportData.value.totalGeneral !== undefined) {
     return reportData.value;
   }
 
-  // Fallback caso venha uma Array plana do Pool MySQL
+  // Fallback caso seja uma lista plana vinda do banco relacional
   const listaBruta = Array.isArray(reportData.value) ? reportData.value : [];
   
   let totalGeral = 0;
@@ -264,7 +259,7 @@ const dadosProcessados = computed(() => {
   };
 });
 
-// Formatadores monetários utilizando as especificações do Banco Central do Brasil
+// Formatadores visuais padrão BRL
 const formatCurrency = (v) => {
   if (v === undefined || v === null) return 'R$ 0,00';
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -275,26 +270,21 @@ const formatQty = (v) => {
   return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(v);
 };
 
-// 🔥 EXPORTAÇÃO EXECUTADA POR ISOLAMENTO DE ESCOPO (DARK MODE -> WHITE RELATORIO)
+// GERADOR DE PDF CUSTOMIZADO (Conversão Dark -> White Mode)
 const generatePDF = () => {
   const originalElement = document.getElementById('report-container');
   if (!originalElement) return;
 
   isExporting.value = true;
 
-  // Clone em memória mantendo a visualização escura intacta para o usuário na tela
   const clonedElement = originalElement.cloneNode(true);
-
-  // Remove componentes operacionais de tela da impressão física
   clonedElement.querySelectorAll('.no-print').forEach(el => el.remove());
 
-  // Redimensionamento estrito baseado no padrão milimétrico da folha A4
   clonedElement.style.width = '840px'; 
   clonedElement.style.maxWidth = '840px';
   clonedElement.style.padding = '15px';
   clonedElement.style.margin = '0';
 
-  // Injeção de CSS Inline para conversão de paleta de cores (Paper Clean Layout)
   const totalCard = clonedElement.querySelector('.total-card');
   if (totalCard) {
     totalCard.style.backgroundColor = '#f8fafc';
