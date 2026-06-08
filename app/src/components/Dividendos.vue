@@ -111,6 +111,7 @@
                       <tr class="text-[10px] uppercase tracking-[0.2em] text-slate-500 border-b border-slate-800/30 table-header-row">
                         <th class="pb-3 col-ativo font-semibold">Ativo</th>
                         <th class="pb-3 col-tipo text-center font-semibold">Tipo</th>
+                        <th class="pb-3 col-data text-center font-semibold">Recebimento</th>
                         <th class="pb-3 col-qtd text-right font-semibold">Quantidade</th>
                         <th class="pb-3 col-val text-right font-semibold text-emerald-500/80">Valor Recebido</th>
                       </tr>
@@ -129,6 +130,9 @@
                           <span class="bg-slate-800 border border-slate-700/50 text-slate-400 font-black text-[9px] px-2 py-0.5 rounded tracking-wide type-tag">
                             {{ asset.eventType }}
                           </span>
+                        </td>
+                        <td class="py-3 text-center font-mono text-xs text-slate-300 col-data cell-data asset-date">
+                          {{ formatDate(asset.eventDate) }}
                         </td>
                         <td class="py-3 text-right font-mono text-xs text-slate-400 col-qtd cell-data numeric-text">
                           {{ formatQty(asset.quantityReceived) }}
@@ -162,7 +166,6 @@ import { useApi } from '../composables/useApi';
 import AsyncLoader from './AsyncLoader.vue';
 import html2pdf from 'html2pdf.js';
 
-// Inicialização reativa dos filtros
 const selectedYear = ref(new Date().getFullYear());
 const selectedMonth = ref(new Date().getMonth() + 1);
 const isExporting = ref(false);
@@ -174,7 +177,6 @@ const months = [
   { value: 10, label: 'Outubro' }, { value: 11, label: 'Novembro' }, { value: 12, label: 'Dezembro' }
 ];
 
-// Cálculo de intervalo temporal para as rotas parametrizadas do K-Portfolio
 const extrairParametrosDatas = (mes, ano) => {
   const mesFormatado = String(mes).padStart(2, '0');
   const inicio = `${ano}-${mesFormatado}-01`;
@@ -184,35 +186,25 @@ const extrairParametrosDatas = (mes, ano) => {
 };
 
 const datasIniciais = extrairParametrosDatas(selectedMonth.value, selectedYear.value);
-
-// URL reativa inicial
 const urlFiltro = ref(`/assets/Dividendos/${datasIniciais.inicio}/${datasIniciais.termino}`);
 
-// 🔥 CAPTURA DA FUNÇÃO FETCHDATA:
-// Destestruturamos 'fetchData' de dentro do seu useApi oficial para chamá-lo sob demanda
 const { data: reportData, loading, error, fetchData } = useApi(urlFiltro);
 
-// Função do botão Filtrar -> Atualiza a string reativa e executa o disparo manual
 const filtrarPeriodo = () => {
   const { inicio, termino } = extrairParametrosDatas(selectedMonth.value, selectedYear.value);
   urlFiltro.value = `/assets/Dividendos/${inicio}/${termino}`;
-  
-  // 🔥 Executa o re-fetch imediato com a nova URL
   fetchData();
 };
 
-// Mapeamento e normalização inteligente da resposta da API
 const dadosProcessados = computed(() => {
   if (!reportData.value) {
     return { totalGeneral: 0, classes: {} };
   }
 
-  // Se o backend já retornar o formato aninhado completo
   if (reportData.value.classes && reportData.value.totalGeneral !== undefined) {
     return reportData.value;
   }
 
-  // Fallback caso seja uma lista plana vinda do banco relacional
   const listaBruta = Array.isArray(reportData.value) ? reportData.value : [];
   
   let totalGeral = 0;
@@ -248,6 +240,7 @@ const dadosProcessados = computed(() => {
       ticker: item.ticker || item.ativo || '---',
       assetName: item.assetName || item.descricao || '---',
       eventType: item.eventType || item.tipo || 'Rendimento',
+      eventDate: item.eventDate || null, // 🟢 Mapeamento da data inserida aqui
       quantityReceived: parseFloat(item.quantityReceived || item.quantidade || 0),
       amountTotal: valor
     });
@@ -259,7 +252,6 @@ const dadosProcessados = computed(() => {
   };
 });
 
-// Formatadores visuais padrão BRL
 const formatCurrency = (v) => {
   if (v === undefined || v === null) return 'R$ 0,00';
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -270,7 +262,13 @@ const formatQty = (v) => {
   return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(v);
 };
 
-// GERADOR DE PDF CUSTOMIZADO (Conversão Dark -> White Mode)
+// 🟢 Formatador de data local ISO YYYY-MM-DD -> DD/MM/YYYY
+const formatDate = (dateString) => {
+  if (!dateString) return '---';
+  const [year, month, day] = dateString.split('-');
+  return `${day}/${month}/${year}`;
+};
+
 const generatePDF = () => {
   const originalElement = document.getElementById('report-container');
   if (!originalElement) return;
@@ -382,6 +380,10 @@ const generatePDF = () => {
           const assetDesc = row.querySelector('.asset-desc');
           if (assetDesc) assetDesc.style.color = '#64748b';
 
+          // Estilização da nova coluna de data no PDF modo Light
+          const assetDate = row.querySelector('.asset-date');
+          if (assetDate) assetDate.style.color = '#334155';
+
           const typeTag = row.querySelector('.type-tag');
           if (typeTag) {
             typeTag.style.backgroundColor = '#e2e8f0';
@@ -396,10 +398,12 @@ const generatePDF = () => {
           if (highlightMoney) highlightMoney.style.color = '#059669';
         });
 
-        table.querySelectorAll('.col-ativo').forEach(el => el.style.width = '35%');
-        table.querySelectorAll('.col-tipo').forEach(el => el.style.width = '15%');
-        table.querySelectorAll('.col-qtd').forEach(el => el.style.width = '25%');
-        table.querySelectorAll('.col-val').forEach(el => el.style.width = '25%');
+        // 🟢 Redimensionamento das larguras das colunas sincronizado com o CSS no PDF
+        table.querySelectorAll('.col-ativo').forEach(el => el.style.width = '30%');
+        table.querySelectorAll('.col-tipo').forEach(el => el.style.width = '12%');
+        table.querySelectorAll('.col-data').forEach(el => el.style.width = '18%');
+        table.querySelectorAll('.col-qtd').forEach(el => el.style.width = '20%');
+        table.querySelectorAll('.col-val').forEach(el => el.style.width = '20%');
       }
     });
   });
@@ -444,10 +448,12 @@ const generatePDF = () => {
   width: 100%;
 }
 
-.col-ativo { width: 35%; }
-.col-tipo  { width: 15%; }
-.col-qtd   { width: 25%; }
-.col-val   { width: 25%; }
+/* 🟢 Distribuição recalibrada das 5 colunas para fechar em 100% */
+.col-ativo { width: 30%; }
+.col-tipo  { width: 12%; }
+.col-data  { width: 18%; }
+.col-qtd   { width: 20%; }
+.col-val   { width: 20%; }
 
 @media print {
   .no-print { display: none !important; }
