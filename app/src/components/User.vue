@@ -113,7 +113,6 @@ onMounted(() => {
     </div>
 
     <header class="shrink-0 mb-4">
-      <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Kaxatapi Finance</h3>
       <h1 class="text-3xl font-bold text-white tracking-tight leading-none">Meu Perfil</h1>
     </header>
 
