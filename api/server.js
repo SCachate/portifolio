@@ -41,7 +41,7 @@ app.use((req, res, next) => {
 });
 
 // Rotas
-app.use('/auth', authRoutes);
+app.use('/auth', authRoutes); 
 app.use('/classes', classRoutes);
 app.use('/assets', assetRoutes);
 app.use('/dashboard', dashboardRoutes);
