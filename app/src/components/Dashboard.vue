@@ -32,7 +32,9 @@
             <template v-else-if="currentTab === 'dividendos'">
               <DividendosView />
             </template>
-
+            <template v-else-if="currentTab === 'usuarios'">
+              <UserView />
+            </template>
           </div>
         </transition>
 
@@ -50,7 +52,8 @@ import Resumo from './Resumo.vue';
 import AsyncLoader from './AsyncLoader.vue';
 import TransactionView from './Transactions.vue';
 import AssetView from './Assets.vue';
-import DividendosView from './Dividendos.vue'
+import DividendosView from './Dividendos.vue';
+import UserView from './User.vue';
 const currentTab = ref('dashboard');
 const { data, loading, error } = useApi(`/dashboard/pendencias`);
 
