@@ -210,15 +210,14 @@ order BY
 // MÓDULO DE GESTÃO E CADASTRO DE ATIVOS (CRUD)
 // =========================================================================
 
-// GET /assets - Lista ativos com suporte a paginação e busca no banco
+// GET /assets - Lista ativos globais (comum a todos os usuários) com paginação e busca
 exports.getAllAssets = asyncHandler(async (req, res) => {
-    const userId = req.userId;
-    
-    // Captura os parâmetros da URL (ex: /assets?page=1&limit=10&search=petr)
+    // Captura e sanitiza os parâmetros da URL
     const page = parseInt(req.query.page) || null;
     const limit = parseInt(req.query.limit) || null;
     const search = req.query.search ? `%${req.query.search.trim()}%` : null;
 
+    // Base da Query Principal
     let query = `
         SELECT 
             a.id, a.ticket, a.description, a.assetType, a.apiCode,
@@ -230,35 +229,38 @@ exports.getAllAssets = asyncHandler(async (req, res) => {
         INNER JOIN investment_classes c ON a.defaultClassId = c.id
         LEFT JOIN investment_strategies s ON a.strategyId = s.id
         LEFT JOIN assets curr ON a.currencyAssetId = curr.id
+        WHERE 1=1
     `;
-
     const params = [];
 
-    // Se houver busca por texto, filtra direto na query do banco (ganho absurdo de performance)
     if (search) {
-        query += ` where (a.ticket LIKE ? OR a.description LIKE ?)`;
+        query += ` AND (a.ticket LIKE ? OR a.description LIKE ?)`;
         params.push(search, search);
     }
 
     query += ` ORDER BY a.assetType ASC, a.ticket ASC, a.description ASC`;
 
-    // Se foi solicitada a paginação, faz o cálculo do OFFSET
+    // Fluxo com Paginação Ativa
     if (page && limit) {
         const offset = (page - 1) * limit;
-        query += ` LIMIT ? OFFSET ?`;
-        params.push(limit, offset);
+        
+        // Base da Query de Contagem Corrigida
+        let countQuery = `SELECT COUNT(*) AS total FROM assets WHERE 1=1`;
+        const countParams = [];
 
-        // Query secundária rápida para contar o total de registros com o mesmo filtro
-        let countQuery = `SELECT COUNT(*) AS total FROM assets`;
-          if (search) {
+        if (search) {
             countQuery += ` AND (ticket LIKE ? OR description LIKE ?)`;
             countParams.push(search, search);
         }
 
+        // Concatena as cláusulas e garante tipagem nativa para o driver mysql2
+        query += ` LIMIT ? OFFSET ?`;
+        params.push(limit, offset);
+
+        // Execução paralela fictícia ou sequencial segura via pool
         const [assetsRows] = await db.execute(query, params);
         const [countRows] = await db.execute(countQuery, countParams);
 
-        // Retorna a lista junto com os metadados da paginação
         return res.json({
             data: assetsRows,
             meta: {
@@ -270,7 +272,7 @@ exports.getAllAssets = asyncHandler(async (req, res) => {
         });
     }
 
-    // Fallback: se não passar paginação, traz todos os dados (comportamento original)
+    // Fallback: Retorna todos os registros se paginação não for enviada
     const [rows] = await db.execute(query, params);
     res.json(rows);
 });
