@@ -91,18 +91,33 @@ const salvarClasse = async () => {
 
 // Exclusão de classe
 const deletarClasse = async (id) => {
-  if (!confirm('Tem certeza que deseja remover esta classe de investimento?')) return;
+  if (!id) {
+    toast.error('ID da classe inválido para exclusão.');
+    return;
+  }
+  
+  if (!confirm('Deseja realmente remover esta classe? Isso pode afetar a exibição de seus ativos vinculados.')) return;
 
   try {
     salvando.value = true;
-    const apiDeletar = useApi(`/classes/${id}`, { method: 'DELETE', immediate: false });
+
+    // Criamos a instância passando a URL com o ID exato já computado
+    const apiDeletar = useApi(`/classes/${id}`, { 
+      method: 'DELETE', 
+      immediate: false 
+    });
+
+    // Dispara a execução real
     await apiDeletar.fetchData();
     
-    toast.success('Classe removida com sucesso.');
+    toast.success('Classe removida com sucesso do sistema.');
+    
     if (form.value.id === id) resetarFormulario();
+    
+    // Atualiza a tabela para sumir com o registro
     await buscarClasses();
   } catch (err) {
-    console.error(err);
+    console.error('Falha na exclusão lógica do registro:', err);
   } finally {
     salvando.value = false;
   }
