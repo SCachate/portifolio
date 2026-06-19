@@ -135,21 +135,21 @@ const toggleCadastros = () => {
 
 // 1. Array Único Atualizado com a Nova Estrutura Hierárquica
 const navigationItems = [
-  { id: 'dashboard',  label: 'Dashboard',    icon: '📊' },
-  { id: 'ativos',     label: 'Meus Ativos',  icon: '💰' },
-  { id: 'transacoes', label: 'Transações',   icon: '🔄' },
+  { id: 'dashboard',  label: 'Dashboard',   icon: '📊' }, // Painel consolidado
+  { id: 'ativos',     label: 'Meus Ativos',  icon: '💼' }, // Carteira/Portfólio de Ativos
+  { id: 'transacoes', label: 'Transações',   icon: '💸' }, // Movimentações financeiras/Aportes
   { 
     id: 'cadastros',   
     label: 'Cadastros',    
-    icon: '⚙️', // Ícone de engrenagem/configuração para Cadastros
+    icon: '🔧', // Ferramentas/Parametrização
     children: [
-      { id: 'cadastro-ativos',  label: 'Ativos',            icon: '📄' },
-      { id: 'classes-ativos',   label: 'Classes de Ativos', icon: '📁' },
-      { id: 'estrategias',      label: 'Estratégias',       icon: '👤' },
-      { id: 'usuarios',         label: 'Usuários',          icon: '👤' },
+      { id: 'cadastro-ativos',  label: 'Ativos',            icon: '🏷️' }, // Ticker/Etiqueta do ativo
+      { id: 'classes-ativos',   label: 'Classes de Ativos', icon: '🗂️' }, // Categorias macro organizadas
+      { id: 'estrategias',      label: 'Estratégias',       icon: '🎯' }, // Alvos e percentuais objetivos
+      { id: 'usuarios',         label: 'Usuários',          icon: '👤' }, // Perfil do investidor
     ]
   },
-  { id: 'dividendos', label: 'Dividendos',   icon: '💰' },
+  { id: 'dividendos', label: 'Dividendos',   icon: '💵' }, // Proventos caindo na conta
 ];
 
 // 2. Computada inteligente para buscar títulos normais ou de subitens
