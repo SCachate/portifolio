@@ -92,33 +92,35 @@ const salvarClasse = async () => {
 // Exclusão de classe
 const deletarClasse = async (id) => {
   if (!id) return;
+  
   if (!confirm('Deseja realmente remover esta classe?')) return;
 
   try {
     salvando.value = true;
 
-    // Passamos um objeto vazio no data para que o useApi original 
-    // monte a requisição sem enviar a string "null" pura pro Express
+    // 🟢 Injetamos data: {} para fazer o useApi original ignorar o envio do "null" no body
     const apiDeletar = useApi(`/classes/${id}`, { 
-      method: 'delete',
+      method: 'delete', // mantém o método idêntico ao esperado
       data: {}, 
       immediate: false 
     });
 
+    // Dispara a requisição de exclusão no backend
     await apiDeletar.fetchData();
 
+    // Exibe o feedback de sucesso se a exclusão foi concluída
     toast.success('Classe removida com sucesso!');
     
     if (form.value.id === id) resetarFormulario();
     
-    // Pequeno atraso para o banco de dados do Render sincronizar
-    // antes de recarregar a tabela de forma limpa
+    // Pequeno atraso seguro para dar tempo do banco de dados do Render 
+    // persistir a deleção antes de consultarmos a listagem atualizada
     setTimeout(async () => {
       await buscarClasses();
     }, 400);
 
   } catch (err) {
-    console.error('Erro na deleção:', err);
+    console.error('Falha ao deletar classe:', err);
   } finally {
     salvando.value = false;
   }
