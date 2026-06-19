@@ -91,44 +91,34 @@ const salvarClasse = async () => {
 
 // Exclusão de classe
 const deletarClasse = async (id) => {
-  if (!id) {
-    toast.error('ID da classe inválido para exclusão.');
-    return;
-  }
-  
-  if (!confirm('Deseja realmente remover esta classe? Teste isolado com useApi.')) return;
+  if (!id) return;
+  if (!confirm('Deseja realmente remover esta classe?')) return;
 
   try {
     salvando.value = true;
 
-    // Instancia passando o DELETE e forçando o 'data' a ir nulo/vazio
+    // Passamos um objeto vazio no data para que o useApi original 
+    // monte a requisição sem enviar a string "null" pura pro Express
     const apiDeletar = useApi(`/classes/${id}`, { 
-      method: 'DELETE', 
-      immediate: false,
-      data: null // 🟢 Força o Axios a não enviar nenhum corpo de dados bizarro que gere o Erro 400
+      method: 'delete',
+      data: {}, 
+      immediate: false 
     });
 
-    // Dispara a requisição física
     await apiDeletar.fetchData();
+
+    toast.success('Classe removida com sucesso!');
     
-    if (apiDeletar.error.value) {
-      console.error('Erro retornado pelo useApi:', apiDeletar.error.value);
-      toast.error('O backend recusou os parâmetros enviados.');
-    } else {
-      toast.success('Classe deletada com sucesso via useApi!');
-      
-      if (form.value.id === id) resetarFormulario();
-      
-      // Como o teste isolado provou que o useApi funciona se o corpo for limpo,
-      // agora podemos atualizar a lista com segurança usando o setTimeout para não colidir estados:
-      setTimeout(async () => {
-        await buscarClasses();
-      }, 200);
-    }
+    if (form.value.id === id) resetarFormulario();
+    
+    // Pequeno atraso para o banco de dados do Render sincronizar
+    // antes de recarregar a tabela de forma limpa
+    setTimeout(async () => {
+      await buscarClasses();
+    }, 400);
 
   } catch (err) {
-    console.error('Exceção capturada no bloco catch:', err);
-    toast.error('Erro interno na execução do clique.');
+    console.error('Erro na deleção:', err);
   } finally {
     salvando.value = false;
   }
