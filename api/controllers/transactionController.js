@@ -216,3 +216,50 @@ Retorne um objeto JSON seguindo exatamente este esquema:
     res.status(500).json({ error: error.message || "Erro ao processar a nota." });
   }
 });
+
+/**
+ * Adiciona uma transação de forma manual através do formulário lateral
+ * Endpoint: POST /api/transactions/manual
+ */
+exports.addManual = asyncHandler(async (req, res) => {
+    // 1. Captura o userId do middleware de autenticação
+    const userId = req.userId || 1;
+
+    // 2. Extrai os 5 campos vindos do formulário lateral do front
+    const { assetId, brokerId, quantity, priceUnit, custos_operacionais, date } = req.body;
+
+    // 3. Validação básica de consistência dos dados obrigatórios
+    if (!assetId || !brokerId || quantity === undefined || !priceUnit || !date) {
+        return res.status(400).json({ 
+            success: false, 
+            error: "Todos os campos obrigatórios devem ser preenchidos." 
+        });
+    }
+
+    // 4. Tratamento opcional para custos vazios ou nulos
+    const fees = custos_operacionais || 0;
+
+    // 5. Query SQL de Inserção direta usando os padrões da sua tabela
+    const sql = `
+        INSERT INTO transactions (userId, assetId, brokerId, quantity, priceUnit, fees, date)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    // 6. Executa a inserção passando os parâmetros tratados de forma segura
+    const [result] = await db.execute(sql, [
+        userId,
+        assetId,
+        brokerId,
+        quantity,      // Positivo (Compra) ou Negativo (Venda) direto do front
+        priceUnit,
+        fees,          // custos_operacionais salvos na coluna fees
+        date
+    ]);
+
+    // 7. Retorna a confirmação de sucesso
+    res.status(210).json({
+        success: true,
+        message: "Transação manual registrada com sucesso!",
+        transactionId: result.insertId
+    });
+});

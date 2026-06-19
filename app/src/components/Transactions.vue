@@ -10,7 +10,16 @@ const primeiroDiaMes = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), 1
 const hoje = dataAtual.toISOString().split('T')[0];
 
 const fileName = ref('');
-const form = ref({ assetId: '', brokerId: '', quantity: null, priceUnit: null, date: hoje });
+
+// --- FORMULÁRIO DE INSERÇÃO MANUAL AJUSTADO COM OS 6 CAMPOS ---
+const form = ref({ 
+  assetId: '', 
+  brokerId: '', 
+  quantity: null, 
+  priceUnit: null, 
+  custos_operacionais: null, 
+  date: hoje 
+});
 
 const filtros = ref({ 
   dataInicio: primeiroDiaMes, 
@@ -22,7 +31,7 @@ const filtros = ref({
 const paginaAtual = ref(1);
 const itensPorPagina = 6;
 
-// --- NOVOS ESTADOS REATIVOS PARA A ÁREA DE REVISÃO DA IA ---
+// --- ESTADOS REATIVOS PARA A ÁREA DE REVISÃO DA IA ---
 const modoRevisao = ref(false);
 const transacoesParaRevisar = ref([]);
 
@@ -85,6 +94,50 @@ const formatCurrency = (val) =>
   Number(val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 
+// --- FUNÇÃO DO FLUXO DE INSERÇÃO MANUAL CONECTADO À NOVA ROTA ---
+const registrarTransacaoManual = async () => {
+  if (!form.value.assetId || !form.value.brokerId || form.value.quantity === null || !form.value.priceUnit || !form.value.date) {
+    toast.warning('Por favor, preencha todos os campos obrigatórios.');
+    return;
+  }
+
+  try {
+    loading.value = true; // Ativa o loader global
+
+    const apiManual = useApi('/transactions/manual', {
+      method: 'POST',
+      data: {
+        assetId: form.value.assetId,
+        brokerId: form.value.brokerId,
+        quantity: form.value.quantity, // Positivo para Compra, Negativo para Venda
+        priceUnit: form.value.priceUnit,
+        custos_operacionais: form.value.custos_operacionais || 0,
+        date: form.value.date
+      },
+      immediate: false
+    });
+
+    await apiManual.fetchData();
+
+    toast.success('Movimentação registrada com sucesso!');
+
+    // Limpa apenas os campos de valores para agilizar digitações consecutivas
+    form.value.quantity = null;
+    form.value.priceUnit = null;
+    form.value.custos_operacionais = null;
+
+    // Atualiza a tabela ativa sem recarregar a página
+    fetchData();
+
+  } catch (err) {
+    console.error('Erro ao registrar transação manual:', err);
+    toast.error('Falha crítica ao salvar transação manual.');
+  } finally {
+    loading.value = false; // Desativa o loader global
+  }
+};
+
+
 // --- FUNÇÃO DE UPLOAD AJUSTADA EXCLUSIVAMENTE NA VALIDAÇÃO DO IF ---
 const handleFileUpload = async (event) => {
   const file = event.target.files[0];
@@ -96,9 +149,8 @@ const handleFileUpload = async (event) => {
   formData.append('nota', file); 
 
   try {
-    loading.value = true; // Ativa o "K" girando na tela principal
+    loading.value = true; 
 
-    // Instanciamos o useApi de forma isolada
     const apiInstancia = useApi('/transactions/addPDF', {
       method: 'POST',
       data: formData,
@@ -108,18 +160,15 @@ const handleFileUpload = async (event) => {
       }
     });
 
-    // Executamos a requisição do upload
     await apiInstancia.fetchData();
 
-    // Lemos o dado retornado pelo backend
     const resposta = apiInstancia.data.value;
 
     console.log("Objeto de teste no Vue:", resposta);
 
-    // Validação corrigida para checar a chave "transacoes" gerada pelo seu backend
     if (resposta && (resposta.transacoes || Array.isArray(resposta))) {
       transacoesParaRevisar.value = resposta.transacoes || resposta;
-      modoRevisao.value = true; // Força a tela a mudar para o Modo Revisão
+      modoRevisao.value = true; 
       toast.success('Nota lida com sucesso! Revise os dados abaixo antes de salvar.');
     } else {
       toast.error('O backend respondeu, mas a chave "transacoes" não foi encontrada.');
@@ -128,8 +177,8 @@ const handleFileUpload = async (event) => {
   } catch (err) {
     console.error('Falha crítica ao importar arquivo no front:', err);
   } finally {
-    loading.value = false; // Desliga o "K" girando
-    event.target.value = ''; // Limpa o input de arquivo
+    loading.value = false; 
+    event.target.value = ''; 
   }
 };
 
@@ -150,14 +199,13 @@ const salvarDadosRevisados = () => {
   <div class="flex flex-col bg-[#0b0f17] text-slate-300 font-sans p-6 overflow-hidden w-full h-full">
     
     <header class="shrink-0 mb-4">
-      <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Kaxatapi Finance</h3>
       <h1 class="text-3xl font-bold text-white tracking-tight leading-none">Histórico de Movimentações</h1>
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden">
       
       <section class="lg:col-span-4 flex flex-col min-h-0">
-        <div class="bg-[#161b26] rounded-xl border border-white/5 p-6 space-y-6 flex flex-col h-full overflow-y-auto custom-scrollbar shadow-xl">
+        <form @submit.prevent="registrarTransacaoManual" class="bg-[#161b26] rounded-xl border border-white/5 p-6 space-y-6 flex flex-col h-full overflow-y-auto custom-scrollbar shadow-xl">
           <label class="flex flex-col items-center justify-center w-full h-32 border border-dashed border-white/10 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all bg-[#0b0f17]/50 group shrink-0">
             <input type="file" class="hidden" @change="handleFileUpload" accept="application/pdf" />
             <span class="text-[10px] font-black text-slate-500 group-hover:text-emerald-500 uppercase tracking-widest text-center px-4">
@@ -165,13 +213,13 @@ const salvarDadosRevisados = () => {
             </span>
           </label>
 
-          <div class="space-y-4 flex-grow">
+          <div class="space-y-4 flex-grow text-left">
             <div class="space-y-1">
               <div class="flex justify-between text-[10px] font-black uppercase text-slate-500">
                 <label>Ativo</label>
-                <button class="text-emerald-500 hover:brightness-125">+ Novo</button>
+                <button type="button" class="text-emerald-500 hover:brightness-125">+ Novo</button>
               </div>
-              <select v-model="form.assetId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none">
+              <select v-model="form.assetId" required class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none">
                 <option value="" disabled>Selecione...</option>
                 <option v-for="a in ativosParaSelect" :key="a.assetId" :value="a.assetId">{{ a.ticket || a.description }}</option>
               </select>
@@ -179,7 +227,7 @@ const salvarDadosRevisados = () => {
 
             <div class="space-y-1">
               <label class="text-[10px] font-black uppercase text-slate-500 block">Corretora</label>
-              <select v-model="form.brokerId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none">
+              <select v-model="form.brokerId" required class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none">
                 <option value="" disabled>Selecione...</option>
                 <option v-for="b in brokersParaSelect" :key="b.brokerId" :value="b.brokerId">{{ b.name }}</option>
               </select>
@@ -187,20 +235,31 @@ const salvarDadosRevisados = () => {
 
             <div class="grid grid-cols-2 gap-4">
               <div class="space-y-1">
-                <label class="text-[10px] font-black uppercase text-slate-500">Qtd.</label>
-                <input v-model.number="form.quantity" type="number" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none" />
+                <label class="text-[10px] font-black uppercase text-slate-500">Qtd. (Venda é -)</label>
+                <input v-model.number="form.quantity" type="number" step="0.00000001" required placeholder="0" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white font-mono outline-none" />
               </div>
               <div class="space-y-1">
                 <label class="text-[10px] font-black uppercase text-slate-500">Custo Unit.</label>
-                <input v-model.number="form.priceUnit" type="number" step="0.01" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none" />
+                <input v-model.number="form.priceUnit" type="number" step="0.0001" required placeholder="0.00" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white font-mono outline-none" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <label class="text-[10px] font-black uppercase text-slate-500">Custos / Taxas</label>
+                <input v-model.number="form.custos_operacionais" type="number" step="0.01" placeholder="0.00" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white font-mono outline-none" />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] font-black uppercase text-slate-500">Data Transação</label>
+                <input v-model="form.date" type="date" required class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white font-mono outline-none" />
               </div>
             </div>
           </div>
 
-          <button class="w-full py-4 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-500 hover:text-white font-black uppercase tracking-widest rounded-lg transition-all text-xs border border-emerald-500/20 shrink-0">
+          <button type="submit" class="w-full py-4 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-500 hover:text-white font-black uppercase tracking-widest rounded-lg transition-all text-xs border border-emerald-500/20 shrink-0">
             Registrar Transação
           </button>
-        </div>
+        </form>
       </section>
 
       <section class="lg:col-span-8 flex flex-col min-h-0 h-full">
@@ -246,10 +305,10 @@ const salvarDadosRevisados = () => {
                 🤖 REVISÃO DA INTELIGÊNCIA ARTIFICIAL (Ajuste se necessário)
               </span>
               <div class="flex gap-2">
-                <button @click="cancelarRevisao" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white text-[10px] font-black uppercase tracking-wider rounded-md transition-all">
+                <button type="button" @click="cancelarRevisao" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white text-[10px] font-black uppercase tracking-wider rounded-md transition-all">
                   Cancelar
                 </button>
-                <button @click="salvarDadosRevisados" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider rounded-md shadow-lg transition-all">
+                <button type="button" @click="salvarDadosRevisados" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider rounded-md shadow-lg transition-all">
                   Confirmar e Salvar no Banco
                 </button>
               </div>
@@ -326,10 +385,10 @@ const salvarDadosRevisados = () => {
                 Página {{ paginaAtual }} de {{ totalPaginas }} ({{ transacoesTotal.length }} registros)
               </span>
               <div class="flex gap-2">
-                <button @click="paginaAtual--" :disabled="paginaAtual === 1" class="px-4 py-2 bg-[#0b0f17] border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-emerald-500 disabled:opacity-20 transition-all">
+                <button type="button" @click="paginaAtual--" :disabled="paginaAtual === 1" class="px-4 py-2 bg-[#0b0f17] border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-emerald-500 disabled:opacity-20 transition-all">
                   Anterior
                 </button>
-                <button @click="paginaAtual++" :disabled="paginaAtual >= totalPaginas" class="px-4 py-2 bg-[#0b0f17] border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-emerald-500 disabled:opacity-20 transition-all">
+                <button type="button" @click="paginaAtual++" :disabled="paginaAtual >= totalPaginas" class="px-4 py-2 bg-[#0b0f17] border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-emerald-500 disabled:opacity-20 transition-all">
                   Próximo
                 </button>
               </div>

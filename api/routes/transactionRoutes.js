@@ -14,7 +14,7 @@ const upload = multer({ dest: '/tmp/' });
 router.get('/', authMiddleware, transactionController.getTransactions);
 
 // Rota para adicionar uma transação manualmente via formulário (POST)
-//router.post('/manual', authMiddleware, transactionController.addManual);
+router.post('/manual', authMiddleware, transactionController.addManual);
 
 // Rota para processar o PDF
 router.post('/addPDF', authMiddleware, upload.single('nota'), transactionController.addPDF);
