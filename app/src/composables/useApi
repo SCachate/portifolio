@@ -1,81 +1,60 @@
-import { ref, isRef, watch, unref } from 'vue';
+import { ref, watch, unref } from 'vue';
 import axios from 'axios';
+import { useToast } from 'vue-toastification'; 
 
 export function useApi(url, options = {}) {
-  // Isola os estados reativos dentro da instância da função para evitar conflitos de memória
   const data = ref(null);
+  const loading = ref(true);
   const error = ref(null);
-  const loading = ref(false);
-
-  // Configurações padrão extraídas das opções
-  const method = options.method || 'GET';
-  const immediate = options.immediate !== undefined ? options.immediate : false;
+  const toast = useToast();  
 
   const fetchData = async () => {
+    const urlValue = unref(url);
+    const token = localStorage.getItem('user_token');
+    
+    if (!urlValue) return;
+
     loading.value = true;
-    error.value = null;
-
     try {
-      // Resgata o token e limpa aspas residuais comuns do localStorage
-      let token = localStorage.getItem('token') || localStorage.getItem('auth_token');
-      if (token) {
-        token = token.replace(/"/g, '');
-      }
-
-      // Monta os cabeçalhos padrão da requisição
+      // Configuramos os headers base, mas permitimos que as 'options' sobrescrevam
       const headers = {
         'Content-Type': 'application/json',
-        ...(token && { 'Authorization': token.startsWith('Bearer ') ? token : `Bearer ${token}` })
+        ...options.headers
       };
 
-      // Resolve o valor da URL caso ela venha como uma propriedade computada ou ref reativa
-      const urlValue = unref(url);
-      const baseUrl = import.meta.env.VITE_API_URL || 'https://portfolio-api-b1ml.onrender.com';
-
-      const response = await axios({
-        url: `${baseUrl}${urlValue}`,
-        method: method,
-        // Se for um DELETE, garante que o corpo não envie resíduos que causem erro 400
-        data: method.toUpperCase() === 'DELETE' ? null : unref(options.data),
-        headers: headers
-      });
-
-      // 🟢 PROTEÇÃO CRÍTICA ANTI-NULL: Previne o estouro de SyntaxError do JSON.parse
-      if (!response.data || response.data === 'null') {
-        data.value = { success: true, message: 'Operação realizada sem retorno de conteúdo.' };
-      } else {
-        data.value = response.data;
+      if (token && urlValue !== '/auth/google') {
+        headers['Authorization'] = `Bearer ${token}`;
       }
 
+      const response = await axios({
+        url: `${import.meta.env.VITE_API_URL}${urlValue}`, 
+        method: options.method || 'get',
+        data: options.data || null,
+        headers: headers 
+      });
+
+      data.value = response.data;
     } catch (err) {
-      console.error('Erro na infraestrutura da API (useApi):', err);
-      error.value = err.response?.data || err;
-      // Propaga o erro para o bloco catch do componente tratá-lo se necessário
-      throw error.value;
+      error.value = err;
+
+      if (err.response && err.response.status === 401) {
+        localStorage.removeItem('user_token');
+        toast.error("Sua sessão expirou. Faça login novamente.");
+        window.location.reload();
+      } else {
+        toast.error(err.response?.data?.error || "Erro na requisição.");
+      }
+      console.error("Erro na API:", err);
     } finally {
       loading.value = false;
     }
   };
 
-  // Se a URL for reativa, re-executa a busca automaticamente quando o parâmetro mudar
-  if (isRef(url)) {
-    watch(url, () => {
-      if (immediate || options.immediate) {
-        fetchData();
-      }
-    });
-  }
-
-  // Execução imediata caso configurado (comum em listagens GET estruturadas)
-  if (immediate) {
+  // Se for um método imediato (GET), executa na hora. 
+  // Se for POST com dados, geralmente chamamos manualmente o fetchData
+  if (options.immediate !== false) {
     fetchData();
   }
 
-  // Retorna os estados isolados e o método de disparo manual
-  return {
-    data,
-    error,
-    loading,
-    fetchData
-  };
+  return { data, loading, error, fetchData };
 }
