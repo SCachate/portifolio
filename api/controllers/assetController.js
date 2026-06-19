@@ -225,11 +225,10 @@ exports.getAllAssets = asyncHandler(async (req, res) => {
         INNER JOIN investment_classes c ON a.defaultClassId = c.id
         LEFT JOIN investment_strategies s ON a.strategyId = s.id
         LEFT JOIN assets curr ON a.currencyAssetId = curr.id
-        WHERE a.userId = ?
         ORDER BY a.assetType ASC, a.ticket ASC, a.description ASC
     `;
 
-    const [rows] = await db.execute(query, [userId]);
+    const [rows] = await db.execute(query);
     res.json(rows);
 });
 
@@ -243,12 +242,11 @@ exports.createAsset = asyncHandler(async (req, res) => {
     }
 
     const query = `
-        INSERT INTO assets (userId, ticket, description, assetType, apiCode, defaultClassId, strategyId, currencyAssetId, is_liquidity)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO assets (ticket, description, assetType, apiCode, defaultClassId, strategyId, currencyAssetId, is_liquidity)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const [result] = await db.execute(query, [
-        userId, 
         ticket ? ticket.toUpperCase().trim() : null, 
         description.trim(), 
         assetType, 
@@ -271,7 +269,7 @@ exports.updateAsset = asyncHandler(async (req, res) => {
     const query = `
         UPDATE assets 
         SET ticket = ?, description = ?, assetType = ?, apiCode = ?, defaultClassId = ?, strategyId = ?, currencyAssetId = ?, is_liquidity = ?
-        WHERE id = ? AND userId = ?
+        WHERE id = ?
     `;
 
     const [result] = await db.execute(query, [
@@ -283,8 +281,7 @@ exports.updateAsset = asyncHandler(async (req, res) => {
         strategyId || null, 
         currencyAssetId || null, 
         is_liquidity ? 1 : 0,
-        id,
-        userId
+        id
     ]);
 
     if (result.affectedRows === 0) {
@@ -296,11 +293,10 @@ exports.updateAsset = asyncHandler(async (req, res) => {
 
 // DELETE /assets/:id - Remove a definição de um ativo de forma isolada
 exports.deleteAsset = asyncHandler(async (req, res) => {
-    const userId = req.userId;
     const { id } = req.params;
 
-    const query = `DELETE FROM assets WHERE id = ? AND userId = ?`;
-    const [result] = await db.execute(query, [id, userId]);
+    const query = `DELETE FROM assets WHERE id = ?`;
+    const [result] = await db.execute(query, [id]);
 
     if (result.affectedRows === 0) {
         return res.status(404).json({ error: 'Ativo não localizado.' });
