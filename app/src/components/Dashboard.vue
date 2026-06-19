@@ -39,7 +39,7 @@
               <ClassView />
             </template>
             <template v-else-if="currentTab === 'estrategias'">
-              <StrategiasView />
+              <StrategyView />
             </template>
           </div>
         </transition>
