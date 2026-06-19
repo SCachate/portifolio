@@ -101,27 +101,36 @@ const deletarClasse = async (id) => {
   try {
     salvando.value = true;
 
-    // Instancia localmente e de forma isolada apenas para a ação do DELETE
-    const apiDeletar = useApi(`/classes/${id}`, { 
-      method: 'DELETE', 
-      immediate: false 
+    // Resgatamos o token do localStorage exatamente como o useApi faz internamente
+    const token = localStorage.getItem('token'); 
+
+    // Disparamos o fetch nativo para isolar o escopo e garantir que nenhuma configuração antiga interfira
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://portfolio-api-b1ml.onrender.com'}/classes/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
     });
 
-    await apiDeletar.fetchData();
+    const resultado = await response.json().catch(() => ({}));
 
-    // Checa se o método não reteve um erro interno do Composable
-    if (!apiDeletar.error.value) {
+    if (response.ok) {
       toast.success('Classe removida com sucesso do sistema.');
       
+      // Se a classe deletada estava selecionada no formulário, limpa ele
       if (form.value.id === id) resetarFormulario();
       
-      // Força o GET de atualização de forma totalmente limpa e isolada
-      setTimeout(async () => {
-        await buscarClasses();
-      }, 100);
+      // Atualiza a tabela chamando a listagem limpa
+      await buscarClasses();
+    } else {
+      // Se o back retornou um erro estruturado, exibe na tela
+      toast.error(resultado.error || resultado.message || 'Erro ao tentar excluir a classe.');
     }
+
   } catch (err) {
     console.error('Falha na exclusão lógica do registro:', err);
+    toast.error('Erro de conectividade ao tentar excluir.');
   } finally {
     salvando.value = false;
   }
