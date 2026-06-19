@@ -210,11 +210,16 @@ order BY
 // MÓDULO DE GESTÃO E CADASTRO DE ATIVOS (CRUD)
 // =========================================================================
 
-// GET /assets - Lista todos os ativos do usuário com joins otimizados
+// GET /assets - Lista ativos com suporte a paginação e busca no banco
 exports.getAllAssets = asyncHandler(async (req, res) => {
     const userId = req.userId;
+    
+    // Captura os parâmetros da URL (ex: /assets?page=1&limit=10&search=petr)
+    const page = parseInt(req.query.page) || null;
+    const limit = parseInt(req.query.limit) || null;
+    const search = req.query.search ? `%${req.query.search.trim()}%` : null;
 
-    const query = `
+    let query = `
         SELECT 
             a.id, a.ticket, a.description, a.assetType, a.apiCode,
             a.defaultClassId, a.strategyId, a.currencyAssetId, a.is_liquidity,
@@ -225,10 +230,48 @@ exports.getAllAssets = asyncHandler(async (req, res) => {
         INNER JOIN investment_classes c ON a.defaultClassId = c.id
         LEFT JOIN investment_strategies s ON a.strategyId = s.id
         LEFT JOIN assets curr ON a.currencyAssetId = curr.id
-        ORDER BY a.assetType ASC, a.ticket ASC, a.description ASC
     `;
 
-    const [rows] = await db.execute(query);
+    const params = [];
+
+    // Se houver busca por texto, filtra direto na query do banco (ganho absurdo de performance)
+    if (search) {
+        query += ` where (a.ticket LIKE ? OR a.description LIKE ?)`;
+        params.push(search, search);
+    }
+
+    query += ` ORDER BY a.assetType ASC, a.ticket ASC, a.description ASC`;
+
+    // Se foi solicitada a paginação, faz o cálculo do OFFSET
+    if (page && limit) {
+        const offset = (page - 1) * limit;
+        query += ` LIMIT ? OFFSET ?`;
+        params.push(limit, offset);
+
+        // Query secundária rápida para contar o total de registros com o mesmo filtro
+        let countQuery = `SELECT COUNT(*) AS total FROM assets`;
+          if (search) {
+            countQuery += ` AND (ticket LIKE ? OR description LIKE ?)`;
+            countParams.push(search, search);
+        }
+
+        const [assetsRows] = await db.execute(query, params);
+        const [countRows] = await db.execute(countQuery, countParams);
+
+        // Retorna a lista junto com os metadados da paginação
+        return res.json({
+            data: assetsRows,
+            meta: {
+                totalItems: countRows[0].total,
+                totalPages: Math.ceil(countRows[0].total / limit),
+                currentPage: page,
+                itemsPerPage: limit
+            }
+        });
+    }
+
+    // Fallback: se não passar paginação, traz todos os dados (comportamento original)
+    const [rows] = await db.execute(query, params);
     res.json(rows);
 });
 
