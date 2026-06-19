@@ -23,10 +23,17 @@ const loadingGlobal = computed(() => carregandoLista.value || salvando.value);
 // Modo de operação do formulário
 const isEditing = computed(() => form.value.id !== null);
 
+// Extrai a lista de forma segura (tratando se vem envelopada ou array puro)
+const safeClassesList = computed(() => {
+  if (!classesList.value) return [];
+  return classesList.value.investment_classes || classesList.value;
+});
+
 // Cálculo do percentual total planejado (Soma dos Target Percents)
 const totalTargetPercent = computed(() => {
-  if (!classesList.value) return 0;
-  return classesList.value.reduce((acc, curr) => acc + Number(curr.targetPercent || 0), 0);
+  const lista = safeClassesList.value;
+  if (!Array.isArray(lista)) return 0;
+  return lista.reduce((acc, curr) => acc + Number(curr.targetPercent || 0), 0);
 });
 
 // Seleciona uma classe da lista para edição
@@ -34,8 +41,8 @@ const selecionarClasse = (classe) => {
   form.value = {
     id: classe.id,
     name: classe.name,
-    targetPercent: Number(classe.targetPercent),
-    color: classe.color
+    targetPercent: Number(classe.targetPercent || 0),
+    color: classe.color || '#008FFB'
   };
 };
 
@@ -72,7 +79,7 @@ const salvarClasse = async () => {
     });
 
     await apiAcao.fetchData();
-    toast.success(isEditing.value ? 'Classe atualizada!' : 'Classe criada!');
+    toast.success(isEditing.value ? 'Classe atualizada com sucesso!' : 'Classe criada com sucesso!');
     resetarFormulario();
     await buscarClasses(); // Atualiza a lista lateral
   } catch (err) {
@@ -100,6 +107,10 @@ const deletarClasse = async (id) => {
     salvando.value = false;
   }
 };
+
+onMounted(() => {
+  buscarClasses();
+});
 </script>
 
 <template>
@@ -115,7 +126,6 @@ const deletarClasse = async (id) => {
     </div>
 
     <header class="shrink-0 mb-4">
-      <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Kaxatapi Finance</h3>
       <h1 class="text-3xl font-bold text-white tracking-tight leading-none">Classes de Investimento</h1>
     </header>
 
@@ -146,14 +156,14 @@ const deletarClasse = async (id) => {
               </thead>
               <tbody class="divide-y divide-white/5">
                 <tr 
-                  v-for="item in classesList" 
+                  v-for="item in safeClassesList" 
                   :key="item.id" 
                   class="hover:bg-white/[0.02] cursor-pointer group"
                   :class="{'bg-emerald-500/5': form.id === item.id}"
                   @click="selecionarClasse(item)"
                 >
                   <td class="p-4 text-center">
-                    <div class="w-4 h-4 rounded-full mx-auto border border-white/10 shadow-inner" :style="{ backgroundColor: item.color }"></div>
+                    <div class="w-4 h-4 rounded-full mx-auto border border-white/10 shadow-inner" :style="{ backgroundColor: item.color || '#8884d8' }"></div>
                   </td>
                   <td class="p-4">
                     <span class="text-sm font-bold text-white tracking-tight group-hover:text-emerald-400 transition-colors">
@@ -161,7 +171,7 @@ const deletarClasse = async (id) => {
                     </span>
                   </td>
                   <td class="p-4 text-right font-mono text-sm text-slate-300 font-bold">
-                    {{ Number(item.targetPercent).toFixed(2) }}%
+                    {{ item.targetPercent ? Number(item.targetPercent).toFixed(2) : '0.00' }}%
                   </td>
                   <td class="p-4 text-center" @click.stop>
                     <button 
@@ -173,7 +183,7 @@ const deletarClasse = async (id) => {
                     </button>
                   </td>
                 </tr>
-                <tr v-if="!carregandoLista && (!classesList || classesList.length === 0)">
+                <tr v-if="!carregandoLista && safeClassesList.length === 0">
                   <td colspan="4" class="p-10 text-center text-slate-600 uppercase text-[10px] font-black">
                     Nenhuma classe configurada.
                   </td>
