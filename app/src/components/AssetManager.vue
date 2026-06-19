@@ -9,7 +9,7 @@ const salvando = ref(false);
 
 // 🟢 Estados de controle da Paginação
 const paginaAtual = ref(1);
-const itensPorPagina = ref(15); // Quantidade sênior ideal por página de tabela
+const itensPorPagina = ref(8); // Quantidade sênior ideal por página de tabela
 
 const form = ref({
   id: null,
