@@ -210,9 +210,9 @@ order BY
 // MÓDULO DE GESTÃO E CADASTRO DE ATIVOS (CRUD)
 // =========================================================================
 
-// GET /assets - Lista ativos globais (comum a todos os usuários) com paginação e busca
+// GET /assets - Lista ativos globais com paginação correta e prepared statements válidos
 exports.getAllAssets = asyncHandler(async (req, res) => {
-    // Captura e força a conversão estrita para números inteiros
+    // Captura os parâmetros e garante que são inteiros válidos antes do parse
     const page = parseInt(req.query.page, 10) || null;
     const limit = parseInt(req.query.limit, 10) || null;
     const search = req.query.search ? `%${req.query.search.trim()}%` : null;
@@ -233,6 +233,7 @@ exports.getAllAssets = asyncHandler(async (req, res) => {
     `;
     const params = [];
 
+    // Filtro dinâmico de busca por texto
     if (search) {
         query += ` AND (a.ticket LIKE ? OR a.description LIKE ?)`;
         params.push(search, search);
@@ -240,11 +241,11 @@ exports.getAllAssets = asyncHandler(async (req, res) => {
 
     query += ` ORDER BY a.assetType ASC, a.ticket ASC, a.description ASC`;
 
-    // Fluxo com Paginação Ativa
+    // Tratamento de Paginação Ativa
     if (page && limit) {
         const offset = (page - 1) * limit;
         
-        // Base da Query de Contagem Corrigida
+        // Estruturação da contagem mantendo isolamento de escopo
         let countQuery = `SELECT COUNT(*) AS total FROM assets WHERE 1=1`;
         const countParams = [];
 
@@ -253,11 +254,13 @@ exports.getAllAssets = asyncHandler(async (req, res) => {
             countParams.push(search, search);
         }
 
-        // 🔥 SOLUÇÃO DO ERRO: Injetar os inteiros sanitizados diretamente na string.
-        // O método execute() do MySQL tem um bug histórico com placeholders (?) no LIMIT/OFFSET em várias versões.
-        query += ` LIMIT ${limit} OFFSET ${offset}`;
+        // Adiciona placeholders normais para manter a query segura
+        query += ` LIMIT ? OFFSET ?`;
+        
+        // 🔥 CORREÇÃO CRÍTICA DO BUG: Cast explícito para String obrigatório no driver mysql2 para LIMIT/OFFSET
+        params.push(limit.toString(), offset.toString());
 
-        // Executa as queries de forma limpa
+        // Execução assíncrona utilizando o pool injetado
         const [assetsRows] = await db.execute(query, params);
         const [countRows] = await db.execute(countQuery, countParams);
 
@@ -272,7 +275,7 @@ exports.getAllAssets = asyncHandler(async (req, res) => {
         });
     }
 
-    // Fallback: Retorna todos os registros se paginação não for enviada
+    // Fallback caso a rota seja chamada sem parâmetros de paginação (traz tudo)
     const [rows] = await db.execute(query, params);
     res.json(rows);
 });
