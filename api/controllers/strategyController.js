@@ -14,8 +14,8 @@ exports.getAllStrategies = asyncHandler(async (req, res) => {
             CAST(s.targetPercent AS DECIMAL(5,2)) AS targetPercent
         FROM investment_strategies s
         INNER JOIN investment_classes c ON s.classId = c.id
-        WHERE s.userId = ?
-        ORDER BY c.name ASC, s.targetPercent DESC
+        WHERE c.userId = ?
+        ORDER BY c.name
     `;
 
     const [rows] = await db.execute(query, [userId]);
@@ -32,12 +32,11 @@ exports.createStrategy = asyncHandler(async (req, res) => {
     }
 
     const query = `
-        INSERT INTO investment_strategies (userId, classId, name, targetPercent) 
-        VALUES (?, ?, ?, ?)
+        INSERT INTO investment_strategies ( classId, name, targetPercent) 
+        VALUES ( ?, ?, ?)
     `;
 
     const [result] = await db.execute(query, [
-        userId,
         classId,
         name,
         targetPercent || 0.00
@@ -51,7 +50,6 @@ exports.createStrategy = asyncHandler(async (req, res) => {
 
 // PUT /strategies/:id - Atualiza os dados da estratégia
 exports.updateStrategy = asyncHandler(async (req, res) => {
-    const userId = req.userId;
     const { id } = req.params;
     const { name, classId, targetPercent } = req.body;
 
@@ -62,10 +60,10 @@ exports.updateStrategy = asyncHandler(async (req, res) => {
     const query = `
         UPDATE investment_strategies 
         SET name = ?, classId = ?, targetPercent = ? 
-        WHERE id = ? AND userId = ?
+        WHERE id = ?
     `;
 
-    const [result] = await db.execute(query, [name, classId, targetPercent || 0.00, id, userId]);
+    const [result] = await db.execute(query, [name, classId, targetPercent || 0.00, id]);
 
     if (result.affectedRows === 0) {
         return res.status(404).json({ error: 'Estratégia não localizada ou permissão negada.' });
@@ -76,15 +74,14 @@ exports.updateStrategy = asyncHandler(async (req, res) => {
 
 // DELETE /strategies/:id - Remove a estratégia
 exports.deleteStrategy = asyncHandler(async (req, res) => {
-    const userId = req.userId;
     const { id } = req.params;
 
     const query = `
         DELETE FROM investment_strategies 
-        WHERE id = ? AND userId = ?
+        WHERE id = ?
     `;
 
-    const [result] = await db.execute(query, [id, userId]);
+    const [result] = await db.execute(query, [id]);
 
     if (result.affectedRows === 0) {
         return res.status(404).json({ error: 'Estratégia não localizada ou permissão negada.' });
