@@ -10,7 +10,7 @@ exports.getAllClasses = asyncHandler(async (req, res) => {
         SELECT id, name, CAST(targetPercent AS DECIMAL(5,2)) AS targetPercent, color 
         FROM investment_classes 
         WHERE userId = ?
-        ORDER BY targetPercent DESC, name ASC
+        ORDER BY name ASC
     `;
     const [rows] = await db.execute(query, [userId]);
     res.json(rows);
