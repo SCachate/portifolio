@@ -67,13 +67,15 @@ const totalPaginas = computed(() =>
   Math.max(1, Math.ceil(transacoesTotal.value.length / itensPorPagina))
 );
 
+// --- MAPEAMENTO PARA SELECTS USANDO OS DADOS DA PRÓPRIA TABELA ---
 const ativosParaSelect = computed(() => {
   const unicos = [...new Map(
     transacoesTotal.value
       .filter(item => item?.assetId)
       .map(item => [item.assetId, { assetId: item.assetId, ticket: item.ticket, description: item.assetDescription }])
   ).values()];
-  return unicos.sort((a, b) => (a.ticket || '').localeCompare(b.ticket || ''));
+  // Ordena os ativos em ordem alfabética pela DESCRIÇÃO
+  return unicos.sort((a, b) => (a.description || '').localeCompare(b.description || ''));
 });
 
 const brokersParaSelect = computed(() => {
@@ -82,6 +84,7 @@ const brokersParaSelect = computed(() => {
       .filter(item => item?.brokerId)
       .map(item => [item.brokerId, { brokerId: item.brokerId, name: item.brokerName }])
   ).values()];
+  // Ordena as corretoras em ordem alfabética pelo NOME
   return unicos.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
@@ -94,7 +97,7 @@ const formatCurrency = (val) =>
   Number(val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 
-// --- FUNÇÃO DO FLUXO DE INSERÇÃO MANUAL CONECTADO À NOVA ROTA ---
+// --- FUNÇÃO DO FLUXO DE INSERÇÃO MANUAL ---
 const registrarTransacaoManual = async () => {
   if (!form.value.assetId || !form.value.brokerId || form.value.quantity === null || !form.value.priceUnit || !form.value.date) {
     toast.warning('Por favor, preencha todos os campos obrigatórios.');
@@ -102,14 +105,14 @@ const registrarTransacaoManual = async () => {
   }
 
   try {
-    loading.value = true; // Ativa o loader global
+    loading.value = true; 
 
     const apiManual = useApi('/transactions/manual', {
       method: 'POST',
       data: {
         assetId: form.value.assetId,
         brokerId: form.value.brokerId,
-        quantity: form.value.quantity, // Positivo para Compra, Negativo para Venda
+        quantity: form.value.quantity, 
         priceUnit: form.value.priceUnit,
         custos_operacionais: form.value.custos_operacionais || 0,
         date: form.value.date
@@ -121,24 +124,24 @@ const registrarTransacaoManual = async () => {
 
     toast.success('Movimentação registrada com sucesso!');
 
-    // Limpa apenas os campos de valores para agilizar digitações consecutivas
+    // Limpa os campos numéricos para facilitar novos inputs rápidos
     form.value.quantity = null;
     form.value.priceUnit = null;
     form.value.custos_operacionais = null;
 
-    // Atualiza a tabela ativa sem recarregar a página
+    // Recarrega a tabela padrão
     fetchData();
 
   } catch (err) {
     console.error('Erro ao registrar transação manual:', err);
     toast.error('Falha crítica ao salvar transação manual.');
   } finally {
-    loading.value = false; // Desativa o loader global
+    loading.value = false; 
   }
 };
 
 
-// --- FUNÇÃO DE UPLOAD AJUSTADA EXCLUSIVAMENTE NA VALIDAÇÃO DO IF ---
+// --- IMPORTAÇÃO VIA PDF ---
 const handleFileUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
@@ -161,10 +164,7 @@ const handleFileUpload = async (event) => {
     });
 
     await apiInstancia.fetchData();
-
     const resposta = apiInstancia.data.value;
-
-    console.log("Objeto de teste no Vue:", resposta);
 
     if (resposta && (resposta.transacoes || Array.isArray(resposta))) {
       transacoesParaRevisar.value = resposta.transacoes || resposta;
@@ -182,7 +182,6 @@ const handleFileUpload = async (event) => {
   }
 };
 
-// Funções de controle da área de revisão
 const cancelarRevisao = () => {
   modoRevisao.value = false;
   transacoesParaRevisar.value = [];
@@ -191,7 +190,6 @@ const cancelarRevisao = () => {
 
 const salvarDadosRevisados = () => {
   toast.info('Pronto para enviar ao banco os dados revisados!');
-  console.log('Dados prontos para o banco:', transacoesParaRevisar.value);
 };
 </script>
 
@@ -199,6 +197,7 @@ const salvarDadosRevisados = () => {
   <div class="flex flex-col bg-[#0b0f17] text-slate-300 font-sans p-6 overflow-hidden w-full h-full">
     
     <header class="shrink-0 mb-4">
+      <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Kaxatapi Finance</h3>
       <h1 class="text-3xl font-bold text-white tracking-tight leading-none">Histórico de Movimentações</h1>
     </header>
 
@@ -221,7 +220,9 @@ const salvarDadosRevisados = () => {
               </div>
               <select v-model="form.assetId" required class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none">
                 <option value="" disabled>Selecione...</option>
-                <option v-for="a in ativosParaSelect" :key="a.assetId" :value="a.assetId">{{ a.ticket || a.description }}</option>
+                <option v-for="a in ativosParaSelect" :key="a.assetId" :value="a.assetId">
+                  {{ a.description || a.ticket }}
+                </option>
               </select>
             </div>
 
@@ -229,7 +230,9 @@ const salvarDadosRevisados = () => {
               <label class="text-[10px] font-black uppercase text-slate-500 block">Corretora</label>
               <select v-model="form.brokerId" required class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none">
                 <option value="" disabled>Selecione...</option>
-                <option v-for="b in brokersParaSelect" :key="b.brokerId" :value="b.brokerId">{{ b.name }}</option>
+                <option v-for="b in brokersParaSelect" :key="b.brokerId" :value="b.brokerId">
+                  {{ b.name }}
+                </option>
               </select>
             </div>
 
@@ -276,7 +279,7 @@ const salvarDadosRevisados = () => {
             <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Ativo</label>
             <select v-model="filtros.assetId" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full outline-none">
               <option value="">Todos</option>
-              <option v-for="a in ativosParaSelect" :key="a.assetId" :value="a.assetId">{{ a.ticket || a.description }}</option>
+              <option v-for="a in ativosParaSelect" :key="a.assetId" :value="a.assetId">{{ a.description || a.ticket }}</option>
             </select>
           </div>
           <div class="flex-1 min-w-[150px] space-y-2 text-left">
