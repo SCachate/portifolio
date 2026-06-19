@@ -101,21 +101,25 @@ const deletarClasse = async (id) => {
   try {
     salvando.value = true;
 
-    // Criamos a instância passando a URL com o ID exato já computado
+    // Instancia localmente e de forma isolada apenas para a ação do DELETE
     const apiDeletar = useApi(`/classes/${id}`, { 
       method: 'DELETE', 
       immediate: false 
     });
 
-    // Dispara a execução real
     await apiDeletar.fetchData();
-    
-    toast.success('Classe removida com sucesso do sistema.');
-    
-    if (form.value.id === id) resetarFormulario();
-    
-    // Atualiza a tabela para sumir com o registro
-    await buscarClasses();
+
+    // Checa se o método não reteve um erro interno do Composable
+    if (!apiDeletar.error.value) {
+      toast.success('Classe removida com sucesso do sistema.');
+      
+      if (form.value.id === id) resetarFormulario();
+      
+      // Força o GET de atualização de forma totalmente limpa e isolada
+      setTimeout(async () => {
+        await buscarClasses();
+      }, 100);
+    }
   } catch (err) {
     console.error('Falha na exclusão lógica do registro:', err);
   } finally {
