@@ -31,8 +31,7 @@ export function useApi(url, options = {}) {
       const response = await axios({
         url: `${import.meta.env.VITE_API_URL}${urlValue}`, 
         method: options.method || 'get',
-        // 🟢 AJUSTE CIRÚRGICO: Se for delete, força null para não enviar dados residuais que causam Erro 400
-        data: methodLower === 'delete' ? null : (options.data || null),
+        data: methodLower === 'delete' ? {} : (options.data || null),
         headers: headers 
       });
 
