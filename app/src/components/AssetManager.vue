@@ -9,7 +9,7 @@ const salvando = ref(false);
 
 // 🟢 Estados de controle da Paginação
 const paginaAtual = ref(1);
-const itensPorPagina = ref(8); // Quantidade sênior ideal por página de tabela
+const itensPorPagina = ref(8); // Forçado estritamente para 8 itens conforme seu layout
 
 const form = ref({
   id: null,
@@ -23,7 +23,7 @@ const form = ref({
   is_liquidity: false
 });
 
-// 🟢 URL Reativa do useApi incluindo os parâmetros de paginação e busca ativa
+// 🟢 URL Reativa incluindo paginação e busca ativa
 const assetsUrl = computed(() => {
   return `/assets?page=${paginaAtual.value}&limit=${itensPorPagina.value}&search=${filtroBusca.value}`;
 });
@@ -31,7 +31,6 @@ const assetsUrl = computed(() => {
 const classesUrl = computed(() => '/classes');
 const strategiesUrl = computed(() => '/strategies');
 
-// Dispara automaticamente sempre que assetsUrl mudar (seja por busca ou mudança de página)
 const { data: assetsResponse, loading: loadingAssets, fetchData: buscarAtivos } = useApi(assetsUrl, { immediate: true });
 const { data: classesList } = useApi(classesUrl, { immediate: true });
 const { data: strategiesList } = useApi(strategiesUrl, { immediate: true });
@@ -41,10 +40,20 @@ const loadingGlobal = computed(() => loadingAssets.value || salvando.value);
 
 const assetTypes = ['B3', 'EUA', 'RENDA_FIXA', 'FII', 'TESOURO DIRETO', 'MOEDA'];
 
-// 🟢 Mapeamento seguro dos dados paginados vindos do backend
+// 🟢 MONITOR DE URL: Sempre que a página mudar ou o usuário digitar na busca, 
+// o Vue detecta a mudança e força o composable a ir no banco buscar novos dados.
+watch(assetsUrl, async () => {
+  await buscarAtivos();
+});
+
+// 🟢 Se o usuário digitar na busca, reseta para a página 1 para evitar bugs visuais
+watch(filtroBusca, () => {
+  paginaAtual.value = 1;
+});
+
+// Mapeamento seguro dos dados paginados vindos do backend
 const safeAssetsList = computed(() => {
   if (!assetsResponse.value) return [];
-  // Como o backend agora responde um objeto { data, meta }, pegamos a propriedade correta
   return assetsResponse.value.data || [];
 });
 
@@ -55,22 +64,20 @@ const metadadosPaginacao = computed(() => {
   return assetsResponse.value.meta;
 });
 
-// 🟢 Se o usuário digitar na busca, reseta para a página 1 para evitar inconsistências
-watch(filtroBusca, () => {
-  paginaAtual.value = 1;
-});
-
-// Resto das funções auxiliares permanecem idênticas (moedasDisponiveis, selecionarAtivo, etc.)
+// Filtra as moedas disponíveis para vincular como par cambial (ex: USD)
 const moedasDisponiveis = computed(() => {
   if (!safeAssetsList.value) return [];
   return safeAssetsList.value.filter(a => a.assetType === 'MOEDA');
 });
 
+// Filtra as sub-estratégias baseando-se na classe macro escolhida no form
 const estrategiasFiltradas = computed(() => {
   if (!strategiesList.value || !form.value.defaultClassId) return [];
-  return Array.isArray(strategiesList.value) ? strategiesList.value : [].filter(s => s.classId === form.value.defaultClassId);
+  const list = Array.isArray(strategiesList.value) ? strategiesList.value : [];
+  return list.filter(s => s.classId === form.value.defaultClassId);
 });
 
+// Reseta a estratégia se o usuário mudar a classe macro do ativo
 watch(() => form.value.defaultClassId, () => {
   if (!isEditing.value) form.value.strategyId = '';
 });
@@ -95,28 +102,46 @@ const resetarFormulario = () => {
 
 const salvarAtivo = async () => {
   if (!form.value.description || !form.value.defaultClassId) {
-    toast.warning('Preencha os campos obrigatórios.');
+    toast.warning('Preencha a descrição e selecione a classe macro.');
     return;
   }
+
   try {
     salvando.value = true;
     const url = isEditing.value ? `/assets/${form.value.id}` : '/assets';
-    await useApi(url, { method: isEditing.value ? 'PUT' : 'POST', data: { ...form.value }, immediate: false }).fetchData();
+    const method = isEditing.value ? 'PUT' : 'POST';
+
+    const apiAcao = useApi(url, {
+      method,
+      data: { ...form.value },
+      immediate: false
+    });
+
+    await apiAcao.fetchData();
     toast.success(isEditing.value ? 'Ativo atualizado!' : 'Novo ativo salvo!');
     resetarFormulario();
     await buscarAtivos();
-  } catch (err) { console.error(err); } finally { salvando.value = false; }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    salvando.value = false;
+  }
 };
 
 const deletarAtivo = async (id) => {
   if (!id || !confirm('Deseja realmente remover?')) return;
   try {
     salvando.value = true;
-    await useApi(`/assets/${id}`, { method: 'DELETE', data: {}, immediate: false }).fetchData();
+    const apiDeletar = useApi(`/assets/${id}`, { method: 'DELETE', data: {}, immediate: false });
+    await apiDeletar.fetchData();
     toast.success('Ativo deletado.');
     if (form.value.id === id) resetarFormulario();
     await buscarAtivos();
-  } catch (err) { console.error(err); } finally { salvando.value = false; }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    salvando.value = false;
+  }
 };
 </script>
 
@@ -222,7 +247,81 @@ const deletarAtivo = async (id) => {
       </section>
 
       <section class="lg:col-span-4 flex flex-col min-h-0">
-        </section>
+        <div class="bg-[#161b26] rounded-xl border border-white/5 p-5 shadow-2xl flex flex-col flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+          <div class="mb-4 border-b border-white/5 pb-3 flex justify-between items-center">
+            <h3 class="text-xs font-black text-emerald-400 uppercase tracking-wider">
+              {{ isEditing ? '📝 Alterar Ativo' : '➕ Novo Ativo' }}
+            </h3>
+            <button v-if="isEditing" @click="resetarFormulario" class="text-[9px] font-black uppercase text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Cancelar</button>
+          </div>
+
+          <form @submit.prevent="salvarAtivo" class="space-y-4 flex flex-col justify-between h-full">
+            <div class="space-y-3 text-left">
+              
+              <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-black text-slate-500 uppercase tracking-wider block">Ticket</label>
+                  <input v-model="form.ticket" type="text" placeholder="PETR4, AAPL..." class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-2.5 text-sm font-mono text-white outline-none focus:border-emerald-500/30 uppercase" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-black text-slate-500 uppercase tracking-wider block">Tipo de Mercado</label>
+                  <select v-model="form.assetType" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-2.5 text-sm text-white outline-none">
+                    <option v-for="t in assetTypes" :key="t" :value="t">{{ t }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-[10px] font-black text-slate-500 uppercase tracking-wider block">Descrição do Ativo</label>
+                <input v-model="form.description" type="text" required placeholder="Ex: CDB Banco C6 Consignado..." class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-2.5 text-sm text-white outline-none focus:border-emerald-500/30" />
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-black text-slate-500 uppercase tracking-wider block">Classe Macro</label>
+                  <select v-model="form.defaultClassId" required class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-2.5 text-sm text-white outline-none">
+                    <option value="" disabled>Selecione...</option>
+                    <option v-for="c in classesList" :key="c.id" :value="c.id">{{ c.name }}</option>
+                  </select>
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-black text-slate-500 uppercase tracking-wider block">Sub-Estratégia</label>
+                  <select v-model="form.strategyId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-2.5 text-sm text-white outline-none" :disabled="!form.defaultClassId">
+                    <option value="">Nenhuma</option>
+                    <option v-for="s in estrategiasFiltradas" :key="s.id" :value="s.id">{{ s.name }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-black text-slate-500 uppercase tracking-wider block">Código da API</label>
+                  <input v-model="form.apiCode" type="text" placeholder="Ex: MXRF11.SA" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-2.5 text-sm font-mono text-white outline-none" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-black text-slate-500 uppercase tracking-wider block">Par Cambial</label>
+                  <select v-model="form.currencyAssetId" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-2.5 text-sm text-white outline-none">
+                    <option value="">BRL (Padrão)</option>
+                    <option v-for="m in moedasDisponiveis" :key="m.id" :value="m.id">{{ m.ticket || m.description }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 pt-2">
+                <input v-model="form.is_liquidity" type="checkbox" id="liq" class="accent-emerald-500 rounded" />
+                <label for="liq" class="text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer select-none">Ativo de Liquidez Imediata</label>
+              </div>
+
+            </div>
+
+            <div class="pt-4 border-t border-white/5 flex justify-end gap-2">
+              <button type="submit" class="w-full py-2.5 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-500 hover:text-white text-[10px] font-black uppercase rounded-lg border border-emerald-500/20 shadow-lg transition-all">
+                {{ isEditing ? 'Atualizar Ativo' : 'Salvar Ativo' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
 
     </div>
   </div>
