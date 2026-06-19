@@ -48,7 +48,7 @@ app.use('/assets', assetRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/transactions', transactionRoutes);
 app.use('/users', userRoutes);
-app.use('/estrategias', strategyRoutes);
+app.use('/strategies', strategyRoutes);
 
 app.use(errorHandler);
 
