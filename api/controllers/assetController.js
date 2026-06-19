@@ -212,9 +212,9 @@ order BY
 
 // GET /assets - Lista ativos globais (comum a todos os usuários) com paginação e busca
 exports.getAllAssets = asyncHandler(async (req, res) => {
-    // Captura e sanitiza os parâmetros da URL
-    const page = parseInt(req.query.page) || null;
-    const limit = parseInt(req.query.limit) || null;
+    // Captura e força a conversão estrita para números inteiros
+    const page = parseInt(req.query.page, 10) || null;
+    const limit = parseInt(req.query.limit, 10) || null;
     const search = req.query.search ? `%${req.query.search.trim()}%` : null;
 
     // Base da Query Principal
@@ -253,11 +253,11 @@ exports.getAllAssets = asyncHandler(async (req, res) => {
             countParams.push(search, search);
         }
 
-        // Concatena as cláusulas e garante tipagem nativa para o driver mysql2
-        query += ` LIMIT ? OFFSET ?`;
-        params.push(limit, offset);
+        // 🔥 SOLUÇÃO DO ERRO: Injetar os inteiros sanitizados diretamente na string.
+        // O método execute() do MySQL tem um bug histórico com placeholders (?) no LIMIT/OFFSET em várias versões.
+        query += ` LIMIT ${limit} OFFSET ${offset}`;
 
-        // Execução paralela fictícia ou sequencial segura via pool
+        // Executa as queries de forma limpa
         const [assetsRows] = await db.execute(query, params);
         const [countRows] = await db.execute(countQuery, countParams);
 
