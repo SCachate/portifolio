@@ -1,31 +1,77 @@
 const db = require('../config/db');
 const asyncHandler = require('../utils/asyncHandler');
 
-// Listar - Sem try/catch!
-exports.getAll = asyncHandler(async (req, res) => {
+// GET /classes - Lista as classes do usuário logado
+exports.getAllClasses = asyncHandler(async (req, res) => {
     const userId = req.userId;
-    const [rows] = await db.execute('SELECT ic.id, ic.name as nome FROM investment_classes as ic WHERE ic.userId = ?', [userId]);
+
+    const query = `
+        SELECT id, name, CAST(targetPercent AS DECIMAL(5,2)) AS targetPercent, color 
+        FROM investment_classes 
+        WHERE userId = ?
+        ORDER BY targetPercent DESC, name ASC
+    `;
+    const [rows] = await db.execute(query, [userId]);
     res.json(rows);
 });
 
-// Criar
-exports.create = asyncHandler(async (req, res) => {
-    const { name, userId } = req.body;
-    await db.execute('INSERT INTO investment_classes (name, userId) VALUES (?, ?)', [name, userId]);
-    res.status(201).json({ success: true, message: 'Classe criada!' });
+// POST /classes - Cria uma nova classe
+exports.createClass = asyncHandler(async (req, res) => {
+    const userId = req.userId;
+    const { name, targetPercent, color } = req.body;
+
+    if (!name) {
+        return res.status(400).json({ error: 'O nome da classe é obrigatório.' });
+    }
+
+    const query = `
+        INSERT INTO investment_classes (userId, name, targetPercent, color) 
+        VALUES (?, ?, ?, ?)
+    `;
+    const [result] = await db.execute(query, [userId, name, targetPercent || 0, color || '#8884d8']);
+
+    res.status(201).json({ id: result.insertId, message: 'Classe criada com sucesso!' });
 });
 
-// Atualizar
-exports.update = asyncHandler(async (req, res) => {
+// PUT /classes/:id - Atualiza uma classe existente
+exports.updateClass = asyncHandler(async (req, res) => {
+    const userId = req.userId;
     const { id } = req.params;
-    const { name } = req.body;
-    await db.execute('UPDATE investment_classes SET name = ? WHERE id = ?', [name, id]);
-    res.json({ success: true, message: 'Classe atualizada!' });
+    const { name, targetPercent, color } = req.body;
+
+    if (!name) {
+        return res.status(400).json({ error: 'O nome da classe é obrigatório.' });
+    }
+
+    const query = `
+        UPDATE investment_classes 
+        SET name = ?, targetPercent = ?, color = ? 
+        WHERE id = ? AND userId = ?
+    `;
+    const [result] = await db.execute(query, [name, targetPercent || 0, color || '#8884d8', id, userId]);
+
+    if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Classe não encontrada ou não pertence ao usuário.' });
+    }
+
+    res.json({ message: 'Classe atualizada com sucesso!' });
 });
 
-// Eliminar
-exports.delete = asyncHandler(async (req, res) => {
+// DELETE /classes/:id - Remove uma classe
+exports.deleteClass = asyncHandler(async (req, res) => {
+    const userId = req.userId;
     const { id } = req.params;
-    await db.execute('DELETE FROM investment_classes WHERE id = ?', [id]);
-    res.json({ success: true, message: 'Classe removida!' });
+
+    // Opcional: Aqui você poderia checar se existem ativos vinculados a esta classe antes de deletar
+    const query = `
+        DELETE FROM investment_classes 
+        WHERE id = ? AND userId = ?
+    `;
+    const [result] = await db.execute(query, [id, userId]);
+
+    if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Classe não encontrada ou não pertence ao usuário.' });
+    }
+
+    res.json({ message: 'Classe removida com sucesso!' });
 });
