@@ -41,6 +41,9 @@
             <template v-else-if="currentTab === 'estrategias'">
               <StrategyView />
             </template>
+            <template v-else-if="currentTab === 'cadastro-ativos'">
+              <AssetCRUDView />
+            </template>
           </div>
         </transition>
 
@@ -62,6 +65,8 @@ import DividendosView from './Dividendos.vue';
 import UserView from './User.vue';
 import ClassView from './Class.vue';
 import StrategyView from './Strategy.vue';
+import AssetCRUDView from './AssetManager.vue';
+
 const currentTab = ref('dashboard');
 const { data, loading, error } = useApi(`/dashboard/pendencias`);
 

@@ -205,3 +205,106 @@ order BY
 	`, [userId]);
 	res.json(rows);
 });
+
+// =========================================================================
+// MÓDULO DE GESTÃO E CADASTRO DE ATIVOS (CRUD)
+// =========================================================================
+
+// GET /assets - Lista todos os ativos do usuário com joins otimizados
+exports.getAllAssets = asyncHandler(async (req, res) => {
+    const userId = req.userId;
+
+    const query = `
+        SELECT 
+            a.id, a.ticket, a.description, a.assetType, a.apiCode,
+            a.defaultClassId, a.strategyId, a.currencyAssetId, a.is_liquidity,
+            c.name AS className,
+            s.name AS strategyName,
+            curr.ticket AS currencyTicket
+        FROM assets a
+        INNER JOIN investment_classes c ON a.defaultClassId = c.id
+        LEFT JOIN investment_strategies s ON a.strategyId = s.id
+        LEFT JOIN assets curr ON a.currencyAssetId = curr.id
+        WHERE a.userId = ?
+        ORDER BY a.assetType ASC, a.ticket ASC, a.description ASC
+    `;
+
+    const [rows] = await db.execute(query, [userId]);
+    res.json(rows);
+});
+
+// POST /assets - Cadastra um novo ativo no dicionário do usuário
+exports.createAsset = asyncHandler(async (req, res) => {
+    const userId = req.userId;
+    const { ticket, description, assetType, apiCode, defaultClassId, strategyId, currencyAssetId, is_liquidity } = req.body;
+
+    if (!description || !assetType || !defaultClassId) {
+        return res.status(400).json({ error: 'Descrição, Tipo de Ativo e Classe Macro são obrigatórios.' });
+    }
+
+    const query = `
+        INSERT INTO assets (userId, ticket, description, assetType, apiCode, defaultClassId, strategyId, currencyAssetId, is_liquidity)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const [result] = await db.execute(query, [
+        userId, 
+        ticket ? ticket.toUpperCase().trim() : null, 
+        description.trim(), 
+        assetType, 
+        apiCode || null, 
+        defaultClassId, 
+        strategyId || null, 
+        currencyAssetId || null, 
+        is_liquidity ? 1 : 0
+    ]);
+
+    res.status(201).json({ id: result.insertId, message: 'Ativo cadastrado com sucesso!' });
+});
+
+// PUT /assets/:id - Modifica os parâmetros de enquadramento do ativo
+exports.updateAsset = asyncHandler(async (req, res) => {
+    const userId = req.userId;
+    const { id } = req.params;
+    const { ticket, description, assetType, apiCode, defaultClassId, strategyId, currencyAssetId, is_liquidity } = req.body;
+
+    const query = `
+        UPDATE assets 
+        SET ticket = ?, description = ?, assetType = ?, apiCode = ?, defaultClassId = ?, strategyId = ?, currencyAssetId = ?, is_liquidity = ?
+        WHERE id = ? AND userId = ?
+    `;
+
+    const [result] = await db.execute(query, [
+        ticket ? ticket.toUpperCase().trim() : null, 
+        description.trim(), 
+        assetType, 
+        apiCode || null, 
+        defaultClassId, 
+        strategyId || null, 
+        currencyAssetId || null, 
+        is_liquidity ? 1 : 0,
+        id,
+        userId
+    ]);
+
+    if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Ativo não encontrado ou permissão negada.' });
+    }
+
+    res.json({ message: 'Ativo atualizado com sucesso!' });
+});
+
+// DELETE /assets/:id - Remove a definição de um ativo de forma isolada
+exports.deleteAsset = asyncHandler(async (req, res) => {
+    const userId = req.userId;
+    const { id } = req.params;
+
+    const query = `DELETE FROM assets WHERE id = ? AND userId = ?`;
+    const [result] = await db.execute(query, [id, userId]);
+
+    if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Ativo não localizado.' });
+    }
+
+    res.json({ message: 'Ativo removido do portfólio.' });
+});
