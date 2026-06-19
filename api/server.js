@@ -8,6 +8,7 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const assetRoutes = require('./routes/assetRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const userRoutes = require('./routes/userRoutes');
+const strategyRoutes = require('./routes/strategyRoutes');
 const errorHandler = require('./middlewares/errorMiddleware');
 
 const app = express();
@@ -47,6 +48,7 @@ app.use('/assets', assetRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/transactions', transactionRoutes);
 app.use('/users', userRoutes);
+app.use('/estrategias', strategyRoutes);
 
 app.use(errorHandler);
 

@@ -35,8 +35,11 @@
             <template v-else-if="currentTab === 'usuarios'">
               <UserView />
             </template>
-             <template v-else-if="currentTab === 'classes-ativos'">
+            <template v-else-if="currentTab === 'classes-ativos'">
               <ClassView />
+            </template>
+            <template v-else-if="currentTab === 'estrategias'">
+              <StrategiasView />
             </template>
           </div>
         </transition>
@@ -58,6 +61,7 @@ import AssetView from './Assets.vue';
 import DividendosView from './Dividendos.vue';
 import UserView from './User.vue';
 import ClassView from './Class.vue';
+import StrategyView from './Strategy.vue';
 const currentTab = ref('dashboard');
 const { data, loading, error } = useApi(`/dashboard/pendencias`);
 

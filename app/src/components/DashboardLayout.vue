@@ -143,9 +143,10 @@ const navigationItems = [
     label: 'Cadastros',    
     icon: '⚙️', // Ícone de engrenagem/configuração para Cadastros
     children: [
-      { id: 'usuarios',         label: 'Usuários',          icon: '👤' },
       { id: 'cadastro-ativos',  label: 'Ativos',            icon: '📄' },
       { id: 'classes-ativos',   label: 'Classes de Ativos', icon: '📁' },
+      { id: 'estrategias',      label: 'Estratégias',       icon: '👤' },
+      { id: 'usuarios',         label: 'Usuários',          icon: '👤' },
     ]
   },
   { id: 'dividendos', label: 'Dividendos',   icon: '💰' },
