@@ -101,27 +101,34 @@ const deletarClasse = async (id) => {
   try {
     salvando.value = true;
 
-    // Instancia o useApi focado apenas no DELETE desta rota específica
+    // Instancia passando o DELETE e forçando o 'data' a ir nulo/vazio
     const apiDeletar = useApi(`/classes/${id}`, { 
       method: 'DELETE', 
-      immediate: false 
+      immediate: false,
+      data: null // 🟢 Força o Axios a não enviar nenhum corpo de dados bizarro que gere o Erro 400
     });
 
     // Dispara a requisição física
     await apiDeletar.fetchData();
     
-    // Verificamos se o estado de erro do composable foi preenchido
     if (apiDeletar.error.value) {
       console.error('Erro retornado pelo useApi:', apiDeletar.error.value);
-      toast.error('O useApi registrou um erro na requisição.');
+      toast.error('O backend recusou os parâmetros enviados.');
     } else {
-      toast.success('Requisição de exclusão enviada via useApi!');
+      toast.success('Classe deletada com sucesso via useApi!');
+      
       if (form.value.id === id) resetarFormulario();
+      
+      // Como o teste isolado provou que o useApi funciona se o corpo for limpo,
+      // agora podemos atualizar a lista com segurança usando o setTimeout para não colidir estados:
+      setTimeout(async () => {
+        await buscarClasses();
+      }, 200);
     }
 
   } catch (err) {
     console.error('Exceção capturada no bloco catch:', err);
-    toast.error('Caiu no catch do evento.');
+    toast.error('Erro interno na execução do clique.');
   } finally {
     salvando.value = false;
   }
