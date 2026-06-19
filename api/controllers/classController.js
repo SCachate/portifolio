@@ -63,6 +63,8 @@ exports.deleteClass = asyncHandler(async (req, res) => {
     const userId = req.userId;
     const { id } = req.params;
 
+    console.info([userId, id]);
+
     // Opcional: Aqui você poderia checar se existem ativos vinculados a esta classe antes de deletar
     const query = `
         DELETE FROM investment_classes 
