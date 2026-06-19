@@ -96,41 +96,32 @@ const deletarClasse = async (id) => {
     return;
   }
   
-  if (!confirm('Deseja realmente remover esta classe? Isso pode afetar a exibição de seus ativos vinculados.')) return;
+  if (!confirm('Deseja realmente remover esta classe? Teste isolado com useApi.')) return;
 
   try {
     salvando.value = true;
 
-    // Resgatamos o token do localStorage exatamente como o useApi faz internamente
-    const token = localStorage.getItem('token'); 
-
-    // Disparamos o fetch nativo para isolar o escopo e garantir que nenhuma configuração antiga interfira
-    const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://portfolio-api-b1ml.onrender.com'}/classes/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : ''
-      }
+    // Instancia o useApi focado apenas no DELETE desta rota específica
+    const apiDeletar = useApi(`/classes/${id}`, { 
+      method: 'DELETE', 
+      immediate: false 
     });
 
-    const resultado = await response.json().catch(() => ({}));
-
-    if (response.ok) {
-      toast.success('Classe removida com sucesso do sistema.');
-      
-      // Se a classe deletada estava selecionada no formulário, limpa ele
-      if (form.value.id === id) resetarFormulario();
-      
-      // Atualiza a tabela chamando a listagem limpa
-      await buscarClasses();
+    // Dispara a requisição física
+    await apiDeletar.fetchData();
+    
+    // Verificamos se o estado de erro do composable foi preenchido
+    if (apiDeletar.error.value) {
+      console.error('Erro retornado pelo useApi:', apiDeletar.error.value);
+      toast.error('O useApi registrou um erro na requisição.');
     } else {
-      // Se o back retornou um erro estruturado, exibe na tela
-      toast.error(resultado.error || resultado.message || 'Erro ao tentar excluir a classe.');
+      toast.success('Requisição de exclusão enviada via useApi!');
+      if (form.value.id === id) resetarFormulario();
     }
 
   } catch (err) {
-    console.error('Falha na exclusão lógica do registro:', err);
-    toast.error('Erro de conectividade ao tentar excluir.');
+    console.error('Exceção capturada no bloco catch:', err);
+    toast.error('Caiu no catch do evento.');
   } finally {
     salvando.value = false;
   }
