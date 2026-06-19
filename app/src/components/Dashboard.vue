@@ -35,6 +35,9 @@
             <template v-else-if="currentTab === 'usuarios'">
               <UserView />
             </template>
+             <template v-else-if="currentTab === 'classes-ativos'">
+              <ClassView />
+            </template>
           </div>
         </transition>
 
@@ -54,6 +57,7 @@ import TransactionView from './Transactions.vue';
 import AssetView from './Assets.vue';
 import DividendosView from './Dividendos.vue';
 import UserView from './User.vue';
+import ClassView from './Class.vue';
 const currentTab = ref('dashboard');
 const { data, loading, error } = useApi(`/dashboard/pendencias`);
 
