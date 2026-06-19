@@ -3,6 +3,7 @@ const asyncHandler = require('../utils/asyncHandler');
 
 // GET /classes - Lista as classes do usuário logado
 exports.getAllClasses = asyncHandler(async (req, res) => {
+    console.info('teste');
     const userId = req.userId;
 
     const query = `
