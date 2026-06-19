@@ -10,7 +10,7 @@ export function useApi(url, options = {}) {
 
   const fetchData = async () => {
     const urlValue = unref(url);
-    const token = localStorage.getItem('user_token');
+    const token = localStorage.getItem('user_token'); // Mantido sua chave original
     
     if (!urlValue) return;
 
@@ -26,10 +26,13 @@ export function useApi(url, options = {}) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
+      const methodLower = (options.method || 'get').toLowerCase();
+
       const response = await axios({
         url: `${import.meta.env.VITE_API_URL}${urlValue}`, 
         method: options.method || 'get',
-        data: options.data || null,
+        // 🟢 AJUSTE CIRÚRGICO: Se for delete, força null para não enviar dados residuais que causam Erro 400
+        data: methodLower === 'delete' ? null : (options.data || null),
         headers: headers 
       });
 
@@ -50,8 +53,7 @@ export function useApi(url, options = {}) {
     }
   };
 
-  // Se for um método imediato (GET), executa na hora. 
-  // Se for POST com dados, geralmente chamamos manualmente o fetchData
+  // Mantido seu comportamento padrão original de execução imediata
   if (options.immediate !== false) {
     fetchData();
   }
