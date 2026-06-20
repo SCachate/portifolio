@@ -48,6 +48,7 @@ export function useApi(url, options = {}) {
       }
       console.error("Erro na API:", err);
     } finally {
+      console.info([urlValue, data]);
       loading.value = false;
     }
   };
@@ -56,6 +57,6 @@ export function useApi(url, options = {}) {
   if (options.immediate !== false) {
     fetchData();
   }
-  console.info(urlValue, [data]);
+
   return { data, loading, error, fetchData };
 }
