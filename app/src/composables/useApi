@@ -26,6 +26,8 @@ export function useApi(url, options = {}) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
+      console.info([options.method, options.method || 'get']);
+
       const methodLower = (options.method || 'get').toLowerCase();
 
       const response = await axios({
