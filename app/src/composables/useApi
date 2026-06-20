@@ -26,8 +26,6 @@ export function useApi(url, options = {}) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      console.info([urlValue, options.method, options.method || 'get']);
-
       const methodLower = (options.method || 'get').toLowerCase();
 
       const response = await axios({
@@ -58,6 +56,6 @@ export function useApi(url, options = {}) {
   if (options.immediate !== false) {
     fetchData();
   }
-
+  console.info(urlValue, [data]);
   return { data, loading, error, fetchData };
 }
