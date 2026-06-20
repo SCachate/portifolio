@@ -160,7 +160,7 @@ const formatarMoeda = (v) => Number(v).toLocaleString('pt-BR', { style: 'currenc
 const formatarDataRelatorio = (d) => d ? d.split('T')[0].split('-').reverse().join('/') : '-';
 
 const sincronizarEBuscar = async () => {
-  console.info('sincronizarEBuscar',[Array.isArray(classesResponse.value) ? classesResponse.value : (classesResponse.value?.rows || [])]]);
+  console.info('sincronizarEBuscar');
   const lista = Array.isArray(classesResponse.value) ? classesResponse.value : (classesResponse.value?.rows || []);
   if (lista.length > 0 && props.classeSelecionada) {
     const found = lista.find(c => c.nome.toLowerCase().trim() === props.classeSelecionada.toLowerCase().trim());
@@ -217,7 +217,7 @@ watch(assetsResponse, (newVal) => {
 });
 
 const assetsFiltrados = computed(() => {
-    console.info('assetsFiltrados',[Array.isArray(unref(assetsResponse)) ? unref(assetsResponse) : (unref(assetsResponse)?.rows || []);]);
+    console.info('assetsFiltrados');
 
   const lista = Array.isArray(unref(assetsResponse)) ? unref(assetsResponse) : (unref(assetsResponse)?.rows || []);
   if (!buscaAsset.value) return lista;
