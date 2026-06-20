@@ -48,7 +48,6 @@ export function useApi(url, options = {}) {
       }
       console.error("Erro na API:", err);
     } finally {
-      console.info([urlValue, data]);
       loading.value = false;
     }
   };

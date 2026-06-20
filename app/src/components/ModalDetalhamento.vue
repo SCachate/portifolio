@@ -10,7 +10,7 @@
               <div class="relative w-full flex items-center justify-center">
                 <select :value="idClasseAtiva" @change="aoMudarClasseManual" 
                   class="bg-transparent text-white font-bold text-xs outline-none cursor-pointer w-full text-center appearance-none z-10 px-6">
-                  <option v-for="c in (classesResponse?.rows || classesResponse || [])" :key="c.id" :value="c.id" class="bg-[#1a1c24] text-white">{{ c.nome }}</option>
+                  <option v-for="c in (classesResponse?.rows || classesResponse || [])" :key="c.id" :value="c.id" class="bg-[#1a1c24] text-white">{{ c.name }}</option>
                 </select>
                 <div class="absolute right-4 pointer-events-none text-slate-600 group-hover:text-slate-400">
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
@@ -160,10 +160,9 @@ const formatarMoeda = (v) => Number(v).toLocaleString('pt-BR', { style: 'currenc
 const formatarDataRelatorio = (d) => d ? d.split('T')[0].split('-').reverse().join('/') : '-';
 
 const sincronizarEBuscar = async () => {
-  console.info('sincronizarEBuscar');
   const lista = Array.isArray(classesResponse.value) ? classesResponse.value : (classesResponse.value?.rows || []);
   if (lista.length > 0 && props.classeSelecionada) {
-    const found = lista.find(c => c.nome.toLowerCase().trim() === props.classeSelecionada.toLowerCase().trim());
+    const found = lista.find(c => c.name.toLowerCase().trim() === props.classeSelecionada.toLowerCase().trim());
     if (found) {
       idClasseAtiva.value = found.id;
       if (dataEhValida(dataInicio.value) && dataEhValida(dataFim.value)) {
@@ -217,8 +216,6 @@ watch(assetsResponse, (newVal) => {
 });
 
 const assetsFiltrados = computed(() => {
-    console.info('assetsFiltrados');
-
   const lista = Array.isArray(unref(assetsResponse)) ? unref(assetsResponse) : (unref(assetsResponse)?.rows || []);
   if (!buscaAsset.value) return lista;
   const t = buscaAsset.value.toLowerCase();
