@@ -1,405 +1,260 @@
-<script setup>
-import { ref, computed, watch } from 'vue';
-import { useApi } from '../composables/useApi'; 
-import { useToast } from 'vue-toastification';
-
-const toast = useToast();
-
-const dataAtual = new Date();
-const primeiroDiaMes = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), 1).toISOString().split('T')[0];
-const hoje = dataAtual.toISOString().split('T')[0];
-
-const fileName = ref('');
-
-// --- FORMULÁRIO DE INSERÇÃO MANUAL AJUSTADO COM OS 6 CAMPOS ---
-const form = ref({ 
-  assetId: '', 
-  brokerId: '', 
-  quantity: null, 
-  priceUnit: null, 
-  custos_operacionais: null, 
-  date: hoje 
-});
-
-const filtros = ref({ 
-  dataInicio: primeiroDiaMes, 
-  dataFim: hoje, 
-  brokerId: '',
-  assetId: ''
-});
-
-const paginaAtual = ref(1);
-const itensPorPagina = 6;
-
-// --- ESTADOS REATIVOS PARA A ÁREA DE REVISÃO DA IA ---
-const modoRevisao = ref(false);
-const transacoesParaRevisar = ref([]);
-
-const apiUrl = computed(() => {
-  if (!filtros.value.dataInicio || !filtros.value.dataFim) return null;
-  const params = new URLSearchParams({
-    startDate: filtros.value.dataInicio,
-    endDate: filtros.value.dataFim,
-    brokerId: filtros.value.brokerId || '',
-    assetId: filtros.value.assetId || ''
-  });
-  return `/transactions?${params.toString()}`;
-});
-
-const { data: apiResponse, loading, fetchData } = useApi(apiUrl, { immediate: true });
-
-watch(apiUrl, (newUrl) => {
-  if (newUrl) {
-    paginaAtual.value = 1;
-    fetchData(); 
-  }
-}, { deep: true });
-
-const transacoesTotal = computed(() => apiResponse.value?.data || []);
-
-const transacoesPaginadas = computed(() => {
-  const inicio = (paginaAtual.value - 1) * itensPorPagina;
-  const fim = inicio + itensPorPagina;
-  return transacoesTotal.value.slice(inicio, fim);
-});
-
-const totalPaginas = computed(() => 
-  Math.max(1, Math.ceil(transacoesTotal.value.length / itensPorPagina))
-);
-
-// --- MAPEAMENTO PARA SELECTS USANDO OS DADOS DA PRÓPRIA TABELA ---
-const ativosParaSelect = computed(() => {
-  const unicos = [...new Map(
-    transacoesTotal.value
-      .filter(item => item?.assetId)
-      .map(item => [item.assetId, { assetId: item.assetId, ticket: item.ticket, description: item.assetDescription }])
-  ).values()];
-  // Ordena os ativos em ordem alfabética pela DESCRIÇÃO
-  return unicos.sort((a, b) => (a.description || '').localeCompare(b.description || ''));
-});
-
-const brokersParaSelect = computed(() => {
-  const unicos = [...new Map(
-    transacoesTotal.value
-      .filter(item => item?.brokerId)
-      .map(item => [item.brokerId, { brokerId: item.brokerId, name: item.brokerName }])
-  ).values()];
-  // Ordena as corretoras em ordem alfabética pelo NOME
-  return unicos.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-});
-
-const formatDate = (dateString) => {
-  if (!dateString) return '---';
-  return new Date(dateString).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-};
-
-const formatCurrency = (val) => 
-  Number(val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-
-// --- FUNÇÃO DO FLUXO DE INSERÇÃO MANUAL ---
-const registrarTransacaoManual = async () => {
-  if (!form.value.assetId || !form.value.brokerId || form.value.quantity === null || !form.value.priceUnit || !form.value.date) {
-    toast.warning('Por favor, preencha todos os campos obrigatórios.');
-    return;
-  }
-
-  try {
-    loading.value = true; 
-
-    const apiManual = useApi('/transactions/manual', {
-      method: 'POST',
-      data: {
-        assetId: form.value.assetId,
-        brokerId: form.value.brokerId,
-        quantity: form.value.quantity, 
-        priceUnit: form.value.priceUnit,
-        custos_operacionais: form.value.custos_operacionais || 0,
-        date: form.value.date
-      },
-      immediate: false
-    });
-
-    await apiManual.fetchData();
-
-    toast.success('Movimentação registrada com sucesso!');
-
-    // Limpa os campos numéricos para facilitar novos inputs rápidos
-    form.value.quantity = null;
-    form.value.priceUnit = null;
-    form.value.custos_operacionais = null;
-
-    // Recarrega a tabela padrão
-    fetchData();
-
-  } catch (err) {
-    console.error('Erro ao registrar transação manual:', err);
-    toast.error('Falha crítica ao salvar transação manual.');
-  } finally {
-    loading.value = false; 
-  }
-};
-
-
-// --- IMPORTAÇÃO VIA PDF ---
-const handleFileUpload = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  fileName.value = file.name;
-
-  const formData = new FormData();
-  formData.append('nota', file); 
-
-  try {
-    loading.value = true; 
-
-    const apiInstancia = useApi('/transactions/addPDF', {
-      method: 'POST',
-      data: formData,
-      immediate: false, 
-      headers: {
-        'Content-Type': undefined 
-      }
-    });
-
-    await apiInstancia.fetchData();
-    const resposta = apiInstancia.data.value;
-
-    if (resposta && (resposta.transacoes || Array.isArray(resposta))) {
-      transacoesParaRevisar.value = resposta.transacoes || resposta;
-      modoRevisao.value = true; 
-      toast.success('Nota lida com sucesso! Revise os dados abaixo antes de salvar.');
-    } else {
-      toast.error('O backend respondeu, mas a chave "transacoes" não foi encontrada.');
-    }
-
-  } catch (err) {
-    console.error('Falha crítica ao importar arquivo no front:', err);
-  } finally {
-    loading.value = false; 
-    event.target.value = ''; 
-  }
-};
-
-const cancelarRevisao = () => {
-  modoRevisao.value = false;
-  transacoesParaRevisar.value = [];
-  fileName.value = '';
-};
-
-const salvarDadosRevisados = () => {
-  toast.info('Pronto para enviar ao banco os dados revisados!');
-};
-</script>
-
 <template>
-  <div class="flex flex-col bg-[#0b0f17] text-slate-300 font-sans p-6 overflow-hidden w-full h-full">
-    
-    <header class="shrink-0 mb-4">
-      <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Kaxatapi Finance</h3>
-      <h1 class="text-3xl font-bold text-white tracking-tight leading-none">Histórico de Movimentações</h1>
-    </header>
-
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden">
+  <div class="p-6 bg-gray-900 min-h-screen text-gray-100">
+    <!-- Cabeçalho e Ações -->
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-2xl font-bold text-white">Gestão de Transações</h1>
+        <p class="text-gray-400 text-sm">Gerencie suas compras, vendas e importações de notas</p>
+      </div>
       
-      <section class="lg:col-span-4 flex flex-col min-h-0">
-        <form @submit.prevent="registrarTransacaoManual" class="bg-[#161b26] rounded-xl border border-white/5 p-6 space-y-6 flex flex-col h-full overflow-y-auto custom-scrollbar shadow-xl">
-          <label class="flex flex-col items-center justify-center w-full h-32 border border-dashed border-white/10 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all bg-[#0b0f17]/50 group shrink-0">
-            <input type="file" class="hidden" @change="handleFileUpload" accept="application/pdf" />
-            <span class="text-[10px] font-black text-slate-500 group-hover:text-emerald-500 uppercase tracking-widest text-center px-4">
-              {{ fileName || 'IMPORTAR NOTA DE CORRETAGEM' }}
-            </span>
-          </label>
+      <div class="flex gap-3">
+        <!-- Input de PDF Oculto -->
+        <input type="file" ref="fileInput" @change="handleFileUpload" class="hidden" accept="application/pdf" />
+        <button @click="$refs.fileInput.click()" :disabled="loadingPDF"
+          class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-700 text-white rounded-lg transition-all shadow-lg active:scale-95">
+          <span v-if="loadingPDF" class="animate-spin text-lg">↻</span>
+          <span>{{ loadingPDF ? 'Processando PDF...' : 'Importar Nota (PDF)' }}</span>
+        </button>
+      </div>
+    </div>
 
-          <div class="space-y-4 flex-grow text-left">
-            <div class="space-y-1">
-              <div class="flex justify-between text-[10px] font-black uppercase text-slate-500">
-                <label>Ativo</label>
-                <button type="button" class="text-emerald-500 hover:brightness-125">+ Novo</button>
-              </div>
-              <select v-model="form.assetId" required class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none">
-                <option value="" disabled>Selecione...</option>
-                <option v-for="a in ativosParaSelect" :key="a.assetId" :value="a.assetId">
-                  {{ a.description || a.ticket }}
-                </option>
-              </select>
-            </div>
-
-            <div class="space-y-1">
-              <label class="text-[10px] font-black uppercase text-slate-500 block">Corretora</label>
-              <select v-model="form.brokerId" required class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none">
-                <option value="" disabled>Selecione...</option>
-                <option v-for="b in brokersParaSelect" :key="b.brokerId" :value="b.brokerId">
-                  {{ b.name }}
-                </option>
-              </select>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <div class="space-y-1">
-                <label class="text-[10px] font-black uppercase text-slate-500">Qtd. (Venda é -)</label>
-                <input v-model.number="form.quantity" type="number" step="0.00000001" required placeholder="0" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white font-mono outline-none" />
-              </div>
-              <div class="space-y-1">
-                <label class="text-[10px] font-black uppercase text-slate-500">Custo Unit.</label>
-                <input v-model.number="form.priceUnit" type="number" step="0.0001" required placeholder="0.00" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white font-mono outline-none" />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <div class="space-y-1">
-                <label class="text-[10px] font-black uppercase text-slate-500">Custos / Taxas</label>
-                <input v-model.number="form.custos_operacionais" type="number" step="0.01" placeholder="0.00" class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white font-mono outline-none" />
-              </div>
-              <div class="space-y-1">
-                <label class="text-[10px] font-black uppercase text-slate-500">Data Transação</label>
-                <input v-model="form.date" type="date" required class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white font-mono outline-none" />
-              </div>
-            </div>
-          </div>
-
-          <button type="submit" class="w-full py-4 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-500 hover:text-white font-black uppercase tracking-widest rounded-lg transition-all text-xs border border-emerald-500/20 shrink-0">
-            Registrar Transação
-          </button>
-        </form>
-      </section>
-
-      <section class="lg:col-span-8 flex flex-col min-h-0 h-full">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <!-- Lado Esquerdo: Histórico de Transações -->
+      <div class="lg:col-span-3 bg-gray-800 rounded-xl shadow-xl border border-gray-700 overflow-hidden">
+        <div class="p-4 border-b border-gray-700 bg-gray-800/50 flex justify-between items-center">
+          <h2 class="font-semibold text-gray-200">Histórico Recente</h2>
+          <span class="text-xs text-gray-500">{{ transactions.length }} registros encontrados</span>
+        </div>
         
-        <div class="bg-[#161b26] rounded-xl border border-white/5 p-5 flex flex-wrap gap-4 items-end shrink-0 mb-4">
-          <div class="flex-1 min-w-[180px] space-y-2 text-left">
-            <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Período</label>
-            <div class="flex gap-2">
-              <input v-model="filtros.dataInicio" type="date" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full outline-none" />
-              <input v-model="filtros.dataFim" type="date" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full outline-none" />
-            </div>
-          </div>
-          <div class="flex-1 min-w-[120px] space-y-2 text-left">
-            <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Ativo</label>
-            <select v-model="filtros.assetId" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full outline-none">
-              <option value="">Todos</option>
-              <option v-for="a in ativosParaSelect" :key="a.assetId" :value="a.assetId">{{ a.description || a.ticket }}</option>
-            </select>
-          </div>
-          <div class="flex-1 min-w-[150px] space-y-2 text-left">
-            <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Instituição</label>
-            <select v-model="filtros.brokerId" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full outline-none">
-              <option value="">Todas</option>
-              <option v-for="b in brokersParaSelect" :key="b.brokerId" :value="b.brokerId">{{ b.name }}</option>
-            </select>
-          </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead>
+              <tr class="text-xs uppercase text-gray-500 bg-gray-900/50">
+                <th class="px-6 py-4 font-medium">Data</th>
+                <th class="px-6 py-4 font-medium">Ativo</th>
+                <th class="px-6 py-4 font-medium">Tipo</th>
+                <th class="px-6 py-4 font-medium text-right">Qtd</th>
+                <th class="px-6 py-4 font-medium text-right">Preço Unit.</th>
+                <th class="px-6 py-4 font-medium text-right">Custos</th>
+                <th class="px-6 py-4 font-medium text-right">Total</th>
+                <th class="px-6 py-4 font-medium">Corretora</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-700">
+              <tr v-for="t in transactions" :key="t.id" class="hover:bg-gray-750 transition-colors text-sm">
+                <td class="px-6 py-4 whitespace-nowrap">{{ formatDate(t.date) }}</td>
+                <td class="px-6 py-4">
+                  <div class="font-bold text-blue-400">{{ t.ticket }}</div>
+                  <div class="text-xs text-gray-500 truncate max-w-[150px]">{{ t.assetDescription }}</div>
+                </td>
+                <td class="px-6 py-4">
+                  <span :class="t.quantity > 0 ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'" 
+                    class="px-2 py-1 rounded text-xs font-bold uppercase">
+                    {{ t.quantity > 0 ? 'Compra' : 'Venda' }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-right tabular-nums">{{ Math.abs(t.quantity).toLocaleString() }}</td>
+                <td class="px-6 py-4 text-right tabular-nums">R$ {{ parseFloat(t.priceUnit).toFixed(2) }}</td>
+                <td class="px-6 py-4 text-right tabular-nums text-gray-400">R$ {{ parseFloat(t.fees).toFixed(2) }}</td>
+                <td class="px-6 py-4 text-right tabular-nums font-semibold">R$ {{ t.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</td>
+                <td class="px-6 py-4 text-gray-400 text-xs">{{ t.brokerName }}</td>
+              </tr>
+              <tr v-if="transactions.length === 0">
+                <td colspan="8" class="px-6 py-12 text-center text-gray-500 italic">
+                  Nenhuma transação encontrada no período.
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+      </div>
 
-        <div class="bg-[#161b26] rounded-xl border border-white/5 shadow-2xl flex flex-col flex-1 min-h-0 overflow-hidden relative">
+      <!-- Lado Direito: Formulário Manual -->
+      <div class="lg:col-span-1 space-y-6">
+        <div class="bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-700">
+          <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <span>➕</span> Adicionar Manual
+          </h2>
           
-          <div v-if="loading" class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm z-30 flex items-center justify-center">
-            <div class="relative flex items-center justify-center w-20 h-20">
-              <div class="w-20 h-20 border-[3px] border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin"></div>
-              <div class="absolute flex items-center justify-center w-10 h-10 bg-emerald-500 rounded-xl shadow-lg">
-                <span class="text-black font-black text-xl select-none">K</span>
+          <form @submit.prevent="saveManual" class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1 uppercase">Ativo</label>
+              <select v-model="form.assetId" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <option value="" disabled>Selecione um Ativo</option>
+                <option v-for="asset in allAssets" :key="asset.id" :value="asset.id">
+                  {{ asset.ticket }} - {{ asset.description }}
+                </option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1 uppercase">Instituição / Corretora</label>
+              <select v-model="form.brokerId" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <option value="" disabled>Selecione a Instituição</option>
+                <option v-for="broker in allBrokers" :key="broker.id" :value="broker.id">
+                  {{ broker.name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1 uppercase">Quantidade</label>
+                <input v-model.number="form.quantity" type="number" step="any" required 
+                  class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                <p class="text-[10px] mt-1 text-gray-500">Venda use negativo (-)</p>
               </div>
-            </div>
-          </div>
-
-          <div v-if="modoRevisao" class="flex flex-col flex-1 min-h-0 bg-[#121722]">
-            <div class="p-4 bg-emerald-950/20 border-b border-emerald-500/10 flex justify-between items-center shrink-0">
-              <span class="text-xs font-black text-emerald-400 uppercase tracking-wider">
-                🤖 REVISÃO DA INTELIGÊNCIA ARTIFICIAL (Ajuste se necessário)
-              </span>
-              <div class="flex gap-2">
-                <button type="button" @click="cancelarRevisao" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white text-[10px] font-black uppercase tracking-wider rounded-md transition-all">
-                  Cancelar
-                </button>
-                <button type="button" @click="salvarDadosRevisados" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider rounded-md shadow-lg transition-all">
-                  Confirmar e Salvar no Banco
-                </button>
-              </div>
-            </div>
-
-            <div class="flex-1 overflow-auto">
-              <table class="w-full text-left border-collapse">
-                <thead class="sticky top-0 bg-[#161b26] z-10 border-b border-white/5">
-                  <tr class="text-[9px] font-black text-slate-500 uppercase tracking-wider">
-                    <th class="p-3">Data</th>
-                    <th class="p-3">Ticker</th>
-                    <th class="p-3">Operação</th>
-                    <th class="p-3">Quantidade</th>
-                    <th class="p-3">Preço Unitário</th>
-                    <th class="p-3">Taxas / Custos</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-white/5">
-                  <tr v-for="(t, idx) in transacoesParaRevisar" :key="idx" class="hover:bg-white/[0.01]">
-                    <td class="p-2"><input v-model="t.data" type="date" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-white font-mono outline-none w-full" /></td>
-                    <td class="p-2"><input v-model="t.ticker" type="text" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-white font-bold uppercase outline-none w-full" /></td>
-                    <td class="p-2">
-                      <select v-model="t.tipo" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-white outline-none w-full">
-                        <option value="C">C - Compra</option>
-                        <option value="V">V - Venda</option>
-                      </select>
-                    </td>
-                    <td class="p-2"><input v-model.number="t.quantidade" type="number" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-slate-300 font-mono outline-none w-full" /></td>
-                    <td class="p-2"><input v-model.number="t.preco_unitario" type="number" step="0.01" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-slate-300 font-mono outline-none w-full" /></td>
-                    <td class="p-2"><input v-model.number="t.custos_operacionais" type="number" step="0.01" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-slate-300 font-mono outline-none w-full" /></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div v-else class="flex flex-col flex-1 min-h-0">
-            <div class="flex-1 overflow-x-auto overflow-y-hidden flex flex-col">
-              <table class="w-full text-left border-collapse">
-                <thead class="sticky top-0 bg-[#1b2230] z-20">
-                  <tr class="text-[10px] font-black text-slate-500 uppercase border-b border-white/5">
-                    <th class="p-4 bg-[#1b2230]">Data</th>
-                    <th class="p-4 bg-[#1b2230]">Ativo / Descrição</th>
-                    <th class="p-4 bg-[#1b2230]">Instituição</th>
-                    <th class="p-4 bg-[#1b2230]">Qtd.</th>
-                    <th class="p-4 bg-[#1b2230]">Preço Unit.</th>
-                    <th class="p-4 bg-[#1b2230] text-right">Total</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-white/5">
-                  <tr v-for="(t, index) in transacoesPaginadas" :key="index" class="hover:bg-white/[0.02]">
-                    <td class="p-4 text-[11px] font-mono text-slate-500">{{ formatDate(t?.date) }}</td>
-                    <td class="p-4">
-                      <div class="flex flex-col">
-                        <span class="text-sm font-bold text-white tracking-tight">{{ t?.ticket || '---' }}</span>
-                        <span class="text-[9px] text-slate-500 font-bold uppercase truncate max-w-[150px]">{{ t?.assetDescription }}</span>
-                      </div>
-                    </td>
-                    <td class="p-4 text-[10px] text-slate-400 font-bold uppercase tracking-tight">{{ t?.brokerName || '---' }}</td>
-                    <td class="p-4 text-xs font-mono text-slate-400 font-bold">{{ Number(t?.quantity || 0).toLocaleString('pt-BR') }}</td>
-                    <td class="p-4 text-xs font-mono text-slate-400">R$ {{ formatCurrency(t?.priceUnit) }}</td>
-                    <td class="p-4 text-right font-mono text-white text-sm font-bold">R$ {{ formatCurrency(t?.total) }}</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <div v-if="!loading && transacoesTotal.length === 0" class="p-10 text-center text-slate-600 uppercase text-[10px] font-black">
-                Nenhuma movimentação no período.
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1 uppercase">Preço Unit.</label>
+                <input v-model.number="form.priceUnit" type="number" step="0.000001" required 
+                  class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
             </div>
 
-            <div class="p-4 border-t border-white/5 flex justify-between items-center bg-[#1b2230]/30 shrink-0">
-              <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-                Página {{ paginaAtual }} de {{ totalPaginas }} ({{ transacoesTotal.length }} registros)
-              </span>
-              <div class="flex gap-2">
-                <button type="button" @click="paginaAtual--" :disabled="paginaAtual === 1" class="px-4 py-2 bg-[#0b0f17] border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-emerald-500 disabled:opacity-20 transition-all">
-                  Anterior
-                </button>
-                <button type="button" @click="paginaAtual++" :disabled="paginaAtual >= totalPaginas" class="px-4 py-2 bg-[#0b0f17] border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-emerald-500 disabled:opacity-20 transition-all">
-                  Próximo
-                </button>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1 uppercase">Custos (R$)</label>
+                <input v-model.number="form.custos_operacionais" type="number" step="0.01" 
+                  class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1 uppercase">Data</label>
+                <input v-model="form.date" type="date" required 
+                  class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
             </div>
-          </div>
 
+            <button type="submit" :disabled="loadingSave"
+              class="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 text-white font-bold rounded-lg transition-all shadow-lg active:scale-95 mt-4">
+              {{ loadingSave ? 'Gravando...' : 'Salvar Transação' }}
+            </button>
+          </form>
         </div>
-      </section>
+      </div>
     </div>
   </div>
 </template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
+
+// Configuração de API (Ajuste conforme seu ambiente)
+const API_URL = ''; // Se estiver usando proxy, deixe vazio
+
+// Estados Reativos
+const transactions = ref([]);
+const allAssets = ref([]);
+const allBrokers = ref([]);
+const loadingPDF = ref(false);
+const loadingSave = ref(false);
+
+const form = ref({
+  assetId: '',
+  brokerId: '',
+  quantity: null,
+  priceUnit: null,
+  custos_operacionais: 0,
+  date: new Date().toISOString().split('T')
+});
+
+// Busca Listas de Apoio (Metadados Globais)
+const fetchMetadata = async () => {
+  try {
+    // Busca ativos do AssetController [4-8]
+    const assetsRes = await axios.get(`${API_URL}/assets`);
+    allAssets.value = assetsRes.data;
+
+    // Busca corretoras do brokerController criado no backend
+    const brokersRes = await axios.get(`${API_URL}/brokers`);
+    allBrokers.value = brokersRes.data;
+  } catch (error) {
+    console.error("Erro ao carregar metadados:", error);
+  }
+};
+
+// Busca Histórico de Transações [9]
+const fetchTransactions = async () => {
+  try {
+    const res = await axios.get(`${API_URL}/transactions`);
+    if (res.data.success) {
+      transactions.value = res.data.data;
+    }
+  } catch (error) {
+    console.error("Erro ao buscar transações:", error);
+  }
+};
+
+// Salvar Manualmente [2, 10]
+const saveManual = async () => {
+  loadingSave.value = true;
+  try {
+    const res = await axios.post(`${API_URL}/transactions/manual`, form.value);
+    if (res.data.success) {
+      alert("Transação registrada!");
+      resetForm();
+      await fetchTransactions(); // Atualiza a lista
+    }
+  } catch (error) {
+    alert(error.response?.data?.error || "Erro ao salvar transação");
+  } finally {
+    loadingSave.value = false;
+  }
+};
+
+// Importar PDF (Gemini AI) [3, 11]
+const handleFileUpload = async (event) => {
+  const file = event.target.files;
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('nota', file);
+
+  loadingPDF.value = true;
+  try {
+    const res = await axios.post(`${API_URL}/transactions/addPDF`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    
+    // Aqui você pode decidir se abre um modal com os dados extraídos pelo Gemini 
+    // ou se já insere direto. No seu backend, addPDF apenas retorna o JSON.
+    console.log("Dados extraídos pelo Gemini:", res.data);
+    alert("Nota processada com sucesso! Verifique os dados extraídos.");
+    
+    // Resetar o input
+    event.target.value = '';
+    await fetchTransactions();
+  } catch (error) {
+    alert(error.response?.data?.error || "Falha ao processar PDF");
+  } finally {
+    loadingPDF.value = false;
+  }
+};
+
+// Utilitários
+const resetForm = () => {
+  form.value = {
+    assetId: '',
+    brokerId: '',
+    quantity: null,
+    priceUnit: null,
+    custos_operacionais: 0,
+    date: new Date().toISOString().split('T')
+  };
+};
+
+const formatDate = (dateString) => {
+  return new Date(dateString).toLocaleDateString('pt-BR');
+};
+
+onMounted(() => {
+  fetchMetadata();
+  fetchTransactions();
+});
+</script>
+
+<style scoped>
+.bg-gray-750 { background-color: #252d3d; }
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+</style>

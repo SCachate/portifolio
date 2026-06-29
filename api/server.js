@@ -9,6 +9,7 @@ const assetRoutes = require('./routes/assetRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const userRoutes = require('./routes/userRoutes');
 const strategyRoutes = require('./routes/strategyRoutes');
+const brokerRoutes = require('./routes/brokgerRoutes');
 const errorHandler = require('./middlewares/errorMiddleware');
 
 const app = express();
@@ -42,7 +43,8 @@ app.use((req, res, next) => {
 });
 
 // Rotas
-app.use('/auth', authRoutes); 
+app.use('/auth', authRoutes);
+app.use('/brokers',brokerRoutes);
 app.use('/classes', classRoutes);
 app.use('/assets', assetRoutes);
 app.use('/dashboard', dashboardRoutes);
