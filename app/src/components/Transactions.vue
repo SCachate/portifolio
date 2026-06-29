@@ -272,7 +272,7 @@ onMounted(() => {
             <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Ativo</label>
             <select v-model="filtros.assetId" class="bg-[#0b0f17] border border-white/5 rounded-md p-2 text-[11px] text-white w-full outline-none">
               <option value="">Todos</option>
-              <option v-for="a in ativosParaSelect" :key="a.id" :value="a.id">{{ a.ticket }}</option>
+              <option v-for="a in ativosParaSelect" :key="a.id" :value="a.id">{{ a.ticket }} - {{ a.description }}</option>
             </select>
           </div>
           <div class="flex-1 min-w-[150px] space-y-2 text-left">
