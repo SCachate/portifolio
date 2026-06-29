@@ -363,9 +363,8 @@ const historicoResultadoOptions = computed(() => ({
     type: 'category',
     categories: historicoResultadoProcessado.value.meses,
     labels: { style: { colors: '#94a3b8', fontSize: '9px' } }
-    , axisTicks: { show: false }
   },
-  yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' }, formatter: (v) => Math.round(v).toLocaleString('pt-BR') } },
+  yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' }, formatter: (v) => Math.round(v).toLocaleString('pt-BR') }, show: false },
   legend: { show: false }, 
   dataLabels: { enabled: false },
   plotOptions: { 
