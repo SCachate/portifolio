@@ -136,7 +136,6 @@ const toggleCadastros = () => {
 // 1. Array Único Atualizado com a Nova Estrutura Hierárquica
 const navigationItems = [
   { id: 'dashboard',  label: 'Dashboard',   icon: '📊' }, // Painel consolidado
-  { id: 'ativos',     label: 'Meus Ativos',  icon: '💼' }, // Carteira/Portfólio de Ativos
   { id: 'transacoes', label: 'Transações',   icon: '💸' }, // Movimentações financeiras/Aportes
   { 
     id: 'cadastros',   
@@ -149,7 +148,15 @@ const navigationItems = [
       { id: 'usuarios',         label: 'Usuários',          icon: '👤' }, // Perfil do investidor
     ]
   },
-  { id: 'dividendos', label: 'Dividendos',   icon: '💵' }, // Proventos caindo na conta
+  { 
+    id: 'relatorios',   
+    label: 'Relatórios',    
+    icon: '📈', // Ícone alterado para Gráfico de Crescimento
+    children: [
+      { id: 'ativos',     label: 'Meus Ativos',  icon: '💼' }, // Carteira/Portfólio de Ativos
+      { id: 'dividendos', label: 'Dividendos',   icon: '💵' }, // Proventos caindo na conta
+    ]
+  },
 ];
 
 // 2. Computada inteligente para buscar títulos normais ou de subitens
