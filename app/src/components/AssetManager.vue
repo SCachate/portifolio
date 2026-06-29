@@ -154,7 +154,6 @@ const deletarAtivo = async (id) => {
 
     <header class="shrink-0 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div>
-        <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Dicionário de Ativos</h3>
         <h1 class="text-3xl font-bold text-white tracking-tight">Cadastro de Ativos</h1>
       </div>
       <input v-model="filtroBusca" type="text" placeholder="🔍 Filtrar no banco por ticket ou nome..." class="bg-[#161b26] border border-white/5 rounded-lg px-4 py-2 text-sm text-white outline-none w-full md:w-72 focus:border-emerald-500/30 transition-all" />

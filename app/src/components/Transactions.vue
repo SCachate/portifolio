@@ -237,7 +237,6 @@ const handleSalvarAtivo = async () => {
 <template>
   <div class="flex flex-col bg-[#0b0f17] text-slate-300 font-sans p-6 overflow-hidden w-full h-full">
     <header class="shrink-0 mb-4">
-      <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Kaxatapi Finance</h3>
       <h1 class="text-3xl font-bold text-white tracking-tight leading-none">Histórico de Movimentações</h1>
     </header>
 
