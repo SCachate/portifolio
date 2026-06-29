@@ -1,6 +1,7 @@
 <template>
   <div class="flex h-screen w-full bg-[#0a0f18] overflow-hidden select-none">
     
+    <!-- SIDEBAR -->
     <aside class="w-64 h-full border-r border-white/5 bg-[#0a0f18] flex flex-col relative flex-shrink-0">
       <div class="p-6">
         <div class="text-emerald-500 font-black text-2xl flex items-center gap-2 mb-10">
@@ -13,6 +14,7 @@
         <nav class="space-y-2">
           <div v-for="item in navigationItems" :key="item.id" class="space-y-1">
             
+            <!-- ITEM SIMPLES (Sem Filhos) -->
             <button 
               v-if="!item.children"
               @click="$emit('navigate', item.id)"
@@ -29,11 +31,12 @@
               <span>{{ item.label }}</span>
             </button>
 
+            <!-- ITEM COM SUBMENU (Filhos) -->
             <div v-else class="space-y-1">
               <button 
-                @click="toggleCadastros"
+                @click="toggleMenu(item.id)"
                 :class="[
-                  isCadastrosOpen || item.children.some(sub => sub.id === activePage)
+                  menuAbertoId === item.id || item.children.some(sub => sub.id === activePage)
                     ? 'text-white border-white/5 bg-white/[0.02]' 
                     : 'text-slate-400 border-transparent hover:bg-white/5'
                 ]"
@@ -46,15 +49,16 @@
                   <span>{{ item.label }}</span>
                 </div>
                 <span 
-                  :class="[isCadastrosOpen ? 'rotate-180 text-emerald-500' : 'text-slate-500']"
+                  :class="[menuAbertoId === item.id ? 'rotate-180 text-emerald-500' : 'text-slate-500']"
                   class="text-xs transition-transform duration-200 font-bold"
                 >
                   ▼
                 </span>
               </button>
 
+              <!-- SUBMENU DINÂMICO -->
               <div 
-                v-show="isCadastrosOpen" 
+                v-show="menuAbertoId === item.id" 
                 class="space-y-1 overflow-hidden transition-all duration-300"
               >
                 <button
@@ -78,6 +82,7 @@
         </nav>
       </div>
 
+      <!-- RODAPÉ DA SIDEBAR -->
       <div class="absolute bottom-0 w-full p-6 border-t border-white/5 bg-[#0a0f18]">
         <div class="flex items-center justify-between">
           <div class="text-xs text-slate-600 font-mono italic">v1.2.0</div>
@@ -88,6 +93,7 @@
       </div>
     </aside>
 
+    <!-- ÁREA PRINCIPAL -->
     <main class="flex-1 h-full flex flex-col overflow-hidden min-w-0">
       <header class="w-full h-16 border-b border-white/5 flex items-center justify-between px-8 bg-[#0a0f18]/80 backdrop-blur-xl sticky top-0 z-40 flex-shrink-0">
         <div class="text-white font-bold text-lg">
@@ -127,52 +133,67 @@ const props = defineProps({
 
 defineEmits(['logout', 'navigate']);
 
-// Controle reativo para abrir/fechar a seção de Cadastros
-const isCadastrosOpen = ref(false);
-const toggleCadastros = () => {
-  isCadastrosOpen.value = !isCadastrosOpen.value;
+// CONTROLE INDIVIDUAL DE EXPANSÃO
+// Armazena o ID do menu que está aberto no momento (null se todos fechados)
+const menuAbertoId = ref(null);
+
+const toggleMenu = (menuId) => {
+  // Se clicar no menu que já está aberto, ele fecha. Caso contrário, abre o novo.
+  menuAbertoId.value = menuAbertoId.value === menuId ? null : menuId;
 };
 
-// 1. Array Único Atualizado com a Nova Estrutura Hierárquica
 const navigationItems = [
-  { id: 'dashboard',  label: 'Dashboard',   icon: '📊' }, // Painel consolidado
-  { id: 'caddiv',  label: 'Dividedos',   icon: '💵' },
-  { id: 'transacoes', label: 'Transações',   icon: '💸' }, // Movimentações financeiras/Aportes
+  { id: 'dashboard',  label: 'Dashboard',   icon: '📊' },
+  { id: 'caddiv',     label: 'Dividendos',  icon: '💵' },
+  { id: 'transacoes', label: 'Transações',  icon: '💸' },
   { 
     id: 'cadastros',   
     label: 'Cadastros',    
-    icon: '🔧', // Ferramentas/Parametrização
+    icon: '🔧',
     children: [
-      { id: 'cadastro-ativos',  label: 'Ativos',            icon: '🏷️' }, // Ticker/Etiqueta do ativo
-      { id: 'classes-ativos',   label: 'Classes de Ativos', icon: '🗂️' }, // Categorias macro organizadas
-      { id: 'estrategias',      label: 'Estratégias',       icon: '🎯' }, // Alvos e percentuais objetivos
-      { id: 'usuarios',         label: 'Usuários',          icon: '👤' }, // Perfil do investidor
+      { id: 'cadastro-ativos',  label: 'Ativos',            icon: '🏷️' },
+      { id: 'classes-ativos',   label: 'Classes de Ativos', icon: '🗂️' },
+      { id: 'estrategias',      label: 'Estratégias',       icon: '🎯' },
+      { id: 'usuarios',         label: 'Usuários',          icon: '👤' },
     ]
   },
   { 
     id: 'relatorios',   
     label: 'Relatórios',    
-    icon: '📈', // Ícone alterado para Gráfico de Crescimento
+    icon: '📈', // Ícone atualizado para gráfico de crescimento
     children: [
-      { id: 'ativos',     label: 'Ativos',  icon: '💼' }, // Carteira/Portfólio de Ativos
-      { id: 'dividendos', label: 'Dividendos',   icon: '💵' }, // Proventos caindo na conta
+      { id: 'ativos',     label: 'Ativos',      icon: '💼' },
+      { id: 'dividendos', label: 'Dividendos',   icon: '💵' },
     ]
   },
 ];
 
-// 2. Computada inteligente para buscar títulos normais ou de subitens
 const currentPageLabel = computed(() => {
   for (const item of navigationItems) {
     if (item.id === props.activePage) return item.label;
     if (item.children) {
       const subMatch = item.children.find(sub => sub.id === props.activePage);
       if (subMatch) {
-        // Se um subitem estiver ativo, abre o menu automaticamente ao carregar a página
-        isCadastrosOpen.value = true;
-        return `${item.label} / ${subMatch.label}`; // Ex: "Cadastros / Classes de Ativos"
+        // AUTO-EXPANSÃO: Abre o menu pai específico se um subitem estiver ativo
+        menuAbertoId.value = item.id;
+        return `${item.label} / ${subMatch.label}`;
       }
     }
   }
   return props.activePage;
 });
 </script>
+
+<style scoped>
+/* Scrollbar customizada para manter o visual premium */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 4px;
+}
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+</style>
