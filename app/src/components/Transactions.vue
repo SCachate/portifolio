@@ -53,13 +53,17 @@ const { data: apiResponse, loading, fetchData } = useApi(apiUrl, { immediate: tr
 // --- FUNÇÃO PARA BUSCAR TODOS OS ATIVOS E CORRETORAS DO BANCO ---
 const fetchMetadata = async () => {
   try {
-    // Busca ativos (usa o endpoint '/' do assetRouter que chama getAllAssets)
-    const { data: assets } = await useApi('/assets', { immediate: false }).fetchData();
-    allAssets.value = assets.value || [];
+    // 1. Inicializa o composable para Ativos (sem execução imediata)
+    const apiAssets = useApi('/assets', { immediate: false });
+    // 2. Aguarda a execução da busca
+    await apiAssets.fetchData();
+    // 3. Atribui o valor da ref 'data' (que foi preenchida pelo axios) à sua variável local
+    allAssets.value = apiAssets.data.value || [];
 
-    // Busca corretoras (usa o endpoint /brokers)
-    const { data: brokers } = await useApi('/brokers', { immediate: false }).fetchData();
-    allBrokers.value = brokers.value || [];
+    // Repete o processo para Corretoras
+    const apiBrokers = useApi('/brokers', { immediate: false });
+    await apiBrokers.fetchData();
+    allBrokers.value = apiBrokers.data.value || [];
   } catch (err) {
     console.error('Erro ao carregar metadados globais:', err);
   }
