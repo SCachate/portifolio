@@ -136,6 +136,8 @@ const toggleCadastros = () => {
 // 1. Array Único Atualizado com a Nova Estrutura Hierárquica
 const navigationItems = [
   { id: 'dashboard',  label: 'Dashboard',   icon: '📊' }, // Painel consolidado
+  { id: 'caddiv',  label: 'Dividedos',   icon: '💵' },
+
   { id: 'transacoes', label: 'Transações',   icon: '💸' }, // Movimentações financeiras/Aportes
   { 
     id: 'cadastros',   
