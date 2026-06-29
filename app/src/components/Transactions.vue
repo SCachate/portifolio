@@ -5,8 +5,8 @@ import { useToast } from 'vue-toastification';
 
 const toast = useToast();
 const dataAtual = new Date();
-const primeiroDiaMes = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), 1).toISOString().split('T');
-const hoje = dataAtual.toISOString().split('T');
+const primeiroDiaMes = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), 1).toISOString().split('T')[0];
+const hoje = dataAtual.toISOString().split('T')[0];
 const fileName = ref('');
 
 // --- NOVOS ESTADOS PARA AS LISTAS GLOBAIS ---
