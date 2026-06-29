@@ -256,7 +256,7 @@ const handleSalvarAtivo = async () => {
             <div class="space-y-1">
               <div class="flex justify-between text-[10px] font-black uppercase text-slate-500">
                 <label>Ativo</label>
-                <button type="button" class="text-emerald-500 hover:brightness-125">+ Novo</button>
+                <button type="button" @click="showAssetModal=true" class="text-emerald-500 hover:brightness-125">+ Novo</button>
               </div>
               <select v-model="form.assetId" required class="w-full bg-[#0b0f17] border border-white/5 rounded-lg p-3 text-white outline-none">
                 <option value="" disabled>Selecione...</option>
