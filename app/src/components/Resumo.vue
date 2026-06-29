@@ -402,7 +402,7 @@ const evolucaoOptions = computed(() => ({
   colors: ['#A78BFA', '#F472B6', '#FBBF24', '#60A5FA', '#34D399', '#F87171'],
   grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 10 } },
   xaxis: { categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
-  yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
+  yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } }, show: false },
   legend: { show: false },
   dataLabels: { enabled: false },
   tooltip: {
