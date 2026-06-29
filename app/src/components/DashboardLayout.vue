@@ -137,7 +137,6 @@ const toggleCadastros = () => {
 const navigationItems = [
   { id: 'dashboard',  label: 'Dashboard',   icon: '📊' }, // Painel consolidado
   { id: 'caddiv',  label: 'Dividedos',   icon: '💵' },
-
   { id: 'transacoes', label: 'Transações',   icon: '💸' }, // Movimentações financeiras/Aportes
   { 
     id: 'cadastros',   
@@ -155,7 +154,7 @@ const navigationItems = [
     label: 'Relatórios',    
     icon: '📈', // Ícone alterado para Gráfico de Crescimento
     children: [
-      { id: 'ativos',     label: 'Meus Ativos',  icon: '💼' }, // Carteira/Portfólio de Ativos
+      { id: 'ativos',     label: 'Ativos',  icon: '💼' }, // Carteira/Portfólio de Ativos
       { id: 'dividendos', label: 'Dividendos',   icon: '💵' }, // Proventos caindo na conta
     ]
   },
