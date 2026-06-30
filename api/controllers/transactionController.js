@@ -14,7 +14,7 @@ const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
  */
 exports.getTransactions = asyncHandler(async (req, res) => {
     // 1. Pegamos o userId (do middleware de auth) e os filtros da query string
-    const userId = req.userId || 1; // Fallback para teste
+    const userId = req.userId;
     const { startDate, endDate, brokerId, assetId } = req.query;
 
     // 2. Base da Query SQL (Usando os nomes de colunas da sua definição de tabela)
@@ -223,7 +223,7 @@ Retorne um objeto JSON seguindo exatamente este esquema:
  */
 exports.addManual = asyncHandler(async (req, res) => {
     // 1. Captura o userId do middleware de autenticação
-    const userId = req.userId || 1;
+    const userId = req.userId;
 
     // 2. Extrai os 5 campos vindos do formulário lateral do front
     const { assetId, brokerId, quantity, priceUnit, custos_operacionais, date } = req.body;
