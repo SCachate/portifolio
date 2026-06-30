@@ -24,6 +24,7 @@ const initGoogle = () => {
       access_type: 'offline',        // CRUCIAL: Garante o envio do refresh_token
       prompt: 'consent',             // Força a tela de consentimento para garantir o refresh_token no teste
       callback: (response) => {
+        console.info(['google',response]);
         // O response aqui conterá um 'code'
         if (response.code) {
           emit('success', response); 
