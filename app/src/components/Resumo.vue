@@ -423,6 +423,12 @@ const evolucaoOptions = computed(() => ({
 // DISPARO INICIAL: Executa ao carregar a página para preencher os gráficos
 onMounted(() => {
   fetchHistorico();
+
+  const DEZ_MINUTOS = 1 * 60 * 1000;
+
+  refreshInterval = setInterval(() => {
+    atualizarTudo();
+  }, DEZ_MINUTOS);
 });
 </script>
 
