@@ -153,7 +153,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useApi } from '../composables/useApi';
 import AsyncLoader from './AsyncLoader.vue';
 import ModalDetalhamento from './ModalDetalhamento.vue';
@@ -420,15 +420,19 @@ const evolucaoOptions = computed(() => ({
   }
 }));
 
-// DISPARO INICIAL: Executa ao carregar a página para preencher os gráficos
+let refreshInterval = null;
+
 onMounted(() => {
   fetchHistorico();
-
-  const DEZ_MINUTOS = 1 * 60 * 1000;
-
+  const INTERVALO = 10 * 60 * 1000; // 10 minutos corrigidos
   refreshInterval = setInterval(() => {
     atualizarTudo();
-  }, DEZ_MINUTOS);
+  }, INTERVALO);
+});
+
+// Limpeza essencial ao destruir o componente
+onUnmounted(() => {
+  if (refreshInterval) clearInterval(refreshInterval);
 });
 </script>
 
