@@ -140,8 +140,9 @@ const registrarTransacaoManual = async () => {
   }
 };
 
+
 const handleFileUpload = async (event) => {
-  const file = event.target.files;
+  const file = event.target.files[0];
   if (!file) return;
   fileName.value = file.name;
   const formData = new FormData();
