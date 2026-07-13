@@ -6,7 +6,7 @@
         
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print mt-4">
           <div>
-            <h1 class="text-2xl font-bold text-white tracking-tight">Patrimônio vs Meta em {{ dataReferencia }}</h1>
+            <h1 class="text-2xl font-bold text-white tracking-tight">Patrimônio vs Meta</h1>
             <p class="text-slate-500 text-sm italic">Análise de rebalanceamento estratégico</p>
           </div>
           
@@ -31,7 +31,7 @@
 
         <div class="bg-[#1a1d2b] rounded-xl p-8 border border-slate-800/50 relative overflow-hidden shadow-2xl total-card">
           <div class="relative z-10">
-            <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Valor Total de Mercado</p>
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Valor Total de Mercado em {{ dataReferencia }}</p>
             <h2 class="text-4xl font-bold text-white tracking-tighter total-val-text">
               {{ formatCurrency(totalGeral) }}
             </h2>
