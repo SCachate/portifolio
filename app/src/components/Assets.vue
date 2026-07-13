@@ -6,7 +6,7 @@
         
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print mt-4">
           <div>
-            <h1 class="text-2xl font-bold text-white tracking-tight">Patrimônio vs Meta</h1>
+            <h1 class="text-2xl font-bold text-white tracking-tight">Patrimônio vs Meta em {{ dataReferencia }}</h1>
             <p class="text-slate-500 text-sm italic">Análise de rebalanceamento estratégico</p>
           </div>
           
@@ -167,6 +167,13 @@ const { data: assets, loading, error } = useApi('/assets/patrimonio');
 
 // Estado reativo para controlar o feedback de carregamento da exportação
 const isExporting = ref(false);
+
+const dataReferencia = computed(() => {
+  const agora = new Date();
+  const mes = String(agora.getMonth() + 1).padStart(2, '0');
+  const ano = agora.getFullYear();
+  return `${mes}/${ano}`;
+});
 
 const totalGeral = computed(() => {
   if (!assets.value) return 0;
