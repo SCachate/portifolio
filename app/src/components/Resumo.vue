@@ -460,7 +460,7 @@ const evolucaoOptions = computed(() => ({
     offsetY: -8,
     style: {
       fontSize: '10px',
-      colors: ['#334155'],
+      colors: ['#ffffff'],
       fontWeight: 600
     },
     background: {
@@ -468,12 +468,12 @@ const evolucaoOptions = computed(() => ({
     },
     formatter: function (val) {
       if (!val || val === 0) return '';
-      return Number(val).toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-        notation: 'compact',
-        maximumFractionDigits: 1
-      });
+      if (val >= 1000000) {
+        return 'R$ ' + (val / 1000000).toFixed(1).replace('.', ',') + 'M';
+      } else if (val >= 1000) {
+        return 'R$ ' + (val / 1000).toFixed(1).replace('.', ',') + 'k';
+      }
+      return 'R$ ' + val.toFixed(0);
     }
   },
 
