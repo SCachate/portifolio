@@ -484,11 +484,11 @@ const evolucaoOptions = computed(() => ({
           formatter: function (val) {
             if (!val || val === 0) return '';
             if (val >= 1000000) {
-              return 'R$ ' + (val / 1000000).toFixed(0).replace('.', ',') + 'M';
+              return (val / 1000000).toFixed(0).replace('.', ',') + 'M';
             } else if (val >= 1000) {
-              return 'R$ ' + (val / 1000).toFixed(0).replace('.', ',') + 'k';
+              return (val / 1000).toFixed(0).replace('.', ',') + 'k';
             }
-            return 'R$ ' + val.toFixed(0);
+            return val.toFixed(0);
           }
         }
       }
