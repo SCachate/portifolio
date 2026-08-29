@@ -468,10 +468,10 @@ const evolucaoOptions = computed(() => ({
         total: {
           enabled: true,
           offsetX: 0,
-          offsetY: -4,
+          offsetY: 0,
           style: {
             color: '#334155',
-            fontSize: '9px',
+            fontSize: '10px',
             fontWeight: 600
           },
           background: {
