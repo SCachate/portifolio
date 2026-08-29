@@ -453,11 +453,15 @@ const evolucaoOptions = computed(() => ({
   yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } }, show: false },
   legend: { show: false },  
 
-plotOptions: { 
+  plotOptions: { 
     bar: { 
       borderRadius: 4, 
       columnWidth: '65%',
       dataLabels: {
+        // Habilita os rótulos nas barras para que o 'total' funcione
+        enabled: true,
+        // Oculta os números individuais de cada barrinha empilhada, exibindo APENAS o somatório no topo
+        hideOverflowingLabels: true,
         total: {
           enabled: true,
           offsetX: 0,
@@ -467,16 +471,21 @@ plotOptions: {
             fontSize: '11px',
             fontWeight: 400
           },
+          // CORREÇÃO AQUI: O background do total nas barras fica configurado dentro deste objeto
           background: {
-            enabled: false
+            enabled: false,
+            foreColor: '#fff',
+            padding: 4,
+            dropShadow: { enabled: false }
           },
           formatter: function (val) {
-            return Number(val).toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            });
+            if (!val || val === 0) return '';
+            if (val >= 1000000) {
+              return 'R$ ' + (val / 1000000).toFixed(1).replace('.', ',') + 'M';
+            } else if (val >= 1000) {
+              return 'R$ ' + (val / 1000).toFixed(1).replace('.', ',') + 'k';
+            }
+            return 'R$ ' + val.toFixed(0);
           }
         }
       }
