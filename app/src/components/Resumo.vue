@@ -451,37 +451,35 @@ const evolucaoOptions = computed(() => ({
   },
   xaxis: { categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
   yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } }, show: false },
-  legend: { show: false },
-  
-  // Rótulos aplicados APENAS na linha (índice 5) com formato compacto
-  dataLabels: {
-    enabled: true,
-    enabledOnSeries: [0,1,2,3,4,5], // Exibe apenas na 6ª série (a linha)
-    offsetY: -8,
-    style: {
-      fontSize: '10px',
-      colors: ['#ffffff'],
-      fontWeight: 600
-    },
-    background: {
-      enabled: false // Remove aquele fundo branco/caixinha que está poluindo
-    },
-    formatter: function (val) {
-      if (!val || val === 0) return '';
-      if (val >= 1000000) {
-        return 'R$ ' + (val / 1000000).toFixed(1).replace('.', ',') + 'M';
-      } else if (val >= 1000) {
-        return 'R$ ' + (val / 1000).toFixed(1).replace('.', ',') + 'k';
-      }
-      return 'R$ ' + val.toFixed(0);
-    }
-  },
+  legend: { show: false },  
 
-  plotOptions: { 
+plotOptions: { 
     bar: { 
       borderRadius: 4, 
-      columnWidth: '65%'
-      // Removido o dataLabels de dentro das barras para limpar o visual
+      columnWidth: '65%',
+      dataLabels: {
+        total: {
+          enabled: true,
+          offsetX: 0,
+          offsetY: -8,
+          style: {
+            color: '#ffffff',
+            fontSize: '11px',
+            fontWeight: 400
+          },
+          background: {
+            enabled: false
+          },
+          formatter: function (val) {
+            return Number(val).toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            });
+          }
+        }
+      }
     } 
   },
   
