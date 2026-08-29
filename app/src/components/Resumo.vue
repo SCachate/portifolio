@@ -293,12 +293,12 @@ const baseBarOptions = computed(() => {
       labels: { show: true, rotate: -45, rotateAlways: true, style: { colors: '#94a3b8', fontSize: '9px' } },
       axisBorder: {
         show: true,
-        color: '#334155',
+        color: '#f6f9fc',
         height: 1
       },
       axisTicks: {
         show: true,
-        color: '#334155',
+        color: '#f6f9fc',
         height: 4
       }
     },
@@ -439,7 +439,6 @@ const historicoResultadoOptions = computed(() => ({
   tooltip: { theme: 'dark', shared: true, intersect: false, y: { formatter: (val) => formatCurrency(val) } }
 }));
 
-// 94a3b8
 const evolucaoOptions = computed(() => ({
   chart: { stacked: true, toolbar: { show: false }, fontFamily: 'inherit' },
   stroke: { width: [0, 0, 0, 0, 0, 3], curve: 'smooth' },
@@ -449,7 +448,7 @@ const evolucaoOptions = computed(() => ({
     strokeDashArray: 4, 
     padding: { left: 10, right: 10, bottom: 0, top: 10 },
   },
-  xaxis: { categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], labels: { style: { colors: '#c43d3d', fontSize: '10px' } } },
+  xaxis: { categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
   yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } }, show: false },
   legend: { show: false },
   dataLabels: { enabled: false },
