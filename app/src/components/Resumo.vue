@@ -226,7 +226,7 @@ const atualizarTudo = async () => {
 const sharedGridOptions = {
   borderColor: '#334155',
   strokeDashArray: 4,
-  xaxis: { lines: { show: false, color: 'transparent' } }, // <--- REMOVE LINHAS VERTICAIS
+  xaxis: { lines: { show: false, strokeWidth: 0, opacity: 0 } }, // <--- REMOVE LINHAS VERTICAIS
   yaxis: { lines: { show: true } }  // <--- MANTÉM LINHAS HORIZONTAIS
 };
 
