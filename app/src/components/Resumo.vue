@@ -480,7 +480,8 @@ const evolucaoOptions = computed(() => ({
             padding: 4,
             opacity: 0.9,
             dropShadow: { enabled: false },
-            borderColor: 'transparent',
+            borderColor: '#1e293b',
+            borderWidth: 0,
             color: '#1e293b' 
           },
           formatter: function (val) {
