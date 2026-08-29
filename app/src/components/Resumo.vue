@@ -468,20 +468,19 @@ const evolucaoOptions = computed(() => ({
         total: {
           enabled: true,
           offsetX: 0,
-          offsetY: -8,
+          offsetY: -15, // Afasta um pouco mais para cima para dar espaço à rotação
           style: {
-            color: '#334155',
+            color: '#ffffff',
             fontSize: '11px',
-            fontWeight: 400
+            fontWeight: 500,
+            cssClass: 'apexcharts-datalabel-value'
           },
           background: {
             enabled: true,
             foreColor: '#1e293b',
             padding: 4,
-            opacity: 0.9,
-            dropShadow: { enabled: false },
-            borderColor: 'transparent',
-            color: '#1e293b' 
+            opacity: 1,
+            dropShadow: { enabled: false }
           },
           formatter: function (val) {
             if (!val || val === 0) return '';
