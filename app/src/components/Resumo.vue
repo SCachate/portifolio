@@ -546,17 +546,10 @@ onUnmounted(() => {
 :deep(.tooltip-total) { border-top: 1px solid #475569; margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-weight: 700; color: #34d399; }
 @media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr; } }
 
-.apexcharts-bar-goals rect, 
-.apexcharts-datalabels rect,
-.apexcharts-data-labels rect {
-  stroke: none !important;
-  fill: #1e293b !important; /* Mesma cor de fundo do seu card */
-}
-
-/* Rotaciona os textos dos rótulos em 90 graus para ficarem alinhados na vertical */
-.apexcharts-datalabel-label, 
-.apexcharts-datalabels text {
-  transform: rotate(-90deg);
-  transform-origin: center;
+/* Força a rotação e o alinhamento vertical limpo dos textos de total sem caixas ou bordas brancas */
+:deep(.apexcharts-datalabels text) {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: translateY(-10px);
 }
 </style>
