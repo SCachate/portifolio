@@ -447,40 +447,45 @@ const evolucaoOptions = computed(() => ({
   grid: { 
     borderColor: '#334155', 
     strokeDashArray: 4, 
-    padding: { left: 10, right: 10, bottom: 0, top: 10 },
+    padding: { left: 10, right: 10, bottom: 0, top: 25 }, // Aumentado o 'top' para dar espaço aos números
   },
   xaxis: { categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
   yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } }, show: false },
   legend: { show: false },
-  dataLabels: { enabled: false },
+  
+  // Rótulos aplicados APENAS na linha (índice 5) com formato compacto
+  dataLabels: {
+    enabled: true,
+    enabledOnSeries: [5], // Exibe apenas na 6ª série (a linha)
+    offsetY: -8,
+    style: {
+      fontSize: '10px',
+      colors: ['#ffffff'],
+      fontWeight: 600
+    },
+    formatter: function (val) {
+      if (!val || val === 0) return '';
+      // Formato compacto (ex: R$ 274 mil / R$ 1,2M) para evitar sobreposição
+      return Number(val).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        notation: 'compact',
+        maximumFractionDigits: 1
+      });
+    }
+  },
+
   plotOptions: { 
     bar: { 
       borderRadius: 4, 
-      columnWidth: '65%',
-      dataLabels: {
-        total: {
-          enabled: true,
-          offsetX: 0,
-          offsetY: -8,
-          style: {
-            color: '#ffffff',
-            fontSize: '11px',
-            fontWeight: 400
-          },
-          formatter: function (val) {
-            return Number(val).toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            });
-          }
-        }
-      }
+      columnWidth: '65%'
+      // Removido o dataLabels de dentro das barras para limpar o visual
     } 
   },
+  
   tooltip: {
-    theme: 'dark', shared: true,
+    theme: 'dark', 
+    shared: true,
     custom: function({ series, dataPointIndex, w }) {
       let total = 0;
       let html = `<div class="custom-tooltip-box"><div class="tooltip-header">${w.globals.categoryLabels[dataPointIndex]} ${anoVisualizado.value}</div><div class="tooltip-body">`;
