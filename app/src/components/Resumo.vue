@@ -470,17 +470,16 @@ const evolucaoOptions = computed(() => ({
           offsetX: 0,
           offsetY: -8,
           style: {
-            color: '#ffffff',
+            color: '#334155',
             fontSize: '11px',
             fontWeight: 400
           },
           background: {
             enabled: true,
-            foreColor: '#ffffff',
+            foreColor: '#1e293b',
             padding: 4,
             opacity: 0.9,
             dropShadow: { enabled: false },
-            // Usa a mesma cor de fundo do seu card escuro para "camuflar" a caixa
             borderColor: 'transparent',
             color: '#1e293b' 
           },
