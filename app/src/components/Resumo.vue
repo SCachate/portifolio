@@ -471,8 +471,8 @@ const evolucaoOptions = computed(() => ({
           offsetY: -15,
           style: {
             color: '#334155',
-            fontSize: '9px',
-            fontWeight: 600
+            fontSize: '8px',
+            fontWeight: 500
           },
           background: {
             enabled: false,
