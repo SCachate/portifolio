@@ -35,7 +35,6 @@
     </div>
     
     <div class="charts-grid">
-      <!-- 1. Distribuição (Donut - Não usa grade, sem alterações) -->
       <div class="chart-card donut-wrapper flex flex-col items-center">
         <h3 class="chart-title text-center w-full">Distribuição</h3>
         <AsyncLoader :loading="loading" :error="error" class="flex-grow-loader">
@@ -51,7 +50,6 @@
         </AsyncLoader>
       </div>
 
-      <!-- 2. Evolução Patrimonial (Linha) -->
       <div class="chart-card flex-col-container">
         <div class="header-top-row">
           <h3 class="chart-title m-0">Evolução Patrimonial</h3>         
@@ -76,7 +74,6 @@
         </div>
       </div>
 
-      <!-- 3. Histórico (Barra Empilhada) -->
       <div class="chart-card flex-col-container">
         <h3 class="chart-title mb-4">Resultado por Classe (Histórico)</h3>
         <div class="card-body-v2">
@@ -98,14 +95,13 @@
         </div>
       </div>
 
-      <!-- 4, 5, 6. Resultados Dia/Mês/Ano (Barras) -->
       <div class="chart-card">
         <AsyncLoader 
           :loading="loadingResultado" 
           :error="errorResultado" 
           class="flex-grow-loader"
         >
-          <h3 class="chart-title">Resultado do Dia 2</h3>
+          <h3 class="chart-title">Resultado do Dia</h3>
           <span :class="['result-value', totaisResultado.dia >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.dia) }}
           </span>
@@ -170,7 +166,6 @@ const abrirPeloGrafico = (dados) => {
   modalAberto.value = true;
 };
 
-// Lógicas de API Existentes
 const { data, loading, error, fetchData: fetchResumo } = useApi(`/dashboard/resumo`);
 
 const anoVisualizado = ref(new Date().getFullYear());
@@ -199,11 +194,11 @@ const {
 
 const formatCurrency = (val) => {
   if (val === undefined || val === null) return 'R$ 0,00';
-  return val.toLocaleString('pt-BR', { 
-    style: 'currency', 
-    currency: 'BRL', 
-    minimumFractionDigits: 2, 
-    maximumFractionDigits: 2 
+  return val.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   });
 };
 
@@ -213,21 +208,11 @@ const atualizarTudo = async () => {
       fetchResumo(), 
       fetchEvolucao(), 
       fetchResultado(),
-      fetchHistorico() 
+      fetchHistorico()
     ]);
   } catch (error) {
     console.error("Erro na atualização global:", error);
   }
-};
-
-// --- PROPRIEDADES COMPUTADAS REATIVAS ---
-
-// Configuração PADRÃO da Grid: Apenas linhas Horizontais (xaxis lines show: false)
-const sharedGridOptions = {
-  borderColor: '#334155',
-  strokeDashArray: 4,
-  xaxis: { lines: { show: false, strokeWidth: 0, opacity: 0 } }, // <--- REMOVE LINHAS VERTICAIS
-  yaxis: { lines: { show: true } }  // <--- MANTÉM LINHAS HORIZONTAIS
 };
 
 const series = computed(() => data.value?.map(item => Number(item.valor)) || []);
@@ -281,9 +266,27 @@ const baseBarOptions = computed(() => {
   const coresBackend = dadosResultado.value?.map(item => item.cor) || ['#10b981'];
   return {
     chart: { toolbar: { show: false }, parentHeightOffset: 0, fontFamily: 'inherit' },   
-    grid: sharedGridOptions, // <--- APLICADO PADRÃO DE GRADE
+    // Padronizado com linhas de grade verticais (strokeDashArray e borderColor idênticos ao histórico)
+    grid: { 
+      borderColor: '#334155', 
+      strokeDashArray: 4, 
+      padding: { top: 20, right: 10, bottom: 0, left: 10 },
+    },
     colors: coresBackend,
-    plotOptions: { bar: { borderRadius: 4, distributed: true, columnWidth: '70%' } },
+    plotOptions: { 
+      bar: { 
+        borderRadius: 4, 
+        distributed: true, 
+        columnWidth: '70%',
+        // Adicionado o total/rótulo em cima de cada barra individualmente para o padrão ficar idêntico
+        dataLabels: {
+          position: 'top',
+          total: {
+            enabled: false
+          }
+        }
+      } 
+    },
     fill: { type: 'solid', colors: coresBackend },
     xaxis: {
       categories: dadosResultado.value?.map(item => item.classe) || [], 
@@ -292,7 +295,24 @@ const baseBarOptions = computed(() => {
     },
     legend: { show: false }, 
     yaxis: { show: false }, 
-    dataLabels: { enabled: false }
+    // Habilitado dataLabels geral para mostrar o valor em cima de cada barra individual dos gráficos dia/mês/ano
+    dataLabels: { 
+      enabled: true,
+      offsetY: -16,
+      style: {
+        fontSize: '10px',
+        colors: ['#ffffff'],
+        fontWeight: 600
+      },
+      formatter: function (val) {
+        if (val === 0) return '';
+        return Number(val).toLocaleString('pt-BR', { 
+          style: 'currency', 
+          currency: 'BRL',
+          maximumFractionDigits: 0 
+        });
+      }
+    }
   };
 });
 
@@ -339,7 +359,135 @@ const historicoResultadoProcessado = computed(() => {
   const classesMap = new Map();
   dadosFonte.forEach(item => {
     if (!item.name) return;
-    if (!classesMap.has(item.name)) { 
+    if (!classesMap.has(item.name)) {
       classesMap.set(item.name, { name: item.name, color: item.color || '#10b981', valoresPorMes: new Map() });
     }
-    classesMap.get(item.name).valoresPor
+    classesMap.get(item.name).valoresPorMes.set(item.yearMonth, Number(item.netResult) || 0);
+  });
+
+  const seriesGeradas = [];
+  const coresGeradas = [];
+  classesMap.forEach(classeData => {
+    const dataAlinhada = mesesOrdenados.map(mes => classeData.valoresPorMes.get(mes) || 0);
+    seriesGeradas.push({ name: classeData.name, data: dataAlinhada });
+    coresGeradas.push(classeData.color);
+  });
+
+  return { meses: mesesOrdenados, series: seriesGeradas, cores: coresGeradas };
+});
+
+const historicoResultadoSeries = computed(() => historicoResultadoProcessado.value.series);
+
+const historicoPronto = computed(() => {
+  return historicoResultadoSeries.value && 
+         historicoResultadoSeries.value.length > 0 && 
+         historicoResultadoProcessado.value.meses.length > 0;
+});
+
+const historicoResultadoOptions = computed(() => ({
+  chart: { type: 'bar', stacked: true, toolbar: { show: false }, fontFamily: 'inherit' },
+  colors: historicoResultadoProcessado.value.cores,
+  // Grade vertical idêntica garantida com as linhas (xaxis lines show: true)
+  grid: { 
+    borderColor: '#334155', 
+    strokeDashArray: 4, 
+    padding: { left: 10, right: 10, bottom: 0, top: 20 },
+  },
+  xaxis: { 
+    type: 'category',
+    categories: historicoResultadoProcessado.value.meses,
+    labels: { style: { colors: '#94a3b8', fontSize: '9px' } }
+  },
+  yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' }, formatter: (v) => Math.round(v).toLocaleString('pt-BR') }, show: false },
+  legend: { show: false }, 
+  dataLabels: { enabled: false },
+  plotOptions: { 
+    bar: { 
+      borderRadius: 4, 
+      columnWidth: '65%',
+      dataLabels: {
+        total: {
+          enabled: true,
+          offsetX: 0,
+          offsetY: -8,
+          style: {
+            color: '#ffffff',
+            fontSize: '11px',
+            fontWeight: 700
+          },
+          formatter: function (val) {
+            return Number(val).toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+            });
+          }
+        }
+      }
+    } 
+  },
+  tooltip: { theme: 'dark', shared: true, intersect: false, y: { formatter: (val) => formatCurrency(val) } }
+}));
+
+const evolucaoOptions = computed(() => ({
+  chart: { stacked: true, toolbar: { show: false }, fontFamily: 'inherit' },
+  stroke: { width: [0, 0, 0, 0, 0, 3], curve: 'smooth' },
+  colors: ['#A78BFA', '#F472B6', '#FBBF24', '#60A5FA', '#34D399', '#F87171'],
+  grid: { 
+    borderColor: '#334155', 
+    strokeDashArray: 4, 
+    padding: { left: 10, right: 10, bottom: 0, top: 10 },
+  },
+  xaxis: { categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
+  yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } }, show: false },
+  legend: { show: false },
+  dataLabels: { enabled: false },
+  tooltip: {
+    theme: 'dark', shared: true,
+    custom: function({ series, dataPointIndex, w }) {
+      let total = 0;
+      let html = `<div class="custom-tooltip-box"><div class="tooltip-header">${w.globals.categoryLabels[dataPointIndex]} ${anoVisualizado.value}</div><div class="tooltip-body">`;
+      w.config.series.forEach((s, idx) => {
+        const val = series[idx][dataPointIndex];
+        if (s.type === 'column') total += val;
+        html += `<div class="tooltip-row"><span class="dot" style="background:${w.globals.colors[idx]}"></span><span>${s.name}:</span><span class="value">${formatCurrency(val)}</span></div>`;
+      });
+      return html + `<div class="tooltip-total"><span>TOTAL:</span><span>${formatCurrency(total)}</span></div></div></div>`;
+    }
+  }
+}));
+
+let refreshInterval = null;
+
+onMounted(() => {
+  fetchHistorico();
+  const INTERVALO = 10 * 60 * 1000;
+  refreshInterval = setInterval(() => {
+    atualizarTudo();
+  }, INTERVALO);
+});
+
+onUnmounted(() => {
+  if (refreshInterval) clearInterval(refreshInterval);
+});
+</script>
+
+<style scoped>
+.result-value { font-variant-numeric: tabular-nums; font-family: 'Inter', sans-serif; font-weight: 700; }
+.charts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; }
+.chart-card { background: #1a1c24; padding: 20px; border-radius: 12px; height: 320px; display: flex; flex-direction: column; overflow: hidden; }
+.chart-title { color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+.flex-col-container { display: flex; flex-direction: column; }
+.header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.card-body-v2 { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.flex-grow-loader { flex: 1; display: flex; flex-direction: column; width: 100%; }
+:deep(.flex-grow-loader > div) { flex: 1; display: flex; flex-direction: column; height: 100%; }
+.chart-wrapper-dynamic { flex: 1; height: 100%; width: 100%; min-height: 210px; }
+:deep(.custom-tooltip-box) { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; min-width: 180px; }
+:deep(.tooltip-header) { border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 8px; color: #f1f5f9; font-weight: bold; }
+:deep(.tooltip-row) { display: flex; justify-content: space-between; font-size: 11px; padding: 2px 0; }
+:deep(.dot) { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+:deep(.tooltip-total) { border-top: 1px solid #475569; margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-weight: 700; color: #34d399; }
+@media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr; } }
+</style>
