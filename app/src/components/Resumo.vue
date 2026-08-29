@@ -551,4 +551,9 @@ onUnmounted(() => {
   /* Define o ponto de origem da rotação para que ele gire a partir do seu próprio canto/centro de forma alinhada */
   transform-origin: center center;
 }
+
+:deep(.chart-evolucao .apexcharts-total-label),
+:deep(.chart-evolucao .apexcharts-datalabels) {
+  overflow: visible !important;
+}
 </style>
