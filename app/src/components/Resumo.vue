@@ -461,25 +461,14 @@ const evolucaoOptions = computed(() => ({
       borderRadius: 4, 
       columnWidth: '65%',
       dataLabels: {
-        // Habilita os rótulos nas barras para que o 'total' funcione
-        enabled: true,
-        // Oculta os números individuais de cada barrinha empilhada, exibindo APENAS o somatório no topo
-        hideOverflowingLabels: true,
         total: {
           enabled: true,
           offsetX: 0,
-          offsetY: -15,
+          offsetY: -8,
           style: {
-            color: '#334155',
+            color: '#ffffff',
             fontSize: '11px',
             fontWeight: 400
-          },
-          background: {
-            enabled: false,
-            foreColor: '#1e293b',
-            opacity: 0,
-            dropShadow: { enabled: false },
-            color: '#1e293b',
           },
           formatter: function (val) {
             if (!val || val === 0) return '';
@@ -493,8 +482,7 @@ const evolucaoOptions = computed(() => ({
         }
       }
     } 
-  },
-  
+  },  
   tooltip: {
     theme: 'dark', 
     shared: true,
