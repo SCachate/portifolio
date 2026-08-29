@@ -470,9 +470,9 @@ const evolucaoOptions = computed(() => ({
           formatter: function (val) {
             return Number(val).toLocaleString('pt-BR', {
               style: 'currency',
+              notation: 'compact',
               currency: 'BRL',
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
+              maximumFractionDigits: 1
             });
           }
         }
