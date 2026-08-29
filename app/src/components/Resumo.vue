@@ -460,12 +460,14 @@ const evolucaoOptions = computed(() => ({
     offsetY: -8,
     style: {
       fontSize: '10px',
-      colors: ['#ffffff'],
+      colors: ['#334155'],
       fontWeight: 600
+    },
+    background: {
+      enabled: false // Remove aquele fundo branco/caixinha que está poluindo
     },
     formatter: function (val) {
       if (!val || val === 0) return '';
-      // Formato compacto (ex: R$ 274 mil / R$ 1,2M) para evitar sobreposição
       return Number(val).toLocaleString('pt-BR', {
         style: 'currency',
         currency: 'BRL',
