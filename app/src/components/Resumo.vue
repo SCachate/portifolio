@@ -291,7 +291,16 @@ const baseBarOptions = computed(() => {
     xaxis: {
       categories: dadosResultado.value?.map(item => item.classe) || [], 
       labels: { show: true, rotate: -45, rotateAlways: true, style: { colors: '#94a3b8', fontSize: '9px' } },
-      axisBorder: { show: false }, axisTicks: { show: false }
+      axisBorder: {
+        show: true,
+        color: '#334155',
+        height: 1
+      },
+      axisTicks: {
+        show: true,
+        color: '#334155',
+        height: 4
+      }
     },
     legend: { show: false }, 
     yaxis: { show: false }, 
