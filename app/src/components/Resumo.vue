@@ -545,11 +545,4 @@ onUnmounted(() => {
 :deep(.dot) { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
 :deep(.tooltip-total) { border-top: 1px solid #475569; margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-weight: 700; color: #34d399; }
 @media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr; } }
-
-/* Força a rotação e o alinhamento vertical limpo dos textos de total sem caixas ou bordas brancas */
-:deep(.apexcharts-datalabels text) {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  transform: translateY(-10px);
-}
 </style>
