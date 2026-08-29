@@ -475,7 +475,7 @@ const evolucaoOptions = computed(() => ({
             fontWeight: 400
           },
           background: {
-            enabled: true,
+            enabled: false,
             foreColor: '#1e293b',
             padding: 4,
             opacity: 0.9,
