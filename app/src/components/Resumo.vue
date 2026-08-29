@@ -454,8 +454,8 @@ const evolucaoOptions = computed(() => ({
   legend: { show: false },
   dataLabels: {
     enabled: true,          // Habilita a exibição de números em cima do gráfico
-    enabledOnSeries: [5],   // IMPORTANTE: Aplica os rótulos APENAS à 6ª série (a linha), ignorando as barras (0-4)
-    offsetY: -8,            // Move o texto 8 pixels para cima do ponto da linha
+    enabledOnSeries: [6],   // IMPORTANTE: Aplica os rótulos APENAS à 6ª série (a linha), ignorando as barras (0-4)
+    offsetY: -18,            // Move o texto 8 pixels para cima do ponto da linha
     style: {
       fontSize: '10px',     // Tamanho da fonte
       colors: ['#94a3b8'],  // Cor do texto (um branco bem claro para contraste)
