@@ -477,12 +477,9 @@ const evolucaoOptions = computed(() => ({
           background: {
             enabled: false,
             foreColor: '#1e293b',
-            padding: 4,
-            opacity: 0.9,
+            opacity: 0,
             dropShadow: { enabled: false },
-            borderColor: '#1e293b',
-            borderWidth: 0,
-            color: '#1e293b' 
+            color: '#1e293b',
           },
           formatter: function (val) {
             if (!val || val === 0) return '';
