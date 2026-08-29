@@ -471,8 +471,8 @@ const evolucaoOptions = computed(() => ({
           offsetY: -15,
           style: {
             color: '#334155',
-            fontSize: '11px',
-            fontWeight: 400
+            fontSize: '9px',
+            fontWeight: 600
           },
           background: {
             enabled: false,
@@ -544,16 +544,9 @@ onUnmounted(() => {
 :deep(.tooltip-total) { border-top: 1px solid #475569; margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-weight: 700; color: #34d399; }
 @media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr; } }
 
-:deep(.chart-evolucao .apexcharts-datalabels text) {
-  /* Rotaciona o texto em 45 graus para a esquerda (use 45deg para a direita se preferir) */
-  transform: rotate(-45deg);
-  
-  /* Define o ponto de origem da rotação para que ele gire a partir do seu próprio canto/centro de forma alinhada */
-  transform-origin: center center;
+:deep(.chart-evolucao .apexcharts-datalabels rect),
+:deep(.chart-evolucao .apexcharts-total-label rect) {
+  display: none !important;
 }
 
-:deep(.chart-evolucao .apexcharts-total-label),
-:deep(.chart-evolucao .apexcharts-datalabels) {
-  overflow: visible !important;
-}
 </style>
