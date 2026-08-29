@@ -452,27 +452,32 @@ const evolucaoOptions = computed(() => ({
   xaxis: { categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
   yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } }, show: false },
   legend: { show: false },
-  dataLabels: {
-    enabled: true,          // Habilita a exibição de números em cima do gráfico
-    enabledOnSeries: [5],   // IMPORTANTE: Aplica os rótulos APENAS à 6ª série (a linha), ignorando as barras (0-4)
-    offsetY: -8,            // Move o texto 8 pixels para cima do ponto da linha
-    style: {
-      fontSize: '10px',     // Tamanho da fonte
-      colors: ['#f1f5f9'],  // Cor do texto (um branco bem claro para contraste)
-      fontWeight: 600       // Peso da fonte (sem ser negrito total, mas com destaque)
-    },
-    // Formata o número para aparecer como moeda (ex: R$ 310k)
-    formatter: function(val) {
-      if (val === null || val === 0) return '';
-      // Usa a formatação compacta (k para milhares, M para milhões) para não poluir o gráfico
-      return val.toLocaleString('pt-BR', { 
-        style: 'currency', 
-        currency: 'BRL', 
-        notation: 'compact', 
-        minimumFractionDigits: 2, 
-        maximumFractionDigits: 2 
-      });
-    }
+  dataLabels: { enabled: false },
+  plotOptions: { 
+    bar: { 
+      borderRadius: 4, 
+      columnWidth: '65%',
+      dataLabels: {
+        total: {
+          enabled: true,
+          offsetX: 0,
+          offsetY: -8,
+          style: {
+            color: '#ffffff',
+            fontSize: '11px',
+            fontWeight: 400
+          },
+          formatter: function (val) {
+            return Number(val).toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            });
+          }
+        }
+      }
+    } 
   },
   tooltip: {
     theme: 'dark', shared: true,
