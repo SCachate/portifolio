@@ -105,7 +105,7 @@
           :error="errorResultado" 
           class="flex-grow-loader"
         >
-          <h3 class="chart-title">Resultado do Dia</h3>
+          <h3 class="chart-title">Resultado do Dia 2</h3>
           <span :class="['result-value', totaisResultado.dia >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.dia) }}
           </span>
