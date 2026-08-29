@@ -52,7 +52,7 @@
 
       <div class="chart-card flex-col-container">
         <div class="header-top-row">
-          <h3 class="chart-title m-0">Evolução Patrimonial</h3>         
+          <h3 class="chart-title m-0">Evolução Patrimonial</h3>          
         </div>
         
         <div class="card-body-v2">
@@ -166,6 +166,7 @@ const abrirPeloGrafico = (dados) => {
   modalAberto.value = true;
 };
 
+// Lógicas de API Existentes
 const { data, loading, error, fetchData: fetchResumo } = useApi(`/dashboard/resumo`);
 
 const anoVisualizado = ref(new Date().getFullYear());
@@ -185,6 +186,7 @@ const {
   fetchData: fetchResultado
 } = useApi(`/dashboard/resultado`);
 
+// NOVA CHAMADA DE API: Conectando com a rota do histórico do seu Express
 const {
   data: dadosHistoricoBackend,
   loading: loadingHistorico,
@@ -208,13 +210,16 @@ const atualizarTudo = async () => {
       fetchResumo(), 
       fetchEvolucao(), 
       fetchResultado(),
-      fetchHistorico()
+      fetchHistorico() // Atualiza também o Histórico Real
     ]);
   } catch (error) {
     console.error("Erro na atualização global:", error);
   }
 };
 
+const mudarAno = (delta) => { anoVisualizado.value += delta; };
+
+// --- PROPRIEDADES COMPUTADAS REATIVAS ---
 const series = computed(() => data.value?.map(item => Number(item.valor)) || []);
 
 const chartOptions = computed(() => ({
@@ -251,7 +256,7 @@ const chartOptions = computed(() => ({
 
 const evolucaoSeries = computed(() => (dadosEvolucao.value && Array.isArray(dadosEvolucao.value)) ? dadosEvolucao.value : []);
 const diaSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.dia) || [] }]);
-const mesSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.mes) || [] }]);
+const mesSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.mes) || [] }]); // <--- CORRIGIDO AQUI!
 const anoSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.ano) || [] }]);
 
 const totaisResultado = computed(() => {
@@ -265,54 +270,17 @@ const totaisResultado = computed(() => {
 const baseBarOptions = computed(() => {
   const coresBackend = dadosResultado.value?.map(item => item.cor) || ['#10b981'];
   return {
-    chart: { toolbar: { show: false }, parentHeightOffset: 0, fontFamily: 'inherit' },   
-    // Padronizado com linhas de grade verticais (strokeDashArray e borderColor idênticos ao histórico)
-    grid: { 
-      borderColor: '#334155', 
-      strokeDashArray: 4, 
-      padding: { top: 20, right: 10, bottom: 0, left: 10 },
-    },
+    chart: { toolbar: { show: false }, parentHeightOffset: 0 },   
+    grid: { padding: { top: 0, right: 10, bottom: 10, left: 10 } },
     colors: coresBackend,
-    plotOptions: { 
-      bar: { 
-        borderRadius: 4, 
-        distributed: true, 
-        columnWidth: '70%',
-        // Adicionado o total/rótulo em cima de cada barra individualmente para o padrão ficar idêntico
-        dataLabels: {
-          position: 'top',
-          total: {
-            enabled: false
-          }
-        }
-      } 
-    },
+    plotOptions: { bar: { borderRadius: 4, distributed: true, columnWidth: '70%' } },
     fill: { type: 'solid', colors: coresBackend },
     xaxis: {
       categories: dadosResultado.value?.map(item => item.classe) || [], 
       labels: { show: true, rotate: -45, rotateAlways: true, style: { colors: '#94a3b8', fontSize: '9px' } },
       axisBorder: { show: false }, axisTicks: { show: false }
     },
-    legend: { show: false }, 
-    yaxis: { show: false }, 
-    // Habilitado dataLabels geral para mostrar o valor em cima de cada barra individual dos gráficos dia/mês/ano
-    dataLabels: { 
-      enabled: true,
-      offsetY: -16,
-      style: {
-        fontSize: '10px',
-        colors: ['#ffffff'],
-        fontWeight: 600
-      },
-      formatter: function (val) {
-        if (val === 0) return '';
-        return Number(val).toLocaleString('pt-BR', { 
-          style: 'currency', 
-          currency: 'BRL',
-          maximumFractionDigits: 0 
-        });
-      }
-    }
+    legend: { show: false }, yaxis: { show: false }, dataLabels: { enabled: false }
   };
 });
 
@@ -348,9 +316,12 @@ const barOptionsDia = computed(() => generateBarOptionsForType('dia'));
 const barOptionsMes = computed(() => generateBarOptionsForType('mes'));
 const barOptionsAno = computed(() => generateBarOptionsForType('ano'));
 
+// --- ESTRATÉGIA INTELEGENTE DE POOL DE DADOS (BACKEND OU MOCK AS FALLBACK) ---
 const historicoResultadoProcessado = computed(() => {
+  // Se houver dados reais vindos do endpoint do banco, use-os. Caso contrário, mantenha o mock.
   const dadosFonte = dadosHistoricoBackend.value;
-  if (!dadosFonte || dadosFonte.length === 0) return { meses: [], series: [], cores: [] };
+
+  if (dadosFonte.length === 0) return { meses: [], series: [], cores: [] };
 
   const mesesSet = new Set();
   dadosFonte.forEach(item => { if (item.yearMonth) mesesSet.add(item.yearMonth); });
@@ -387,12 +358,7 @@ const historicoPronto = computed(() => {
 const historicoResultadoOptions = computed(() => ({
   chart: { type: 'bar', stacked: true, toolbar: { show: false }, fontFamily: 'inherit' },
   colors: historicoResultadoProcessado.value.cores,
-  // Grade vertical idêntica garantida com as linhas (xaxis lines show: true)
-  grid: { 
-    borderColor: '#334155', 
-    strokeDashArray: 4, 
-    padding: { left: 10, right: 10, bottom: 0, top: 20 },
-  },
+  grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 20 } }, // Aumentado o top para dar espaço ao texto
   xaxis: { 
     type: 'category',
     categories: historicoResultadoProcessado.value.meses,
@@ -409,9 +375,9 @@ const historicoResultadoOptions = computed(() => ({
         total: {
           enabled: true,
           offsetX: 0,
-          offsetY: -8,
+          offsetY: -8, // Joga o texto para cima da barra para não sumir no topo
           style: {
-            color: '#ffffff',
+            color: '#ffffff', // Força a cor branca pura para dar contraste total no fundo escuro
             fontSize: '11px',
             fontWeight: 700
           },
@@ -434,11 +400,7 @@ const evolucaoOptions = computed(() => ({
   chart: { stacked: true, toolbar: { show: false }, fontFamily: 'inherit' },
   stroke: { width: [0, 0, 0, 0, 0, 3], curve: 'smooth' },
   colors: ['#A78BFA', '#F472B6', '#FBBF24', '#60A5FA', '#34D399', '#F87171'],
-  grid: { 
-    borderColor: '#334155', 
-    strokeDashArray: 4, 
-    padding: { left: 10, right: 10, bottom: 0, top: 10 },
-  },
+  grid: { borderColor: '#334155', strokeDashArray: 4, padding: { left: 10, right: 10, bottom: 0, top: 10 } },
   xaxis: { categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
   yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } }, show: false },
   legend: { show: false },
@@ -462,12 +424,13 @@ let refreshInterval = null;
 
 onMounted(() => {
   fetchHistorico();
-  const INTERVALO = 10 * 60 * 1000;
+  const INTERVALO = 10 * 60 * 1000; // 10 minutos corrigidos
   refreshInterval = setInterval(() => {
     atualizarTudo();
   }, INTERVALO);
 });
 
+// Limpeza essencial ao destruir o componente
 onUnmounted(() => {
   if (refreshInterval) clearInterval(refreshInterval);
 });
@@ -484,6 +447,10 @@ onUnmounted(() => {
 .flex-grow-loader { flex: 1; display: flex; flex-direction: column; width: 100%; }
 :deep(.flex-grow-loader > div) { flex: 1; display: flex; flex-direction: column; height: 100%; }
 .chart-wrapper-dynamic { flex: 1; height: 100%; width: 100%; min-height: 210px; }
+.year-navigator { display: flex; align-items: center; background: #0f172a; border-radius: 6px; padding: 2px; border: 1px solid #334155; }
+.nav-btn { background: transparent; border: none; color: #10b981; padding: 0 10px; cursor: pointer; font-size: 14px; font-weight: bold; }
+.nav-btn:disabled { color: #475569; }
+.year-display { color: #fff; font-size: 0.85rem; font-weight: 600; min-width: 45px; text-align: center; border-left: 1px solid #334155; border-right: 1px solid #334155; }
 :deep(.custom-tooltip-box) { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; min-width: 180px; }
 :deep(.tooltip-header) { border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 8px; color: #f1f5f9; font-weight: bold; }
 :deep(.tooltip-row) { display: flex; justify-content: space-between; font-size: 11px; padding: 2px 0; }
