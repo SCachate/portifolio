@@ -474,12 +474,15 @@ const evolucaoOptions = computed(() => ({
             fontSize: '11px',
             fontWeight: 400
           },
-          // CORREÇÃO AQUI: O background do total nas barras fica configurado dentro deste objeto
           background: {
-            enabled: false,
-            foreColor: '#fff',
+            enabled: true,
+            foreColor: '#ffffff',
             padding: 4,
-            dropShadow: { enabled: false }
+            opacity: 0.9,
+            dropShadow: { enabled: false },
+            // Usa a mesma cor de fundo do seu card escuro para "camuflar" a caixa
+            borderColor: 'transparent',
+            color: '#1e293b' 
           },
           formatter: function (val) {
             if (!val || val === 0) return '';
@@ -543,4 +546,16 @@ onUnmounted(() => {
 :deep(.dot) { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
 :deep(.tooltip-total) { border-top: 1px solid #475569; margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-weight: 700; color: #34d399; }
 @media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr; } }
+
+.apexcharts-datalabel-label,
+.apexcharts-datalabel-value {
+  fill: #ffffff !important;
+}
+
+/* Força a remoção do fundo branco padrão das caixas de total empilhadas */
+.apexcharts-bar-goals rect, 
+.apexcharts-datalabels rect {
+  fill: transparent !important;
+  stroke: none !important;
+}
 </style>
