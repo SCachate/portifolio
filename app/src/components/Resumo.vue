@@ -413,7 +413,7 @@ const historicoResultadoOptions = computed(() => ({
           style: {
             color: '#ffffff',
             fontSize: '11px',
-            fontWeight: 700
+            fontWeight: 400
           },
           formatter: function (val) {
             return Number(val).toLocaleString('pt-BR', {
