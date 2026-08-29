@@ -61,7 +61,7 @@
             :error="errorEvolucao" 
             class="flex-grow-loader"
           >
-            <div class="chart-wrapper-dynamic">
+            <div class="chart-wrapper-dynamic chart-evolucao">
               <apexchart 
                 type="line" 
                 height="100%" 
@@ -543,4 +543,12 @@ onUnmounted(() => {
 :deep(.dot) { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
 :deep(.tooltip-total) { border-top: 1px solid #475569; margin-top: 8px; padding-top: 8px; display: flex; justify-content: space-between; font-weight: 700; color: #34d399; }
 @media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr; } }
+
+:deep(.chart-evolucao .apexcharts-datalabels text) {
+  /* Rotaciona o texto em 45 graus para a esquerda (use 45deg para a direita se preferir) */
+  transform: rotate(-45deg);
+  
+  /* Define o ponto de origem da rotação para que ele gire a partir do seu próprio canto/centro de forma alinhada */
+  transform-origin: center center;
+}
 </style>
