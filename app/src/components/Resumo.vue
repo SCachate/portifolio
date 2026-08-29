@@ -456,7 +456,7 @@ const evolucaoOptions = computed(() => ({
   // Rótulos aplicados APENAS na linha (índice 5) com formato compacto
   dataLabels: {
     enabled: true,
-    enabledOnSeries: [5], // Exibe apenas na 6ª série (a linha)
+    enabledOnSeries: [0,1,2,3,4,5], // Exibe apenas na 6ª série (a linha)
     offsetY: -8,
     style: {
       fontSize: '10px',
