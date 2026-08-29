@@ -455,10 +455,10 @@ const evolucaoOptions = computed(() => ({
   dataLabels: {
     enabled: true,          // Habilita a exibição de números em cima do gráfico
     enabledOnSeries: [6],   // IMPORTANTE: Aplica os rótulos APENAS à 6ª série (a linha), ignorando as barras (0-4)
-    offsetY: -18,            // Move o texto 8 pixels para cima do ponto da linha
+    offsetY: 18,            // Move o texto 8 pixels para cima do ponto da linha
     style: {
       fontSize: '10px',     // Tamanho da fonte
-      colors: ['#94a3b8'],  // Cor do texto (um branco bem claro para contraste)
+      colors: ['#1f2227'],  // Cor do texto (um branco bem claro para contraste)
       fontWeight: 600       // Peso da fonte (sem ser negrito total, mas com destaque)
     },
     // Formata o número para aparecer como moeda (ex: R$ 310k)
