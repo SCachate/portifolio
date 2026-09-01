@@ -40,7 +40,7 @@ const loadingGlobal = computed(() => loadingAssets.value || salvando.value);
 
 const assetTypes = ['B3', 'EUA', 'RENDA_FIXA', 'FII', 'TESOURO DIRETO', 'MOEDA'];
 
-const currenciesUrl = computed(() => '/assets?assetType=MOEDAS&limit=100'); 
+const currenciesUrl = computed(() => `/assets?page=1&limit=9999&search=`); 
 const { data: currenciesResponse } = useApi(currenciesUrl, { immediate: true });
 
 // 🟢 MONITOR DE URL: Sempre que a página mudar ou o usuário digitar na busca, 
