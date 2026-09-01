@@ -40,6 +40,9 @@ const loadingGlobal = computed(() => loadingAssets.value || salvando.value);
 
 const assetTypes = ['B3', 'EUA', 'RENDA_FIXA', 'FII', 'TESOURO DIRETO', 'MOEDA'];
 
+const currenciesUrl = computed(() => '/assets?assetType=MOEDAS&limit=100'); 
+const { data: currenciesResponse } = useApi(currenciesUrl, { immediate: true });
+
 // 🟢 MONITOR DE URL: Sempre que a página mudar ou o usuário digitar na busca, 
 // o Vue detecta a mudança e força o composable a ir no banco buscar novos dados.
 watch(assetsUrl, async () => {
@@ -64,10 +67,10 @@ const metadadosPaginacao = computed(() => {
   return assetsResponse.value.meta;
 });
 
-// Filtra as moedas disponíveis para vincular como par cambial (ex: USD)
 const moedasDisponiveis = computed(() => {
-  if (!safeAssetsList.value) return [];
-  return safeAssetsList.value.filter(a => a.assetType === 'MOEDA');
+  if (!currenciesResponse.value) return [];
+  const list = Array.isArray(currenciesResponse.value.data) ? currenciesResponse.value.data : [];
+  return list.filter(a => a.assetType === 'MOEDA');
 });
 
 // Filtra as sub-estratégias baseando-se na classe macro escolhida no form
