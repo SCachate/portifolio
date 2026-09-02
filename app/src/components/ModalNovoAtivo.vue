@@ -32,12 +32,12 @@ const formAtivo = ref({ ...formAtivoInicial });
 // Buscas independentes do modal (Desacoplamento total da tela pai)
 const { data: classesResponse } = useApi('/classes', { immediate: true });
 const { data: strategiesResponse } = useApi('/strategies', { immediate: true });
-const { data: moedasResponse } = useApi('/assets?assetType=MOEDA', { immediate: true });
+const { data: moedasResponse } = useApi('/assets', { immediate: true });
 
 // Extração segura dos dados vindos do backend
 const classesList = computed(() => Array.isArray(classesResponse.value?.data) ? classesResponse.value.data : (classesResponse.value || []));
 const strategiesList = computed(() => Array.isArray(strategiesResponse.value?.data) ? strategiesResponse.value.data : (strategiesResponse.value || []));
-const moedasDisponiveis = computed(() => Array.isArray(moedasResponse.value?.data) ? moedasResponse.value.data : (moedasResponse.value || []));
+const moedasDisponiveis = computed(() => Array.isArray(moedasResponse.value?.data) ? moedasResponse.value.data.filter(a => a.assetType === 'MOEDA') : (moedasResponse.value || []));
 
 // Filtro reativo: Só exibe estratégias da Classe Macro selecionada
 const estrategiasFiltradas = computed(() => {
