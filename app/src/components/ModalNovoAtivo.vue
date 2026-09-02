@@ -37,7 +37,14 @@ const { data: moedasResponse } = useApi('/assets', { immediate: true });
 // Extração segura dos dados vindos do backend
 const classesList = computed(() => Array.isArray(classesResponse.value?.data) ? classesResponse.value.data : (classesResponse.value || []));
 const strategiesList = computed(() => Array.isArray(strategiesResponse.value?.data) ? strategiesResponse.value.data : (strategiesResponse.value || []));
-const moedasDisponiveis = computed(() => Array.isArray(moedasResponse.value?.data) ? moedasResponse.value.data.filter(a => a.assetType === 'MOEDA') : (moedasResponse.value || []));
+
+const moedasDisponiveis = computed(() => {
+  const payload = moedasResponse.value?.data ?? moedasResponse.value;
+  const listaSegura = Array.isArray(payload) ? payload : [];
+  
+  // Aplica o filtro com segurança sobre o array garantido
+  return listaSegura.filter(ativo => ativo.assetType === 'MOEDA');
+});
 
 // Filtro reativo: Só exibe estratégias da Classe Macro selecionada
 const estrategiasFiltradas = computed(() => {
