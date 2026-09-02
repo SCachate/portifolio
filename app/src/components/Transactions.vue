@@ -152,12 +152,14 @@ const registrarTransacaoManual = async () => {
 };
 
 
+// --- UPLOAD E TRATAMENTO DO JSON DA IA ---
 const handleFileUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
   fileName.value = file.name;
   const formData = new FormData();
   formData.append('nota', file);
+  
   try {
     loading.value = true;
     const apiInstancia = useApi('/transactions/addPDF', {
@@ -166,12 +168,22 @@ const handleFileUpload = async (event) => {
       immediate: false,
       headers: { 'Content-Type': undefined }
     });
+    
     await apiInstancia.fetchData();
     const resposta = apiInstancia.data.value;
-    if (resposta && (resposta.transacoes || Array.isArray(resposta))) {
-      transacoesParaRevisar.value = resposta.transacoes || resposta;
+    
+    if (resposta && resposta.transacoes) {
+      // Pulo do gato: Pegamos a data do cabeçalho do JSON (ou hoje como fallback)
+      const dataDaNota = resposta.data || hoje;
+      
+      // Mapeamos as transações injetando a data nelas
+      transacoesParaRevisar.value = resposta.transacoes.map(t => ({
+        ...t,
+        data: dataDaNota
+      }));
+      
       modoRevisao.value = true;
-      toast.success('Nota lida com sucesso! Revise os dados abaixo.');
+      toast.success('Nota lida com sucesso! Clique em "Incluir" para processar cada linha.');
     } else {
       toast.error('O backend respondeu, mas os dados não foram processados corretamente.');
     }
@@ -179,8 +191,37 @@ const handleFileUpload = async (event) => {
     console.error('Falha ao importar PDF:', err);
   } finally {
     loading.value = false;
-    event.target.value = '';
+    event.target.value = ''; // Reseta o input
   }
+};
+
+// --- NOVA FUNÇÃO: MOVER PARA O FORMULÁRIO ---
+const preencherFormulario = (linhaGrid) => {
+  // 1. Tenta achar o ID do ativo no banco baseado no Ticker
+  const ativoEncontrado = getAtivoByTicker(linhaGrid.ticker);
+  
+  if (!ativoEncontrado) {
+    toast.warning(`O ativo ${linhaGrid.ticker} não está cadastrado. Cadastre-o primeiro!`);
+    showAssetModal.value = true;
+    // Opcional: preencher o nome do modal de ativo com linhaGrid.ativo se você passar via prop
+    return;
+  }
+
+  // 2. Trata a quantidade (Se for venda 'V', joga negativo no form)
+  const isVenda = linhaGrid.tipo === 'V' || linhaGrid.tipo === 'v';
+  const qtdAbsoluta = Math.abs(linhaGrid.quantidade || 0);
+
+  // 3. Popula o formulário lateral
+  form.value.assetId = ativoEncontrado.id;
+  form.value.quantity = isVenda ? -qtdAbsoluta : qtdAbsoluta;
+  form.value.priceUnit = linhaGrid.preco_unitario;
+  form.value.custos_operacionais = linhaGrid.custos_operacionais;
+  form.value.date = linhaGrid.data;
+  
+  // Nota: form.brokerId não é preenchido automaticamente pois não vem por linha no JSON.
+  // O usuário deverá selecionar ou já deixar selecionado no dropdown.
+
+  toast.info('Dados movidos para o formulário. Verifique e salve!');
 };
 
 const cancelarRevisao = () => {
@@ -189,8 +230,13 @@ const cancelarRevisao = () => {
   fileName.value = '';
 };
 
-const salvarDadosRevisados = () => {
-  toast.info('Pronto para enviar ao banco os dados revisados!');
+const getAtivoByTicker = (ticker) => {
+  if (!ticker) return null;
+  return allAssets.value.find(a => (a.ticket || '').toUpperCase() === ticker.toUpperCase());
+};
+
+const assetExiste = (ticker) => {
+  return !!getAtivoByTicker(ticker);
 };
 
 onMounted(() => {
@@ -305,31 +351,68 @@ onMounted(() => {
           <!-- MODO REVISÃO IA -->
           <div v-if="modoRevisao" class="flex flex-col flex-1 min-h-0 bg-[#121722]">
             <div class="p-4 bg-emerald-950/20 border-b border-emerald-500/10 flex justify-between items-center shrink-0">
-              <span class="text-xs font-black text-emerald-400 uppercase tracking-wider">🤖 REVISÃO DA INTELIGÊNCIA ARTIFICIAL</span>
-              <div class="flex gap-2">
-                <button @click="cancelarRevisao" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white text-[10px] font-black uppercase rounded-md transition-all">Cancelar</button>
-                <button @click="salvarDadosRevisados" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase rounded-md transition-all">Confirmar e Salvar</button>
-              </div>
+              <span class="text-xs font-black text-emerald-400 uppercase tracking-wider">
+                🤖 FILA DE IMPORTAÇÃO (Clique em "Incluir" para revisar no formulário)
+              </span>
+              <button @click="cancelarRevisao" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white text-[10px] font-black uppercase rounded-md transition-all">
+                Fechar Nota
+              </button>
             </div>
             <div class="flex-1 overflow-auto">
               <table class="w-full text-left border-collapse">
                 <thead class="sticky top-0 bg-[#161b26] z-10 border-b border-white/5">
                   <tr class="text-[9px] font-black text-slate-500 uppercase tracking-wider">
-                    <th class="p-3">Data</th><th class="p-3">Ticker</th><th class="p-3">Operação</th><th class="p-3">Qtd</th><th class="p-3">Preço</th><th class="p-3">Taxas</th>
+                    <th class="p-3">Data</th>
+                    <th class="p-3">Ticker</th>
+                    <th class="p-3">Descrição (Ativo)</th>
+                    <th class="p-3">Op.</th>
+                    <th class="p-3">Qtd</th>
+                    <th class="p-3">Preço</th>
+                    <th class="p-3">Taxas</th>
+                    <th class="p-3 text-center">Ação</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-white/5">
-                  <tr v-for="(t, idx) in transacoesParaRevisar" :key="idx">
-                    <td class="p-2"><input v-model="t.data" type="date" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-white font-mono w-full" /></td>
-                    <td class="p-2"><input v-model="t.ticker" type="text" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-white font-bold uppercase w-full" /></td>
+                  <tr v-for="(t, idx) in transacoesParaRevisar" :key="idx" class="hover:bg-white/[0.02] transition-colors">
                     <td class="p-2">
-                      <select v-model="t.tipo" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-white w-full">
-                        <option value="C">Compra</option><option value="V">Venda</option>
+                      <input v-model="t.data" type="date" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-[10px] text-white font-mono w-24 outline-none" />
+                    </td>
+                    <td class="p-2">
+                      <div class="flex items-center gap-2">
+                        <input 
+                          v-model="t.ticker" 
+                          type="text" 
+                          class="bg-[#0b0f17] border rounded p-1 text-[10px] text-white font-bold uppercase w-16 outline-none transition-colors"
+                          :class="assetExiste(t.ticker) ? 'border-emerald-500/30 text-emerald-400' : 'border-rose-500/50 text-rose-400'" 
+                        />
+                      </div>
+                    </td>
+                    <td class="p-2">
+                      <input v-model="t.ativo" type="text" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-[10px] text-slate-300 w-full outline-none" title="Descrição extraída pela IA" />
+                    </td>
+                    <td class="p-2">
+                      <select v-model="t.tipo" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-[10px] text-white w-14 outline-none">
+                        <option value="C">C</option>
+                        <option value="V">V</option>
                       </select>
                     </td>
-                    <td class="p-2"><input v-model.number="t.quantidade" type="number" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-slate-300 w-full" /></td>
-                    <td class="p-2"><input v-model.number="t.preco_unitario" type="number" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-slate-300 w-full" /></td>
-                    <td class="p-2"><input v-model.number="t.custos_operacionais" type="number" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-xs text-slate-300 w-full" /></td>
+                    <td class="p-2">
+                      <input v-model.number="t.quantidade" type="number" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-[10px] text-slate-300 w-16 outline-none" />
+                    </td>
+                    <td class="p-2">
+                      <input v-model.number="t.preco_unitario" type="number" step="0.01" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-[10px] text-slate-300 w-20 outline-none" />
+                    </td>
+                    <td class="p-2">
+                      <input v-model.number="t.custos_operacionais" type="number" step="0.01" class="bg-[#0b0f17] border border-white/5 rounded p-1 text-[10px] text-slate-300 w-16 outline-none" />
+                    </td>
+                    <td class="p-2 text-center">
+                      <button 
+                        @click="preencherFormulario(t)"
+                        class="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-500 hover:text-white border border-emerald-500/30 rounded text-[9px] font-black uppercase transition-all"
+                      >
+                        Incluir
+                      </button>
+                    </td>
                   </tr>
                 </tbody>
               </table>
