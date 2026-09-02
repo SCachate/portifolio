@@ -197,29 +197,24 @@ const handleFileUpload = async (event) => {
 
 // --- NOVA FUNÇÃO: MOVER PARA O FORMULÁRIO ---
 const preencherFormulario = (linhaGrid) => {
-  // 1. Tenta achar o ID do ativo no banco baseado no Ticker
+
   const ativoEncontrado = getAtivoByTicker(linhaGrid.ticker);
   
   if (!ativoEncontrado) {
     toast.warning(`O ativo ${linhaGrid.ticker} não está cadastrado. Cadastre-o primeiro!`);
     showAssetModal.value = true;
-    // Opcional: preencher o nome do modal de ativo com linhaGrid.ativo se você passar via prop
     return;
   }
 
-  // 2. Trata a quantidade (Se for venda 'V', joga negativo no form)
   const isVenda = linhaGrid.tipo === 'V' || linhaGrid.tipo === 'v';
   const qtdAbsoluta = Math.abs(linhaGrid.quantidade || 0);
 
-  // 3. Popula o formulário lateral
   form.value.assetId = ativoEncontrado.id;
   form.value.quantity = isVenda ? -qtdAbsoluta : qtdAbsoluta;
   form.value.priceUnit = linhaGrid.preco_unitario;
   form.value.custos_operacionais = linhaGrid.custos_operacionais;
-  form.value.date = linhaGrid.data;
-  
-  // Nota: form.brokerId não é preenchido automaticamente pois não vem por linha no JSON.
-  // O usuário deverá selecionar ou já deixar selecionado no dropdown.
+  form.value.date = linhaGrid.data;  
+  form.value.brokerId = linhaGrid.brokerId || '';
 
   toast.info('Dados movidos para o formulário. Verifique e salve!');
 };

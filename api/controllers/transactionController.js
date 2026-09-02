@@ -149,7 +149,7 @@ Instruções para o cálculo de custos:
 
 Retorne um objeto JSON seguindo exatamente este esquema:
 {
-  "cnpj_corretora": "string (formato CNPJ limo, sem pontuação ou traço)",
+  "cnpj_corretora": "string (formato CNPJ limpo, sem pontuação ou traço)",
   "cnpj_cpf_cliente": "string (formato CPF ou CNPJ limpo, sem pontuação ou traço)",
   "data": "YYYY-MM-DD",
   "transacoes": [
@@ -199,11 +199,34 @@ Retorne um objeto JSON seguindo exatamente este esquema:
         if (user.cpf != dadosExtraidos.cnpj_cpf_cliente) {
             console.info([user.cpf,dadosExtraidos.cnpj_cpf_cliente, user.CPF != dadosExtraidos.cnpj_cpf_cliente]);
             return res.status(400).json({ error: 'Esta nota de corretagem não pertence a este usuário!' });
-        }     
+        }  
     } 
     else 
     {
         return res.status(400).json({ error: 'Não foi possível identificar o proprietário da nota de corretagem!' });
+    }
+
+    let brokerIdEncontrado = null;
+    
+    if (dadosExtraidos.cnpj_corretora) {
+      const cnpjLimpo = dadosExtraidos.cnpj_corretora.replace(/[^\d]/g, '');
+      const sqlBroker = `
+          SELECT id 
+          FROM brokers 
+          WHERE REPLACE(REPLACE(REPLACE(cnpj, '.', ''), '/', ''), '-', '') = ?
+      `;
+      const [brokersFound] = await db.execute(sqlBroker, [cnpjLimpo]);
+      
+      if (brokersFound.length > 0) {
+          brokerIdEncontrado = brokersFound[0].id;
+      } 
+    }
+
+    if (dadosExtraidos.transacoes && Array.isArray(dadosExtraidos.transacoes)) {
+        dadosExtraidos.transacoes = dadosExtraidos.transacoes.map(t => ({
+            ...t,
+            brokerId: brokerIdEncontrado
+        }));
     }
 
     console.info(dadosExtraidos);
