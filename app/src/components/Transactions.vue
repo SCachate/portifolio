@@ -5,6 +5,7 @@ import { useToast } from 'vue-toastification';
 import ModalNovoAtivo from '../components/ModalNovoAtivo.vue';
 
 const showAssetModal = ref(false);
+const indiceLinhaEmEdicao = ref(null);
 
 const onAtivoCadastrado = async (novoAtivo) => {
   await fetchMetadata();
@@ -138,7 +139,18 @@ const registrarTransacaoManual = async () => {
       immediate: false
     });
     await apiManual.fetchData();
-    toast.success('Movimentação registrada com sucesso!');
+    toast.success('Movimentação registrada com sucesso!');~
+
+    if (indiceLinhaEmEdicao.value !== null) {
+      transacoesParaRevisar.value.splice(indiceLinhaEmEdicao.value, 1);
+      indiceLinhaEmEdicao.value = null;
+
+      if (transacoesParaRevisar.value.length === 0) {
+        modoRevisao.value = false; // Esconde o grid
+        toast.success('🎉 Todas as operações da nota foram importadas!');
+      }
+    }
+
     form.value.quantity = null;
     form.value.priceUnit = null;
     form.value.custos_operacionais = null;
@@ -196,7 +208,7 @@ const handleFileUpload = async (event) => {
 };
 
 // --- NOVA FUNÇÃO: MOVER PARA O FORMULÁRIO ---
-const preencherFormulario = (linhaGrid) => {
+const preencherFormulario = (linhaGrid, index) => {
 
   const ativoEncontrado = getAtivoByTicker(linhaGrid.ticker);
   
@@ -215,6 +227,8 @@ const preencherFormulario = (linhaGrid) => {
   form.value.custos_operacionais = linhaGrid.custos_operacionais;
   form.value.date = linhaGrid.data;  
   form.value.brokerId = linhaGrid.brokerId || '';
+
+  indiceLinhaEmEdicao.value = index;
 
   toast.info('Dados movidos para o formulário. Verifique e salve!');
 };
@@ -402,7 +416,7 @@ onMounted(() => {
                     </td>
                     <td class="p-2 text-center">
                       <button 
-                        @click="preencherFormulario(t)"
+                        @click="preencherFormulario(t, idx)"
                         class="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-500 hover:text-white border border-emerald-500/30 rounded text-[9px] font-black uppercase transition-all"
                       >
                         Incluir
