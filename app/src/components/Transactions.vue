@@ -197,11 +197,6 @@ onMounted(() => {
   fetchMetadata(); // Carrega Ativos e Corretoras globais ao iniciar [1]
 });
 
-// --------------------------- Modal de cadastro de ativos 
-// Estados para o Modal
-const showAssetModal = ref(false);
-const salvandoAtivo = ref(false);
-
 </script>
 
 <template>
