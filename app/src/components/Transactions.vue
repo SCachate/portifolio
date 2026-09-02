@@ -139,7 +139,7 @@ const registrarTransacaoManual = async () => {
       immediate: false
     });
     await apiManual.fetchData();
-    toast.success('Movimentação registrada com sucesso!');~
+    toast.success('Movimentação registrada com sucesso!');
 
     if (indiceLinhaEmEdicao.value !== null) {
       transacoesParaRevisar.value.splice(indiceLinhaEmEdicao.value, 1);
