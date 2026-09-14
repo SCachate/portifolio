@@ -123,11 +123,10 @@ WHERE
 	userid=?
 	and vpmr.periodo = ?
 	and vpmr.nome_classe = 'Renda fixa'
-    `;
+`;
 
-    console.log(termino.substring(0,7));
-
-    const amount = 1300;
+    const [rows2] = await connection.execute(sql, [userId, termino.substring(0,7)]);
+    const amount = rows2[0]?.lucro_prejuizo_real ?? null;
 
     if (!report.classes[idRF]) { 
         report.classes[idRF] = {
