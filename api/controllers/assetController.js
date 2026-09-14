@@ -126,7 +126,7 @@ WHERE
 `;
 
     const [rows2] = await db.execute(sql, [userId, termino.substring(0,7)]);
-    const amount = rows2[0]?.lucro_prejuizo_real ?? null;
+    const amount = rows2[0]?.lucro_prejuizo_real ?? 0;
 
     if (!report.classes[idRF]) { 
         report.classes[idRF] = {
