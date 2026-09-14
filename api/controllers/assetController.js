@@ -114,6 +114,19 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
         acumuladorTotalGeral += amount;
     });
 
+    const sql = `
+SELECt
+	vpmr.lucro_prejuizo_real 
+FROM 
+	v_performance_mensal_real vpmr
+WHERE 
+	userid=?
+	and vpmr.periodo = ?
+	and vpmr.nome_classe = 'Renda fixa'
+    `;
+
+    console.log(termino);
+
     const amount = 1300;
 
     if (!report.classes[idRF]) { 
