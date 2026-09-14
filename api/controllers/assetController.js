@@ -114,6 +114,8 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
         acumuladorTotalGeral += amount;
     });
 
+    const amount = 1300;
+
     if (!report.classes[idRF]) { 
         report.classes[idRF] = {
                     className: 'Renda fixa',
@@ -136,8 +138,12 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
             eventType: 'RENDIMENTO',
             eventDate: new Date().toISOString().split('T')[0],
             quantityReceived:0,
-            amountTotal: 0
+            amountTotal: amount
         });
+
+    report.classes[idRF].brokers[0].brokerTotal += amount;
+    report.classes[idRF].classTotal += amount;
+    acumuladorTotalGeral += amount;
 
     report.totalGeneral = acumuladorTotalGeral;
 
