@@ -129,11 +129,7 @@ WHERE
 `;
 
     const [rows2] = await db.execute(sql, [userId, periodo]);
-
-    console.log('Parâmetros enviados:', { userId, periodo });
-console.log('Resultado do banco:', rows2);
-
-    const amount = rows2[0]?.lucro_prejuizo_real ?? 0;
+    const amount = Number(rows2[0]?.lucro_prejuizo_real ?? 0);
 
     if (!report.classes[idRF]) { 
         report.classes[idRF] = {
