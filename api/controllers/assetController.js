@@ -134,7 +134,7 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
             ticker: 'RF',
             assetName: 'Renda Fixa',
             eventType: 'RENDIMENTO',
-            eventDate: new Date().toLocaleDateString('pt-BR'),
+            eventDate: new Date().toISOString().split('T')[0],
             quantityReceived:0,
             amountTotal: 0
         });
