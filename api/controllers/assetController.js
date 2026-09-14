@@ -125,7 +125,7 @@ WHERE
 	and vpmr.nome_classe = 'Renda fixa'
 `;
 
-    const [rows2] = await connection.execute(sql, [userId, termino.substring(0,7)]);
+    const [rows2] = await db.execute(sql, [userId, termino.substring(0,7)]);
     const amount = rows2[0]?.lucro_prejuizo_real ?? null;
 
     if (!report.classes[idRF]) { 
