@@ -64,6 +64,8 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
     ]);
 
     let acumuladorTotalGeral = 0;
+    let idRF = 0;
+    let idBK = 0;
 
     const report = {
         totalGeneral: 0,
@@ -85,6 +87,9 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
             };
         }
 
+        if (className == 'Renda fixa')
+            idRF = cId;
+
         if (!report.classes[cId].brokers[bId]) {
             report.classes[cId].brokers[bId] = {
                 brokerName: brokerName,
@@ -93,7 +98,10 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
             };
         }
 
-        report.classes[cId].brokers[bId].assets.push({
+        if (idBK === 0)
+            idBK = bId;
+
+        report.classes[idRF].brokers[bId].assets.push({
             eventId: row.eventId,
             assetId: row.assetId,
             ticker: row.ticker,
@@ -108,6 +116,17 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
         report.classes[cId].classTotal += amount;
         acumuladorTotalGeral += amount;
     });
+
+    report.classes[idRF].brokers[idBK].assets.push({
+            eventId: 0,
+            assetId: 32,
+            ticker: 'RF',
+            assetName: 'Renda Fixa',
+            eventType: 'RENDIMENTO',
+            eventDate: new Date(),
+            quantityReceived:0,
+            amountTotal: 0
+        });
 
     report.totalGeneral = acumuladorTotalGeral;
 
