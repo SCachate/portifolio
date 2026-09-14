@@ -115,8 +115,8 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
     });
 
     const periodo = typeof termino === 'string' && termino.includes('/')
-  ? termino.split('/').reverse().slice(0, 2).join('-') /
-  : new Date(termino).toISOString().substring(0, 7)
+        ? termino.split('/').reverse().slice(0, 2).join('-') 
+        : new Date(termino).toISOString().substring(0, 7)
     const sql = `
 SELECt
 	vpmr.lucro_prejuizo_real 
