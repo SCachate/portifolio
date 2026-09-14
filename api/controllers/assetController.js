@@ -98,7 +98,7 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
             };
         }
 
-        report.classes[idRF].brokers[bId].assets.push({
+        report.classes[cId].brokers[bId].assets.push({
             eventId: row.eventId,
             assetId: row.assetId,
             ticker: row.ticker,
