@@ -114,6 +114,9 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
         acumuladorTotalGeral += amount;
     });
 
+    console.log('-----------------');
+    console.log(idRF);
+
     if (!report.classes[idRF]) { 
         report.classes[idRF] = {
                     className: 'Renda fixa',
