@@ -66,7 +66,6 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
     let acumuladorTotalGeral = 0;
     let idRF = 0;
 
-
     const report = {
         totalGeneral: 0,
         classes: {}
@@ -87,8 +86,6 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
             };
         }
 
-        if (className == 'Renda fixa')
-            idRF = cId;
 
         if (!report.classes[cId].brokers[bId]) {
             report.classes[cId].brokers[bId] = {
@@ -114,13 +111,19 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
         acumuladorTotalGeral += amount;
     });
 
-    report.classes[idRF].brokers[0] = {
+    report.classes[0] = {
+                className: 'Renda fixa',
+                classTotal: 0,
+                brokers: {}
+            };
+
+    report.classes[0].brokers[0] = {
                 brokerName: 'Geral',
                 brokerTotal: 0,
                 assets: []
             };
 
-    report.classes[idRF].brokers[0].assets.push({
+    report.classes[0].brokers[0].assets.push({
             eventId: 0,
             assetId: 32,
             ticker: 'RF',
