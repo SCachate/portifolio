@@ -114,6 +114,9 @@ exports.getDividendReportByClass = asyncHandler(async (req, res) => {
         acumuladorTotalGeral += amount;
     });
 
+    const periodo = typeof termino === 'string' && termino.includes('/')
+  ? termino.split('/').reverse().slice(0, 2).join('-') /
+  : new Date(termino).toISOString().substring(0, 7)
     const sql = `
 SELECt
 	vpmr.lucro_prejuizo_real 
@@ -125,7 +128,11 @@ WHERE
 	and vpmr.nome_classe = 'Renda fixa'
 `;
 
-    const [rows2] = await db.execute(sql, [userId, termino.substring(0,7)]);
+    const [rows2] = await db.execute(sql, [userId, periodo]);
+
+    console.log('Parâmetros enviados:', { userId, periodo });
+console.log('Resultado do banco:', rows2);
+
     const amount = rows2[0]?.lucro_prejuizo_real ?? 0;
 
     if (!report.classes[idRF]) { 
