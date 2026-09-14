@@ -125,7 +125,7 @@ WHERE
 	and vpmr.nome_classe = 'Renda fixa'
     `;
 
-    console.log(termino);
+    console.log(termino.substring(0,7));
 
     const amount = 1300;
 
