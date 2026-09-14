@@ -148,7 +148,7 @@ WHERE
             ticker: 'RF',
             assetName: 'Renda Fixa',
             eventType: 'RENDIMENTO',
-            eventDate: new Date().toISOString().split('T')[0],
+            eventDate: termino,
             quantityReceived:0,
             amountTotal: amount
         });
