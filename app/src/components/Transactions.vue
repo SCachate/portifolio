@@ -513,9 +513,28 @@ onMounted(() => {
                     <td class="p-4 text-xs font-mono text-slate-400 font-bold">{{ Number(t?.quantity || 0).toLocaleString('pt-BR') }}</td>
                     <td class="p-4 text-xs font-mono text-slate-400">R$ {{ formatCurrency(t?.priceUnit) }}</td>
                     <td class="p-4 text-right font-mono text-white text-sm font-bold">R$ {{ formatCurrency(t?.total) }}</td>
-                    <td class="p-4 text-center space-x-2">
-                      <button @click="carregarParaEdicao(t)" title="Editar" class="px-2 py-1 bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white rounded text-[10px] font-bold uppercase transition-all">Editar</button>
-                      <button @click="excluirTransacao(t.id)" title="Excluir" class="px-2 py-1 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded text-[10px] font-bold uppercase transition-all">Excluir</button>
+                    <td class="p-4 text-center flex items-center justify-center gap-2">
+                      <!-- Botão Editar (Ícone de Lápis) -->
+                      <button 
+                        @click="carregarParaEdicao(t)" 
+                        title="Editar" 
+                        class="p-2 bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white rounded-lg transition-all group"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+
+                      <!-- Botão Excluir (Ícone de Lixeira) -->
+                      <button 
+                        @click="excluirTransacao(t.id)" 
+                        title="Excluir" 
+                        class="p-2 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-lg transition-all group"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
                     </td>
                   </tr>
                 </tbody>
