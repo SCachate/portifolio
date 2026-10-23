@@ -286,3 +286,74 @@ exports.addManual = asyncHandler(async (req, res) => {
         transactionId: result.insertId
     });
 });
+
+/**
+ * Atualiza uma transação existente
+ * Endpoint: PUT /api/transactions/:id
+ */
+exports.updateTransaction = asyncHandler(async (req, res) => {
+    const userId = req.userId;
+    const transactionId = req.params.id;
+    const { assetId, brokerId, quantity, priceUnit, custos_operacionais, date } = req.body;
+
+    // 1. Validação básica de consistência
+    if (!assetId || !brokerId || quantity === undefined || !priceUnit || !date) {
+        return res.status(400).json({ 
+            success: false, 
+            error: "Todos os campos obrigatórios devem ser preenchidos." 
+        });
+    }
+
+    const fees = custos_operacionais || 0;
+
+    // 2. Garante que a transação pertence ao usuário autenticado
+    const [existing] = await db.execute(
+        `SELECT id FROM transactions WHERE id = ? AND userId = ?`, 
+        [transactionId, userId]
+    );
+
+    if (existing.length === 0) {
+        return res.status(404).json({ success: false, error: "Transação não encontrada." });
+    }
+
+    // 3. Executa a atualização
+    const sql = `
+        UPDATE transactions 
+        SET assetId = ?, brokerId = ?, quantity = ?, priceUnit = ?, fees = ?, date = ?
+        WHERE id = ? AND userId = ?
+    `;
+
+    await db.execute(sql, [assetId, brokerId, quantity, priceUnit, fees, date, transactionId, userId]);
+
+    res.status(200).json({
+        success: true,
+        message: "Transação atualizada com sucesso!"
+    });
+});
+
+/**
+ * Exclui uma transação
+ * Endpoint: DELETE /api/transactions/:id
+ */
+exports.deleteTransaction = asyncHandler(async (req, res) => {
+    const userId = req.userId;
+    const transactionId = req.params.id;
+
+    // 1. Garante que a transação pertence ao usuário autenticado
+    const [existing] = await db.execute(
+        `SELECT id FROM transactions WHERE id = ? AND userId = ?`, 
+        [transactionId, userId]
+    );
+
+    if (existing.length === 0) {
+        return res.status(404).json({ success: false, error: "Transação não encontrada." });
+    }
+
+    // 2. Executa a exclusão
+    await db.execute(`DELETE FROM transactions WHERE id = ? AND userId = ?`, [transactionId, userId]);
+
+    res.status(200).json({
+        success: true,
+        message: "Transação excluída com sucesso!"
+    });
+});
