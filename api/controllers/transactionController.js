@@ -240,18 +240,10 @@ Retorne um objeto JSON seguindo exatamente este esquema:
   }
 });
 
-/**
- * Adiciona uma transação de forma manual através do formulário lateral
- * Endpoint: POST /api/transactions/manual
- */
 exports.addManual = asyncHandler(async (req, res) => {
-    // 1. Captura o userId do middleware de autenticação
     const userId = req.userId;
-
-    // 2. Extrai os 5 campos vindos do formulário lateral do front
     const { assetId, brokerId, quantity, priceUnit, custos_operacionais, date } = req.body;
 
-    // 3. Validação básica de consistência dos dados obrigatórios
     if (!assetId || !brokerId || quantity === undefined || !priceUnit || !date) {
         return res.status(400).json({ 
             success: false, 
@@ -259,44 +251,39 @@ exports.addManual = asyncHandler(async (req, res) => {
         });
     }
 
-    // 4. Tratamento opcional para custos vazios ou nulos
     const fees = custos_operacionais || 0;
 
-    // 5. Query SQL de Inserção direta usando os padrões da sua tabela
+    // 1. Insere a transação
     const sql = `
         INSERT INTO transactions (userId, assetId, brokerId, quantity, priceUnit, fees, date)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
 
-    // 6. Executa a inserção passando os parâmetros tratados de forma segura
     const [result] = await db.execute(sql, [
-        userId,
-        assetId,
-        brokerId,
-        quantity,      // Positivo (Compra) ou Negativo (Venda) direto do front
-        priceUnit,
-        fees,          // custos_operacionais salvos na coluna fees
-        date
+        userId, assetId, brokerId, quantity, priceUnit, fees, date
     ]);
 
-    // 7. Retorna a confirmação de sucesso
+    // 2. Executa o recálculo em cascata chamando a procedure diretamente pelo Node.js
+    await db.execute(
+        `CALL sp_recalculate_asset_history(?, ?, ?, ?)`, 
+        [userId, assetId, brokerId, date]
+    );
+
     res.status(210).json({
         success: true,
-        message: "Transação manual registrada com sucesso!",
+        message: "Transação registrada e histórico recalculado com sucesso!",
         transactionId: result.insertId
     });
 });
 
 /**
- * Atualiza uma transação existente
- * Endpoint: PUT /api/transactions/:id
+ * Atualiza uma transação existente e dispara o recálculo
  */
 exports.updateTransaction = asyncHandler(async (req, res) => {
     const userId = req.userId;
     const transactionId = req.params.id;
     const { assetId, brokerId, quantity, priceUnit, custos_operacionais, date } = req.body;
 
-    // 1. Validação básica de consistência
     if (!assetId || !brokerId || quantity === undefined || !priceUnit || !date) {
         return res.status(400).json({ 
             success: false, 
@@ -306,9 +293,9 @@ exports.updateTransaction = asyncHandler(async (req, res) => {
 
     const fees = custos_operacionais || 0;
 
-    // 2. Garante que a transação pertence ao usuário autenticado
+    // 1. Verifica se a transação existe e pertence ao usuário
     const [existing] = await db.execute(
-        `SELECT id FROM transactions WHERE id = ? AND userId = ?`, 
+        `SELECT id, assetId, brokerId, date FROM transactions WHERE id = ? AND userId = ?`, 
         [transactionId, userId]
     );
 
@@ -316,7 +303,11 @@ exports.updateTransaction = asyncHandler(async (req, res) => {
         return res.status(404).json({ success: false, error: "Transação não encontrada." });
     }
 
-    // 3. Executa a atualização
+    const oldAssetId = existing[0].assetId;
+    const oldBrokerId = existing[0].brokerId;
+    const oldDate = existing[0].date;
+
+    // 2. Atualiza a transação
     const sql = `
         UPDATE transactions 
         SET assetId = ?, brokerId = ?, quantity = ?, priceUnit = ?, fees = ?, date = ?
@@ -325,23 +316,37 @@ exports.updateTransaction = asyncHandler(async (req, res) => {
 
     await db.execute(sql, [assetId, brokerId, quantity, priceUnit, fees, date, transactionId, userId]);
 
+    // 3. Se mudou de ativo ou corretora, recalcula o antigo também
+    if (oldAssetId !== Number(assetId) || oldBrokerId !== Number(brokerId)) {
+        await db.execute(
+            `CALL sp_recalculate_asset_history(?, ?, ?, ?)`, 
+            [userId, oldAssetId, oldBrokerId, oldDate]
+        );
+    }
+
+    // 4. Recalcula o ativo atual (usando a menor data entre a antiga e a nova para garantir o reflexo correto)
+    const menorData = oldDate < date ? oldDate : date;
+    await db.execute(
+        `CALL sp_recalculate_asset_history(?, ?, ?, ?)`, 
+        [userId, assetId, brokerId, menorData]
+    );
+
     res.status(200).json({
         success: true,
-        message: "Transação atualizada com sucesso!"
+        message: "Transação atualizada e histórico recalculado com sucesso!"
     });
 });
 
 /**
- * Exclui uma transação
- * Endpoint: DELETE /api/transactions/:id
+ * Exclui uma transação e dispara o recálculo
  */
 exports.deleteTransaction = asyncHandler(async (req, res) => {
     const userId = req.userId;
     const transactionId = req.params.id;
 
-    // 1. Garante que a transação pertence ao usuário autenticado
+    // 1. Busca os dados antes de excluir para saber quem recalcular
     const [existing] = await db.execute(
-        `SELECT id FROM transactions WHERE id = ? AND userId = ?`, 
+        `SELECT assetId, brokerId, date FROM transactions WHERE id = ? AND userId = ?`, 
         [transactionId, userId]
     );
 
@@ -349,11 +354,19 @@ exports.deleteTransaction = asyncHandler(async (req, res) => {
         return res.status(404).json({ success: false, error: "Transação não encontrada." });
     }
 
-    // 2. Executa a exclusão
+    const { assetId, brokerId, date } = existing[0];
+
+    // 2. Exclui a transação
     await db.execute(`DELETE FROM transactions WHERE id = ? AND userId = ?`, [transactionId, userId]);
+
+    // 3. Dispara o recálculo em cascata a partir da data da transação excluída
+    await db.execute(
+        `CALL sp_recalculate_asset_history(?, ?, ?, ?)`, 
+        [userId, assetId, brokerId, date]
+    );
 
     res.status(200).json({
         success: true,
-        message: "Transação excluída com sucesso!"
+        message: "Transação excluída e histórico recalculado com sucesso!"
     });
 });
