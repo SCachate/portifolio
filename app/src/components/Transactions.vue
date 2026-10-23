@@ -7,9 +7,11 @@ import ModalNovoAtivo from '../components/ModalNovoAtivo.vue';
 const showAssetModal = ref(false);
 const indiceLinhaEmEdicao = ref(null);
 
+// --- NOVO ESTADO PARA CONTROLE DE EDIÇÃO NO FORMULÁRIO ---
+const transacaoEmEdicaoId = ref(null);
+
 const onAtivoCadastrado = async (novoAtivo) => {
   await fetchMetadata();
-  
   if (novoAtivo && novoAtivo.id) {
     form.value.assetId = novoAtivo.id;
   }
@@ -21,11 +23,11 @@ const primeiroDiaMes = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), 1
 const hoje = dataAtual.toISOString().split('T')[0];
 const fileName = ref('');
 
-// --- NOVOS ESTADOS PARA AS LISTAS GLOBAIS ---
-const allAssets = ref([]);   // Armazenará todos os ativos do banco
-const allBrokers = ref([]);  // Armazenará todas as corretoras do banco
+// --- ESTADOS REATIVOS PARA AS LISTAS GLOBAIS ---
+const allAssets = ref([]);   
+const allBrokers = ref([]);  
 
-// --- FORMULÁRIO DE INSERÇÃO MANUAL ---
+// --- FORMULÁRIO DE INSERÇÃO / EDIÇÃO MANUAL ---
 const form = ref({
   assetId: '',
   brokerId: '',
@@ -62,17 +64,12 @@ const apiUrl = computed(() => {
 
 const { data: apiResponse, loading, fetchData } = useApi(apiUrl, { immediate: true });
 
-// --- FUNÇÃO PARA BUSCAR TODOS OS ATIVOS E CORRETORAS DO BANCO ---
 const fetchMetadata = async () => {
   try {
-    // 1. Inicializa o composable para Ativos (sem execução imediata)
     const apiAssets = useApi('/assets', { immediate: false });
-    // 2. Aguarda a execução da busca
     await apiAssets.fetchData();
-    // 3. Atribui o valor da ref 'data' (que foi preenchida pelo axios) à sua variável local
     allAssets.value = apiAssets.data.value || [];
 
-    // Repete o processo para Corretoras
     const apiBrokers = useApi('/brokers', { immediate: false });
     await apiBrokers.fetchData();
     allBrokers.value = apiBrokers.data.value || [];
@@ -100,14 +97,11 @@ const totalPaginas = computed(() =>
   Math.max(1, Math.ceil(transacoesTotal.value.length / itensPorPagina))
 );
 
-// --- MAPEAMENTO PARA SELECTS USANDO OS DADOS GLOBAIS DO BANCO ---
 const ativosParaSelect = computed(() => {
-  // Retorna todos os ativos da base ordenados por descrição
   return [...allAssets.value].sort((a, b) => (a.description || '').localeCompare(b.description || ''));
 });
 
 const brokersParaSelect = computed(() => {
-  // Retorna todas as corretoras da base ordenadas por nome
   return [...allBrokers.value].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
@@ -119,52 +113,113 @@ const formatDate = (dateString) => {
 const formatCurrency = (val) =>
   Number(val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const registrarTransacaoManual = async () => {
+// --- SALVAR (CRIAÇÃO OU ATUALIZAÇÃO) ---
+const salvarTransacao = async () => {
   if (!form.value.assetId || !form.value.brokerId || form.value.quantity === null || !form.value.priceUnit || !form.value.date) {
     toast.warning('Por favor, preencha todos os campos obrigatórios.');
     return;
   }
   try {
     loading.value = true;
-    const apiManual = useApi('/transactions/manual', {
-      method: 'POST',
-      data: {
-        assetId: form.value.assetId,
-        brokerId: form.value.brokerId,
-        quantity: form.value.quantity,
-        priceUnit: form.value.priceUnit,
-        custos_operacionais: form.value.custos_operacionais || 0,
-        date: form.value.date
-      },
-      immediate: false
-    });
-    await apiManual.fetchData();
-    toast.success('Movimentação registrada com sucesso!');
+    
+    if (transacaoEmEdicaoId.value) {
+      // MODO EDIÇÃO (PUT /api/transactions/:id)
+      const apiUpdate = useApi(`/transactions/${transacaoEmEdicaoId.value}`, {
+        method: 'PUT',
+        data: {
+          assetId: form.value.assetId,
+          brokerId: form.value.brokerId,
+          quantity: form.value.quantity,
+          priceUnit: form.value.priceUnit,
+          custos_operacionais: form.value.custos_operacionais || 0,
+          date: form.value.date
+        },
+        immediate: false
+      });
+      await apiUpdate.fetchData();
+      toast.success('Transação atualizada com sucesso!');
+    } else {
+      // MODO CRIAÇÃO (POST /api/transactions/manual)
+      const apiManual = useApi('/transactions/manual', {
+        method: 'POST',
+        data: {
+          assetId: form.value.assetId,
+          brokerId: form.value.brokerId,
+          quantity: form.value.quantity,
+          priceUnit: form.value.priceUnit,
+          custos_operacionais: form.value.custos_operacionais || 0,
+          date: form.value.date
+        },
+        immediate: false
+      });
+      await apiManual.fetchData();
+      toast.success('Movimentação registrada com sucesso!');
+    }
 
+    // Se veio da fila de revisão da IA
     if (indiceLinhaEmEdicao.value !== null) {
       transacoesParaRevisar.value.splice(indiceLinhaEmEdicao.value, 1);
       indiceLinhaEmEdicao.value = null;
 
       if (transacoesParaRevisar.value.length === 0) {
-        modoRevisao.value = false; // Esconde o grid
+        modoRevisao.value = false;
         toast.success('🎉 Todas as operações da nota foram importadas!');
       }
     }
 
-    form.value.quantity = null;
-    form.value.priceUnit = null;
-    form.value.custos_operacionais = null;
+    limparFormulario();
     fetchData();
   } catch (err) {
-    console.error('Erro ao registrar transação manual:', err);
-    toast.error('Falha crítica ao salvar transação manual.');
+    console.error('Erro ao salvar transação:', err);
+    toast.error('Falha crítica ao salvar transação.');
   } finally {
     loading.value = false;
   }
 };
 
+// --- PREPARAR FORMULÁRIO PARA EDIÇÃO A PARTIR DA TABELA ---
+const carregarParaEdicao = (t) => {
+  transacaoEmEdicaoId.value = t.id;
+  form.value.assetId = t.assetId;
+  form.value.brokerId = t.brokerId;
+  form.value.quantity = t.quantity;
+  form.value.priceUnit = t.priceUnit;
+  form.value.custos_operacionais = t.fees;
+  form.value.date = t.date ? t.date.split('T')[0] : hoje;
+  
+  toast.info(`Editando transação #${t.id}. Modifique os campos e clique em Salvar.`);
+};
 
-// --- UPLOAD E TRATAMENTO DO JSON DA IA ---
+// --- EXCLUIR TRANSAÇÃO ---
+const excluirTransacao = async (id) => {
+  if (!confirm('Tem certeza que deseja excluir esta transação? O histórico e os saldos serão recalculados automaticamente.')) {
+    return;
+  }
+  try {
+    loading.value = true;
+    const apiDelete = useApi(`/transactions/${id}`, {
+      method: 'DELETE',
+      immediate: false
+    });
+    await apiDelete.fetchData();
+    toast.success('Transação excluída com sucesso!');
+    fetchData();
+  } catch (err) {
+    console.error('Erro ao excluir transação:', err);
+    toast.error('Falha ao excluir transação.');
+  } finally {
+    loading.value = false;
+  }
+};
+
+const limparFormulario = () => {
+  transacaoEmEdicaoId.value = null;
+  form.value.quantity = null;
+  form.value.priceUnit = null;
+  form.value.custos_operacionais = null;
+  form.value.date = hoje;
+};
+
 const handleFileUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
@@ -185,10 +240,7 @@ const handleFileUpload = async (event) => {
     const resposta = apiInstancia.data.value;
     
     if (resposta && resposta.transacoes) {
-      // Pulo do gato: Pegamos a data do cabeçalho do JSON (ou hoje como fallback)
       const dataDaNota = resposta.data || hoje;
-      
-      // Mapeamos as transações injetando a data nelas
       transacoesParaRevisar.value = resposta.transacoes.map(t => ({
         ...t,
         data: dataDaNota
@@ -203,13 +255,11 @@ const handleFileUpload = async (event) => {
     console.error('Falha ao importar PDF:', err);
   } finally {
     loading.value = false;
-    event.target.value = ''; // Reseta o input
+    event.target.value = '';
   }
 };
 
-// --- NOVA FUNÇÃO: MOVER PARA O FORMULÁRIO ---
 const preencherFormulario = (linhaGrid, index) => {
-
   const ativoEncontrado = getAtivoByTicker(linhaGrid.ticker);
   
   if (!ativoEncontrado) {
@@ -221,6 +271,7 @@ const preencherFormulario = (linhaGrid, index) => {
   const isVenda = linhaGrid.tipo === 'V' || linhaGrid.tipo === 'v';
   const qtdAbsoluta = Math.abs(linhaGrid.quantidade || 0);
 
+  transacaoEmEdicaoId.value = null; // Nova transação vinda da IA
   form.value.assetId = ativoEncontrado.id;
   form.value.quantity = isVenda ? -qtdAbsoluta : qtdAbsoluta;
   form.value.priceUnit = linhaGrid.preco_unitario;
@@ -249,9 +300,8 @@ const assetExiste = (ticker) => {
 };
 
 onMounted(() => {
-  fetchMetadata(); // Carrega Ativos e Corretoras globais ao iniciar [1]
+  fetchMetadata();
 });
-
 </script>
 
 <template>
@@ -263,8 +313,15 @@ onMounted(() => {
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden">
       <!-- FORMULÁRIO LATERAL -->
       <section class="lg:col-span-4 flex flex-col min-h-0">
-        <form @submit.prevent="registrarTransacaoManual" class="bg-[#161b26] rounded-xl border border-white/5 p-6 space-y-6 flex flex-col h-full overflow-y-auto custom-scrollbar shadow-xl">
-          <label class="flex flex-col items-center justify-center w-full h-32 border border-dashed border-white/10 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all bg-[#0b0f17]/50 group shrink-0">
+        <form @submit.prevent="salvarTransacao" class="bg-[#161b26] rounded-xl border border-white/5 p-6 space-y-6 flex flex-col h-full overflow-y-auto custom-scrollbar shadow-xl">
+          <div class="flex justify-between items-center shrink-0">
+            <span class="text-[10px] font-black uppercase text-slate-400">
+              {{ transacaoEmEdicaoId ? 'Editando Transação #' + transacaoEmEdicaoId : 'Nova Transação' }}
+            </span>
+            <button v-if="transacaoEmEdicaoId" type="button" @click="limparFormulario" class="text-[10px] font-black uppercase text-rose-400 hover:underline">Cancelar Edição</button>
+          </div>
+
+          <label class="flex flex-col items-center justify-center w-full h-24 border border-dashed border-white/10 hover:border-emerald-500/50 rounded-xl cursor-pointer transition-all bg-[#0b0f17]/50 group shrink-0">
             <input type="file" class="hidden" @change="handleFileUpload" accept="application/pdf" />
             <span class="text-[10px] font-black text-slate-500 group-hover:text-emerald-500 uppercase tracking-widest text-center px-4">
               {{ fileName || 'IMPORTAR NOTA DE CORRETAGEM' }}
@@ -319,7 +376,7 @@ onMounted(() => {
           </div>
 
           <button type="submit" class="w-full py-4 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-500 hover:text-white font-black uppercase tracking-widest rounded-lg transition-all text-xs border border-emerald-500/20 shrink-0">
-            Registrar Transação
+            {{ transacaoEmEdicaoId ? 'Atualizar Transação' : 'Registrar Transação' }}
           </button>
         </form>
       </section>
@@ -428,7 +485,7 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- TABELA DE HISTÓRICO PADRÃO -->
+          <!-- TABELA DE HISTÓRICO PADRÃO COM AÇÕES DE EDITAR/EXCLUIR -->
           <div v-else class="flex flex-col flex-1 min-h-0">
             <div class="flex-1 overflow-auto flex flex-col">
               <table class="w-full text-left border-collapse">
@@ -440,6 +497,7 @@ onMounted(() => {
                     <th class="p-4">Qtd.</th>
                     <th class="p-4">Preço Unit.</th>
                     <th class="p-4 text-right">Total</th>
+                    <th class="p-4 text-center">Ações</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-white/5">
@@ -455,6 +513,10 @@ onMounted(() => {
                     <td class="p-4 text-xs font-mono text-slate-400 font-bold">{{ Number(t?.quantity || 0).toLocaleString('pt-BR') }}</td>
                     <td class="p-4 text-xs font-mono text-slate-400">R$ {{ formatCurrency(t?.priceUnit) }}</td>
                     <td class="p-4 text-right font-mono text-white text-sm font-bold">R$ {{ formatCurrency(t?.total) }}</td>
+                    <td class="p-4 text-center space-x-2">
+                      <button @click="carregarParaEdicao(t)" title="Editar" class="px-2 py-1 bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white rounded text-[10px] font-bold uppercase transition-all">Editar</button>
+                      <button @click="excluirTransacao(t.id)" title="Excluir" class="px-2 py-1 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded text-[10px] font-bold uppercase transition-all">Excluir</button>
+                    </td>
                   </tr>
                 </tbody>
               </table>
