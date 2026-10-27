@@ -255,8 +255,8 @@ exports.addManual = asyncHandler(async (req, res) => {
 
     // 1. Insere a transação
     const sql = `
-        INSERT INTO transactions (userId, assetId, brokerId, quantity, priceUnit, fees, date)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO transactions (userId, assetId, brokerId, quantity, priceUnit, fees, date, pm)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0)
     `;
 
     const [result] = await db.execute(sql, [
