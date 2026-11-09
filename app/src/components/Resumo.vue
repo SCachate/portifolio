@@ -119,7 +119,8 @@
           <span :class="['result-value', totaisResultado.mes >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.mes) }}
           </span>
-          <apexchart type="bar" height="100%" :options="barOptionsMes" :series="mesSeries" />
+          <!-- <apexchart type="bar" height="100%" :options="barOptionsMes" :series="mesSeries" /> -->
+          <apexchart type="rangeBar" height="100%" :options="waterfallBarOptions" :series="mesSeriesWaterfall" />
         </AsyncLoader>
       </div>
 
@@ -133,7 +134,7 @@
           <span :class="['result-value', totaisResultado.ano >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.ano) }}
           </span>
-          <apexchart type="bar" height="100%" :options="barOptionsAno" :series="anoSeries" />
+          <apexchart type="rangeBar" height="100%" :options="waterfallBarOptions" :series="anoSeriesWaterfall" />
         </AsyncLoader>
       </div>
     </div>
