@@ -52,7 +52,7 @@
 
       <div class="chart-card flex-col-container">
         <div class="header-top-row">
-          <h3 class="chart-title m-0">Evolução Patrimonial</h3>         
+          <h3 class="chart-title m-0">Evolução Patrimonial</h3>        
         </div>
         
         <div class="card-body-v2">
@@ -105,7 +105,7 @@
           <span :class="['result-value', totaisResultado.dia >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.dia) }}
           </span>
-          <apexchart type="rangeBar" height="100%" :options="waterfallBarOptions" :series="diaSeriesWaterfall" />
+          <apexchart type="rangeBar" height="100%" :options="waterfallOptionsDia" :series="diaSeriesWaterfall" />
         </AsyncLoader>
       </div>
 
@@ -119,8 +119,7 @@
           <span :class="['result-value', totaisResultado.mes >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.mes) }}
           </span>
-          <!-- <apexchart type="bar" height="100%" :options="barOptionsMes" :series="mesSeries" /> -->
-          <apexchart type="rangeBar" height="100%" :options="waterfallBarOptions" :series="mesSeriesWaterfall" />
+          <apexchart type="rangeBar" height="100%" :options="waterfallOptionsMes" :series="mesSeriesWaterfall" />
         </AsyncLoader>
       </div>
 
@@ -134,7 +133,7 @@
           <span :class="['result-value', totaisResultado.ano >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.ano) }}
           </span>
-          <apexchart type="rangeBar" height="100%" :options="waterfallBarOptions" :series="anoSeriesWaterfall" />
+          <apexchart type="rangeBar" height="100%" :options="waterfallOptionsAno" :series="anoSeriesWaterfall" />
         </AsyncLoader>
       </div>
     </div>
@@ -251,9 +250,6 @@ const chartOptions = computed(() => ({
 }));
 
 const evolucaoSeries = computed(() => (dadosEvolucao.value && Array.isArray(dadosEvolucao.value)) ? dadosEvolucao.value : []);
-const diaSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.dia) || [] }]);
-const mesSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.mes) || [] }]);
-const anoSeries = computed(() => [{ name: 'Resultado', data: dadosResultado.value?.map(item => item.ano) || [] }]);
 
 const totaisResultado = computed(() => {
   if (!dadosResultado.value || !Array.isArray(dadosResultado.value)) return { dia: 0, mes: 0, ano: 0 };
@@ -262,102 +258,6 @@ const totaisResultado = computed(() => {
     return acc;
   }, { dia: 0, mes: 0, ano: 0 });
 });
-
-const baseBarOptions = computed(() => {
-  const coresBackend = dadosResultado.value?.map(item => item.cor) || ['#10b981'];
-  return {
-    chart: { toolbar: { show: false }, parentHeightOffset: 0, fontFamily: 'inherit' },   
-    // Padronizado com linhas de grade verticais (strokeDashArray e borderColor idênticos ao histórico)
-    grid: { 
-      borderColor: '#334155', 
-      strokeDashArray: 4, 
-      padding: { top: 20, right: 10, bottom: 0, left: 10 },
-    },
-    colors: coresBackend,
-    plotOptions: { 
-      bar: { 
-        borderRadius: 4, 
-        distributed: true, 
-        columnWidth: '70%',
-        // Adicionado o total/rótulo em cima de cada barra individualmente para o padrão ficar idêntico
-        dataLabels: {
-          position: 'top',
-          total: {
-            enabled: false
-          }
-        }
-      } 
-    },
-    fill: { type: 'solid', colors: coresBackend },
-    xaxis: {
-      categories: dadosResultado.value?.map(item => item.classe) || [], 
-      labels: { show: true, rotate: -45, rotateAlways: true, style: { colors: '#94a3b8', fontSize: '9px' } },
-      axisBorder: {
-        show: true,
-        color: '#f6f9fc',
-        height: 1
-      },
-      axisTicks: {
-        show: true,
-        color: '#f6f9fc',
-        height: 4
-      }
-    },
-    legend: { show: false }, 
-    yaxis: { show: false }, 
-    // Habilitado dataLabels geral para mostrar o valor em cima de cada barra individual dos gráficos dia/mês/ano
-    dataLabels: { 
-      enabled: true,
-      offsetY: -16,
-      style: {
-        fontSize: '10px',
-        colors: ['#ffffff'],
-        fontWeight: 600
-      },
-      formatter: function (val) {
-        if (val === 0) return '';
-        return Number(val).toLocaleString('pt-BR', { 
-          style: 'currency', 
-          currency: 'BRL',
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2 
-        });
-      }
-    }
-  };
-});
-
-const generateBarOptionsForType = (tipo) => ({
-  ...baseBarOptions.value,
-  chart: {
-    ...baseBarOptions.value.chart,
-    events: {
-      dataPointSelection: (event, chartContext, config) => {
-        const item = dadosResultado.value[config.dataPointIndex];
-        if (item) abrirPeloGrafico({ classe: item.classe, tipo });
-      }
-    }
-  },
-  tooltip: {
-    theme: 'dark',
-    custom: function({ series, seriesIndex, dataPointIndex, w }) {
-      const val = series[seriesIndex][dataPointIndex];
-      const label = w.globals.labels[dataPointIndex];
-      const statusColor = val >= 0 ? '#10b981' : '#f87171';
-      return `<div style="background: #1a1c24; border: 1px solid #334155; padding: 10px; border-radius: 8px;">
-                <div style="color: #94a3b8; font-size: 10px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">${label}</div>
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor};"></span>
-                  <span style="color: #f1f5f9; font-size: 12px;">Resultado: ${formatCurrency(val)}</span>
-                </div>
-              </div>`;
-    }
-  }
-});
-
-const barOptionsDia = computed(() => generateBarOptionsForType('dia'));
-const barOptionsMes = computed(() => generateBarOptionsForType('mes'));
-const barOptionsAno = computed(() => generateBarOptionsForType('ano'));
 
 const historicoResultadoProcessado = computed(() => {
   const dadosFonte = dadosHistoricoBackend.value;
@@ -398,7 +298,6 @@ const historicoPronto = computed(() => {
 const historicoResultadoOptions = computed(() => ({
   chart: { type: 'bar', stacked: true, toolbar: { show: false }, fontFamily: 'inherit' },
   colors: historicoResultadoProcessado.value.cores,
-  // Grade vertical idêntica garantida com as linhas (xaxis lines show: true)
   grid: { 
     borderColor: '#334155', 
     strokeDashArray: 4, 
@@ -453,18 +352,13 @@ const evolucaoOptions = computed(() => ({
   xaxis: { categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
   yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' } }, show: false },
   legend: { show: false },
-  
-  // Mantemos o dataLabels principal desativado aqui para não poluir as barrinhas internas individuais
   dataLabels: { enabled: false },
-
   plotOptions: { 
     bar: { 
       borderRadius: 4, 
       columnWidth: '65%',
       dataLabels: {
-        // Habilita os rótulos nas barras para que o 'total' funcione
         enabled: true,
-        // Oculta os números individuais de cada barrinha empilhada, exibindo APENAS o somatório no topo
         hideOverflowingLabels: true,
         total: {
           enabled: true,
@@ -495,7 +389,6 @@ const evolucaoOptions = computed(() => ({
       }
     } 
   },
-  
   tooltip: {
     theme: 'dark', 
     shared: true,
@@ -510,7 +403,6 @@ const evolucaoOptions = computed(() => ({
       return html + `<div class="tooltip-total"><span>TOTAL:</span><span>${formatCurrency(total)}</span></div></div></div>`;
     }
   }
-
 }));
 
 let refreshInterval = null;
@@ -527,7 +419,7 @@ onUnmounted(() => {
   if (refreshInterval) clearInterval(refreshInterval);
 });
 
-// Função auxiliar para gerar as séries Waterfall mantendo a cor do backend
+// Funções do Waterfall com tratamento seguro de dados nulos
 const criarSerieWaterfall = (propriedade) => {
   if (!dadosResultado.value || !Array.isArray(dadosResultado.value)) return [];
   
@@ -552,7 +444,6 @@ const diaSeriesWaterfall = computed(() => criarSerieWaterfall('dia'));
 const mesSeriesWaterfall = computed(() => criarSerieWaterfall('mes'));
 const anoSeriesWaterfall = computed(() => criarSerieWaterfall('ano'));
 
-// Fábrica de opções que inclui o evento de clique (dataPointSelection) e tooltip personalizado
 const generateWaterfallOptionsForType = (tipo) => ({
   chart: { 
     type: 'rangeBar', 
@@ -560,9 +451,8 @@ const generateWaterfallOptionsForType = (tipo) => ({
     fontFamily: 'inherit',
     events: {
       dataPointSelection: (event, chartContext, config) => {
-        const item = dadosResultado.value[config.dataPointIndex];
+        const item = dadosResultado.value?.[config.dataPointIndex];
         if (item) {
-          // Reativa a abertura do modal passando a classe e o período correto
           abrirPeloGrafico({ classe: item.classe, tipo });
         }
       }
@@ -590,8 +480,9 @@ const generateWaterfallOptionsForType = (tipo) => ({
   tooltip: {
     theme: 'dark',
     custom: function({ seriesIndex, dataPointIndex, w }) {
-      const item = dadosResultado.value[dataPointIndex];
-      const dataPoint = w.config.series[seriesIndex].data[dataPointIndex];
+      const item = dadosResultado.value?.[dataPointIndex];
+      const dataPoint = w.config.series?.[seriesIndex]?.data?.[dataPointIndex];
+      if (!dataPoint) return '';
       const [start, end] = dataPoint.y;
       const variacao = end - start;
       const label = dataPoint.x;
@@ -613,8 +504,6 @@ const waterfallOptionsDia = computed(() => generateWaterfallOptionsForType('dia'
 const waterfallOptionsMes = computed(() => generateWaterfallOptionsForType('mes'));
 const waterfallOptionsAno = computed(() => generateWaterfallOptionsForType('ano'));
 </script>
-
-
 
 <style scoped>
 .result-value { font-variant-numeric: tabular-nums; font-family: 'Inter', sans-serif; font-weight: 700; }
@@ -638,5 +527,4 @@ const waterfallOptionsAno = computed(() => generateWaterfallOptionsForType('ano'
 :deep(.chart-evolucao .apexcharts-total-label rect) {
   display: none !important;
 }
-
 </style>
