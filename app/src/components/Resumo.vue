@@ -105,7 +105,7 @@
           <span :class="['result-value', totaisResultado.dia >= 0 ? 'text-emerald-400' : 'text-red-400']">
             {{ formatCurrency(totaisResultado.dia) }}
           </span>
-          <apexchart type="bar" height="100%" :options="barOptionsDia" :series="diaSeries" />
+          <apexchart type="rangeBar" height="100%" :options="waterfallBarOptions" :series="diaSeriesWaterfall" />
         </AsyncLoader>
       </div>
 
@@ -509,6 +509,7 @@ const evolucaoOptions = computed(() => ({
       return html + `<div class="tooltip-total"><span>TOTAL:</span><span>${formatCurrency(total)}</span></div></div></div>`;
     }
   }
+
 }));
 
 let refreshInterval = null;
@@ -524,7 +525,83 @@ onMounted(() => {
 onUnmounted(() => {
   if (refreshInterval) clearInterval(refreshInterval);
 });
+
+
+  // Função auxiliar para gerar o formato de intervalo [start, end] exigido pelo Waterfall
+const criarSerieWaterfall = (propriedade) => {
+  if (!dadosResultado.value || !Array.isArray(dadosResultado.value)) return [];
+  
+  let runningTotal = 0;
+  const data = dadosResultado.value.map(item => {
+    const valor = Number(item[propriedade]) || 0;
+    const start = runningTotal;
+    runningTotal += valor;
+    const end = runningTotal;
+    
+    return {
+      x: item.classe,
+      y: [start, end],
+      // Define cor verde para valores positivos e vermelha para negativos
+      fillColor: valor >= 0 ? '#10b981' : '#f87171'
+    };
+  });
+
+  return [{ name: 'Waterfall', data }];
+};
+
+// Novas computed properties para as séries Waterfall
+const diaSeriesWaterfall = computed(() => criarSerieWaterfall('dia'));
+const mesSeriesWaterfall = computed(() => criarSerieWaterfall('mes'));
+const anoSeriesWaterfall = computed(() => criarSerieWaterfall('ano'));
+
+const waterfallBarOptions = computed(() => ({
+  chart: { 
+    type: 'rangeBar', 
+    toolbar: { show: false }, 
+    fontFamily: 'inherit' 
+  },
+  grid: { 
+    borderColor: '#334155', 
+    strokeDashArray: 4, 
+    padding: { top: 20, right: 10, bottom: 0, left: 10 },
+  },
+  plotOptions: { 
+    bar: { 
+      horizontal: false,
+      borderRadius: 4, 
+      columnWidth: '70%',
+      isUserDataInverted: true
+    } 
+  },
+  xaxis: {
+    categories: dadosResultado.value?.map(item => item.classe) || [], 
+    labels: { show: true, rotate: -45, rotateAlways: true, style: { colors: '#94a3b8', fontSize: '9px' } }
+  },
+  yaxis: { show: false },
+  legend: { show: false },
+  tooltip: {
+    theme: 'dark',
+    custom: function({ seriesIndex, dataPointIndex, w }) {
+      const dataPoint = w.config.series[seriesIndex].data[dataPointIndex];
+      const [start, end] = dataPoint.y;
+      const variacao = end - start;
+      const label = dataPoint.x;
+      const statusColor = variacao >= 0 ? '#10b981' : '#f87171';
+      
+      return `<div style="background: #1a1c24; border: 1px solid #334155; padding: 10px; border-radius: 8px;">
+                <div style="color: #94a3b8; font-size: 10px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">${label}</div>
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor};"></span>
+                  <span style="color: #f1f5f9; font-size: 12px;">Variação: ${formatCurrency(variacao)}</span>
+                </div>
+                <div style="color: #94a3b8; font-size: 10px; border-top: 1px solid #334155; pt: 4px;">Total Acumulado: ${formatCurrency(end)}</div>
+              </div>`;
+    }
+  }
+}));
 </script>
+
+
 
 <style scoped>
 .result-value { font-variant-numeric: tabular-nums; font-family: 'Inter', sans-serif; font-weight: 700; }
