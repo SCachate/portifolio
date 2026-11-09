@@ -528,7 +528,6 @@ onUnmounted(() => {
 });
 
 
-  // Função auxiliar para gerar o formato de intervalo [start, end] exigido pelo Waterfall
 const criarSerieWaterfall = (propriedade) => {
   if (!dadosResultado.value || !Array.isArray(dadosResultado.value)) return [];
   
@@ -542,8 +541,8 @@ const criarSerieWaterfall = (propriedade) => {
     return {
       x: item.classe,
       y: [start, end],
-      // Define cor verde para valores positivos e vermelha para negativos
-      fillColor: valor >= 0 ? '#10b981' : '#f87171'
+      // Utiliza a cor que vem do backend (item.cor), com fallback para verde/vermelho se não houver
+      fillColor: item.cor || (valor >= 0 ? '#10b981' : '#f87171')
     };
   });
 
