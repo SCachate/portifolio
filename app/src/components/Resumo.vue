@@ -527,7 +527,7 @@ onUnmounted(() => {
   if (refreshInterval) clearInterval(refreshInterval);
 });
 
-
+// Função auxiliar para gerar as séries Waterfall mantendo a cor do backend
 const criarSerieWaterfall = (propriedade) => {
   if (!dadosResultado.value || !Array.isArray(dadosResultado.value)) return [];
   
@@ -541,7 +541,6 @@ const criarSerieWaterfall = (propriedade) => {
     return {
       x: item.classe,
       y: [start, end],
-      // Utiliza a cor que vem do backend (item.cor), com fallback para verde/vermelho se não houver
       fillColor: item.cor || (valor >= 0 ? '#10b981' : '#f87171')
     };
   });
@@ -549,16 +548,25 @@ const criarSerieWaterfall = (propriedade) => {
   return [{ name: 'Waterfall', data }];
 };
 
-// Novas computed properties para as séries Waterfall
 const diaSeriesWaterfall = computed(() => criarSerieWaterfall('dia'));
 const mesSeriesWaterfall = computed(() => criarSerieWaterfall('mes'));
 const anoSeriesWaterfall = computed(() => criarSerieWaterfall('ano'));
 
-const waterfallBarOptions = computed(() => ({
+// Fábrica de opções que inclui o evento de clique (dataPointSelection) e tooltip personalizado
+const generateWaterfallOptionsForType = (tipo) => ({
   chart: { 
     type: 'rangeBar', 
     toolbar: { show: false }, 
-    fontFamily: 'inherit' 
+    fontFamily: 'inherit',
+    events: {
+      dataPointSelection: (event, chartContext, config) => {
+        const item = dadosResultado.value[config.dataPointIndex];
+        if (item) {
+          // Reativa a abertura do modal passando a classe e o período correto
+          abrirPeloGrafico({ classe: item.classe, tipo });
+        }
+      }
+    }
   },
   grid: { 
     borderColor: '#334155', 
@@ -582,11 +590,12 @@ const waterfallBarOptions = computed(() => ({
   tooltip: {
     theme: 'dark',
     custom: function({ seriesIndex, dataPointIndex, w }) {
+      const item = dadosResultado.value[dataPointIndex];
       const dataPoint = w.config.series[seriesIndex].data[dataPointIndex];
       const [start, end] = dataPoint.y;
       const variacao = end - start;
       const label = dataPoint.x;
-      const statusColor = variacao >= 0 ? '#10b981' : '#f87171';
+      const statusColor = item?.cor || (variacao >= 0 ? '#10b981' : '#f87171');
       
       return `<div style="background: #1a1c24; border: 1px solid #334155; padding: 10px; border-radius: 8px;">
                 <div style="color: #94a3b8; font-size: 10px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">${label}</div>
@@ -594,11 +603,15 @@ const waterfallBarOptions = computed(() => ({
                   <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${statusColor};"></span>
                   <span style="color: #f1f5f9; font-size: 12px;">Variação: ${formatCurrency(variacao)}</span>
                 </div>
-                <div style="color: #94a3b8; font-size: 10px; border-top: 1px solid #334155; pt: 4px;">Total Acumulado: ${formatCurrency(end)}</div>
+                <div style="color: #94a3b8; font-size: 10px; border-top: 1px solid #334155; padding-top: 4px;">Total Acumulado: ${formatCurrency(end)}</div>
               </div>`;
     }
   }
-}));
+});
+
+const waterfallOptionsDia = computed(() => generateWaterfallOptionsForType('dia'));
+const waterfallOptionsMes = computed(() => generateWaterfallOptionsForType('mes'));
+const waterfallOptionsAno = computed(() => generateWaterfallOptionsForType('ano'));
 </script>
 
 
