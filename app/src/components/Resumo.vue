@@ -327,9 +327,9 @@ const historicoResultadoOptions = computed(() => ({
           },
            formatter: function (val) {
             if (!val || val === 0) return '';
-            if (val >= 1000000) {
+            if (Math.abs(val) >= 1000000) {
               return (val / 1000000).toFixed(1).replace('.', ',') + 'M';
-            } else if (val >= 1000) {
+            } else if (Math.abs(val) >= 1000) {
               return (val / 1000).toFixed(1).replace('.', ',') + 'k';
             }
             return Number(val).toLocaleString('pt-BR', {
