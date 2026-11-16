@@ -325,7 +325,16 @@ const historicoResultadoOptions = computed(() => ({
             fontSize: '11px',
             fontWeight: 400
           },
-          formatter: function (val) {
+           formatter: function (val) {
+            if (!val || val === 0) return '';
+            if (val >= 1000000) {
+              return (val / 1000000).toFixed(0).replace('.', ',') + 'M';
+            } else if (val >= 1000) {
+              return (val / 1000).toFixed(0).replace('.', ',') + 'k';
+            }
+            return val.toFixed(1);
+          },
+          formatter2: function (val) {
             return Number(val).toLocaleString('pt-BR', {
               style: 'currency',
               currency: 'BRL',
