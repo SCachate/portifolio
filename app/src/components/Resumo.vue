@@ -332,12 +332,7 @@ const historicoResultadoOptions = computed(() => ({
             } else if (Math.abs(val) >= 1000) {
               return (val / 1000).toFixed(1).replace('.', ',') + 'k';
             }
-            return Number(val).toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            });
+            return val.toFixed(1).replace('.',',');
           },
           formatter2: function (val) {
             return Number(val).toLocaleString('pt-BR', {
